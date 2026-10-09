@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Cadenza · AI Practice Coach</title>
+  <meta name="description" content="Offline AI music practice coach for piano and guitar: real-time chord, timing, intonation and dynamics feedback, song analysis, strumming transcription, metronome, tuner and games.">
+  <meta name="theme-color" content="#2a0f5c">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/icon.svg">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <div id="app" class="app"></div>
+  <div id="toasts" aria-live="polite"></div>
+  <noscript>Cadenza needs JavaScript enabled.</noscript>
+
+  <!-- Analysis engine (pure, offline) -->
+  <script src="js/core/dsp.js"></script>
+  <script src="js/core/theory.js"></script>
+  <script src="js/core/rhythm.js"></script>
+  <script src="js/core/midi.js"></script>
+  <script src="js/core/analyzer.js"></script>
+  <script src="js/core/coach.js"></script>
+  <script src="js/core/game.js"></script>
+  <!-- Browser audio -->
+  <script src="js/audio/audio.js"></script>
+  <script src="js/audio/live.js"></script>
+  <script src="js/audio/metronome.js"></script>
+  <!-- UI -->
+  <script src="js/ui/components.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/views/shared.js"></script>
+  <script src="js/views/home.js"></script>
+  <script src="js/views/studio.js"></script>
+  <script src="js/views/insights.js"></script>
+  <script src="js/views/games.js"></script>
+  <script src="js/views/metronome.js"></script>
+  <script src="js/views/tuner.js"></script>
+  <script src="js/views/progress.js"></script>
+  <script>PM.App.start();</script>
+</body>
+</html>

@@ -149,3 +149,10 @@ test('audio piano analysis in 3/4', async () => {
   assert.strictEqual(a.chordSummary.loop, 'C → G → Am → F');
   assert.deepStrictEqual(a.chords.filter((c) => c.name !== 'N').slice(0, 4).map((c) => c.roman), ['I', 'V', 'vi', 'IV']);
 });
+
+test('relative major/minor resolved by chord evidence (G–Em–C–D is G major)', async () => {
+  const notes = strummedSong({ bars: 8, progression: ['G', 'Em', 'C', 'D'] });
+  const a = await Analyzer.analyzeMidi(Midi.parseMidi(Midi.writeMidi(notes, { bpm: 92 })), { instrument: 'guitar' });
+  assert.strictEqual(a.key.name, 'G major');
+  assert.deepStrictEqual(a.chords.filter((c) => c.name !== 'N').slice(0, 4).map((c) => c.roman), ['I', 'vi', 'IV', 'V']);
+});

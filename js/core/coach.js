@@ -215,7 +215,8 @@
         const t = grid ? frame.time : refTime;
         const near = g.nearest(t);
         if (near && Math.abs(near.offset) < near.interval * 0.4) {
-          const ms = near.offset * 1000;
+          // reference offsets are in track time; convert to real time when the track is slowed down
+          const ms = (near.offset * 1000) / (grid ? 1 : frame.rate || 1);
           s.onsets++;
           s.offsets.push(ms);
           this.recentOffsets.push(ms);
@@ -252,8 +253,8 @@
 
       // --- dynamics vs reference
       if (frame.active && ref && refTime != null && ref.dynamics) {
-        const target = ref.dynamics.levelAt(refTime);
-        const mark = ref.dynamics.markAt(refTime);
+        const target = Analyzer.dynLevelAt(ref.dynamics, refTime);
+        const mark = Analyzer.dynMarkAt(ref.dynamics, refTime);
         const delta = liveLevel - target;
         st.dynamics = { target, live: liveLevel, mark, delta };
         s.dynSamples++;

@@ -210,7 +210,32 @@
     info.confidence = Math.max(0, Math.min(1, best.r));
     info.margin = best.r - results[1].r;
     info.alternatives = results.slice(1, 3).map((x) => keyInfo(x.tonic, x.mode).name);
+    info.candidates = results.slice(0, 4);
     return info;
+  }
+
+  /**
+   * Re-rank key candidates using the chord sequence: songs usually start/end on the tonic chord
+   * and spend the most time on it. Resolves relative major/minor ambiguity (G major vs E minor).
+   */
+  function refineKeyWithChords(key, chords) {
+    if (!key || !key.candidates || !chords || !chords.length) return key;
+    const real = chords.filter((c) => c.root != null);
+    if (!real.length) return key;
+    const total = real.reduce((a, c) => a + (c.end - c.start), 0) || 1;
+    const isTonic = (c, k) => c.root === k.tonic && (k.mode === 'major' ? ['', '7', 'maj7', 'sus2', 'sus4', '5'] : ['m', 'm7', '5']).includes(c.type);
+    let best = null;
+    for (const cand of key.candidates) {
+      const share = real.filter((c) => isTonic(c, cand)).reduce((a, c) => a + (c.end - c.start), 0) / total;
+      const s = cand.r + 0.35 * share + (isTonic(real[0], cand) ? 0.08 : 0) + (isTonic(real[real.length - 1], cand) ? 0.08 : 0);
+      if (!best || s > best.s) best = { s, cand };
+    }
+    if (best.cand.tonic === key.tonic && best.cand.mode === key.mode) return key;
+    const k = keyInfo(best.cand.tonic, best.cand.mode);
+    k.confidence = key.confidence;
+    k.alternatives = key.candidates.filter((c) => c !== best.cand).slice(0, 2).map((x) => keyInfo(x.tonic, x.mode).name);
+    k.candidates = key.candidates;
+    return k;
   }
 
   function diatonicChords(tonic, mode, preferFlat) {
@@ -306,7 +331,7 @@
 
   PM.Theory = {
     SHARPS, FLATS, CHORD_TYPES, TYPE_BY_ID, STANDARD_TUNING, mod12, spell, chordName, chordPcs, detectChord, chordFromNotes,
-    detectKey, keyInfo, romanNumeral, chordScores, describeTemplate, viterbiChords, TEMPLATES, chordFunction, diatonicChords, guitarShape, pianoVoicing, parseChordName, pearson,
+    detectKey, refineKeyWithChords, keyInfo, romanNumeral, chordScores, describeTemplate, viterbiChords, TEMPLATES, chordFunction, diatonicChords, guitarShape, pianoVoicing, parseChordName, pearson,
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = PM.Theory;
 })(typeof self !== 'undefined' ? self : globalThis);

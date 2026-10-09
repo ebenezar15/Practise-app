@@ -103,7 +103,9 @@
     const smooth = new Float32Array(db.length);
     let acc = db[0] || -60;
     for (let i = 0; i < db.length; i++) { acc = acc * 0.85 + db[i] * 0.15; smooth[i] = acc; }
-    const sorted = Array.from(smooth).filter((x) => x > -70).sort((a, b) => a - b);
+    const peak = Math.max(-70, ...smooth);
+    const silent = (x) => x < peak - 40 || x < -70; // lead-in / tail silence is not a dynamic
+    const sorted = Array.from(smooth).filter((x) => !silent(x)).sort((a, b) => a - b);
     const ref = sorted.length ? sorted[Math.floor(sorted.length * 0.97)] : 0;
     const floor = sorted.length ? sorted[Math.floor(sorted.length * 0.1)] : -60;
     const curve = [];
@@ -111,6 +113,7 @@
     // sections of constant marking (min 2 s)
     const sections = [];
     for (const pt of curve) {
+      if (silent(pt.db)) { const last = sections[sections.length - 1]; if (last) last.end = pt.t; continue; }
       const m = markFor(pt.rel);
       const last = sections[sections.length - 1];
       if (last && last.mark === m.mark) last.end = pt.t;
@@ -129,27 +132,28 @@
     const win = Math.max(1, Math.round(3 / step));
     for (let i = 0; i + win < curve.length; i += Math.max(1, Math.floor(win / 2))) {
       const d = curve[i + win].db - curve[i].db;
-      if (Math.abs(d) >= 6 && curve[i + win].db > floor) {
+      if (Math.abs(d) >= 6 && !silent(curve[i].db) && !silent(curve[i + win].db)) {
         const type = d > 0 ? 'crescendo' : 'decrescendo';
         const last = events[events.length - 1];
         if (last && last.type === type && curve[i].t - last.end < 1.5) last.end = curve[i + win].t;
         else events.push({ type, start: curve[i].t, end: curve[i + win].t, change: d });
       }
     }
-    const avgRel = curve.reduce((a, p) => a + p.rel, 0) / Math.max(1, curve.length);
-    return {
-      curve, sections: merged, events,
-      rangeDb: ref - floor, overall: markFor(avgRel).mark,
-      levelAt(t) {
-        if (!curve.length) return 0.5;
-        const i = Math.max(0, Math.min(curve.length - 1, Math.round(t / step)));
-        return Math.max(0, Math.min(1, (curve[i].rel + 30) / 30));
-      },
-      markAt(t) {
-        const s = merged.find((x) => t >= x.start && t <= x.end);
-        return s ? s.mark : 'mf';
-      },
-    };
+    const audible = curve.filter((p) => !silent(p.db));
+    const avgRel = audible.reduce((a, p) => a + p.rel, 0) / Math.max(1, audible.length);
+    return { curve, sections: merged, events, step, rangeDb: ref - floor, overall: markFor(avgRel).mark };
+  }
+
+  /** Reference loudness at time t, 0 (quiet) … 1 (loudest). Plain-data helpers so analyses can be stored. */
+  function dynLevelAt(dyn, t) {
+    const c = dyn && dyn.curve;
+    if (!c || !c.length) return 0.5;
+    const i = Math.max(0, Math.min(c.length - 1, Math.round(t / (dyn.step || 0.1))));
+    return Math.max(0, Math.min(1, (c[i].rel + 30) / 30));
+  }
+  function dynMarkAt(dyn, t) {
+    const s = dyn && dyn.sections && dyn.sections.find((x) => t >= x.start && t <= x.end);
+    return s ? s.mark : 'mf';
   }
 
   /** One-hot-ish bass pitch class: the lowest reasonably strong peak below 300 Hz. */
@@ -216,7 +220,7 @@
     // Key
     const total = new Float32Array(12);
     chromaFrames.forEach((c) => { for (let i = 0; i < 12; i++) total[i] += c[i]; });
-    const key = Theory.detectKey(total);
+    let key = Theory.detectKey(total);
 
     // Beat-synchronous chords
     const maxE = Math.max(...energy, 1e-9);
@@ -241,7 +245,9 @@
       prevChroma = nc;
       beatFrames.push({ chroma: c, bass: bc, silent: !cnt || e / cnt < maxE * 0.02 });
     }
-    const chords = segmentChords(beatFrames, beats, duration, key);
+    let chords = segmentChords(beatFrames, beats, duration, key);
+    const refined = Theory.refineKeyWithChords(key, chords);
+    if (refined !== key) { key = refined; chords = segmentChords(beatFrames, beats, duration, key); }
     const chordSummary = summarizeChords(chords);
     progress(0.8, 'Feeling the groove…');
     await tick();
@@ -275,7 +281,7 @@
 
     // Strumming
     let strum = null;
-    if (instrument === 'guitar') {
+    if (opts.strum !== false) {
       progress(0.88, 'Transcribing strumming…');
       await tick();
       const onsets = Rhythm.pickOnsets(feat.novelty, feat.hopTime, { minGap: 0.09, delta: 0.8 });
@@ -348,7 +354,11 @@
       const pcsPresent = c.reduce((a, x) => a + (x > 0 ? 1 : 0), 0);
       beatFrames.push({ chroma: c, bass: bc, silent: pcsPresent < 2 });
     }
-    const chords = segmentChords(beatFrames, beats, duration, key);
+    let chords = segmentChords(beatFrames, beats, duration, key);
+    if (!key.fromFile) {
+      const refined = Theory.refineKeyWithChords(key, chords);
+      if (refined !== key) { key = refined; chords = segmentChords(beatFrames, beats, duration, key); }
+    }
 
     // dynamics from velocity density
     const step = 0.1;
@@ -363,7 +373,7 @@
 
     // Strums from clustered note-ons; ascending pitch order = down-strum
     let strum = null;
-    if (instrument === 'guitar') {
+    if (opts.strum !== false) {
       const clusters = [];
       for (const n of notes) {
         const last = clusters[clusters.length - 1];
@@ -409,6 +419,6 @@
     return analysis.notes.filter((n) => n.start - tol <= t && n.end + tol >= t);
   }
 
-  PM.Analyzer = { analyzeAudio, analyzeMidi, chordAt, notesAt, segmentChords, dynamicsFromCurve, markFor, DYN_MARKS };
+  PM.Analyzer = { analyzeAudio, analyzeMidi, chordAt, notesAt, segmentChords, dynamicsFromCurve, dynLevelAt, dynMarkAt, markFor, DYN_MARKS };
   if (typeof module !== 'undefined' && module.exports) module.exports = PM.Analyzer;
 })(typeof self !== 'undefined' ? self : globalThis);
