@@ -34,7 +34,7 @@
    * Viterbi-smoothed chord segmentation over beats.
    * beatFrames: [{chroma, bass, silent}] aligned with beats.
    */
-  function segmentChords(beatFrames, beats, duration, key) {
+  function segmentChords(beatFrames, beats, duration, key, richThreshold) {
     const path = Theory.viterbiChords(beatFrames, { changePenalty: 0.12, noChordScore: 0.55 });
     const runs = [];
     for (let i = 0; i < path.length; i++) {
@@ -67,8 +67,22 @@
         if (f.silent) continue;
         for (let k = 0; k < 12; k++) { chroma[k] += f.chroma[k]; bass[k] += f.bass ? f.bass[k] : 0; }
       }
-      const sc = Theory.chordScores(chroma, bass)[x.j];
-      const d = Theory.describeTemplate(x.j, bass, key && key.preferFlat, sc);
+      // refine the quality (e.g. A → A7) with the whole segment's notes, keeping the root
+      const scores = Theory.chordScores(chroma, bass);
+      const root = Theory.TEMPLATES[x.j].root;
+      let j = x.j;
+      for (let t = 0; t < Theory.TEMPLATES.length; t++) if (Theory.TEMPLATES[t].root === root && scores[t] > scores[j] + 0.02) j = t;
+      // if every note of a richer same-root chord (e.g. the 7th) is clearly present, prefer it
+      let cmax = 0;
+      for (let k = 0; k < 12; k++) cmax = Math.max(cmax, chroma[k]);
+      for (let t = 0; t < Theory.TEMPLATES.length; t++) {
+        const T = Theory.TEMPLATES[t];
+        if (T.root !== root || T.type.iv.length <= Theory.TEMPLATES[j].type.iv.length) continue;
+        const pcs = T.type.iv.map((iv) => Theory.mod12(root + iv));
+        const jpcs = Theory.TEMPLATES[j].type.iv.map((iv) => Theory.mod12(root + iv));
+        if (jpcs.every((p) => pcs.includes(p)) && pcs.every((p) => chroma[p] >= cmax * (richThreshold || 0.6))) j = t;
+      }
+      const d = Theory.describeTemplate(j, bass, key && key.preferFlat, scores[j]);
       return Object.assign(d, {
         start, end, beats: x.to - x.from + 1,
         roman: Theory.romanNumeral(d.root, d.type, key), fn: Theory.chordFunction(d.root, key),
@@ -347,17 +361,18 @@
       for (const n of notes) {
         const ov = Math.min(n.end, t1) - Math.max(n.start, t0);
         if (ov <= 0) continue;
-        c[n.midi % 12] += ov * (0.5 + n.velocity);
+        // low notes (walking bass lines) shape the bass vector more than the harmony
+        c[n.midi % 12] += ov * (0.5 + n.velocity) * (n.midi < 48 ? 0.4 : 1);
         if (n.midi < lowest) lowest = n.midi;
       }
       if (lowest < 999) bc[lowest % 12] = 1;
       const pcsPresent = c.reduce((a, x) => a + (x > 0 ? 1 : 0), 0);
-      beatFrames.push({ chroma: c, bass: bc, silent: pcsPresent < 2 });
+      beatFrames.push({ chroma: c, bass: bc, silent: pcsPresent === 0, uninformative: pcsPresent === 1 });
     }
-    let chords = segmentChords(beatFrames, beats, duration, key);
+    let chords = segmentChords(beatFrames, beats, duration, key, 0.3);
     if (!key.fromFile) {
       const refined = Theory.refineKeyWithChords(key, chords);
-      if (refined !== key) { key = refined; chords = segmentChords(beatFrames, beats, duration, key); }
+      if (refined !== key) { key = refined; chords = segmentChords(beatFrames, beats, duration, key, 0.3); }
     }
 
     // dynamics from velocity density
@@ -401,6 +416,53 @@
     };
   }
 
+  /**
+   * Monophonic transcription (bass lines, trumpet/vocal melodies) with YIN on a
+   * decimated signal. Returns [{midi, start, end, velocity}].
+   */
+  async function transcribeMono(data, sr, opts) {
+    opts = opts || {};
+    const minF = opts.minFreq || 40, maxF = opts.maxFreq || 1000;
+    let x = data, rate = sr;
+    while (rate / 2 >= Math.max(2.5 * maxF, 8000)) { x = DSP.decimate2(x); rate /= 2; }
+    const W = Math.max(256, Math.ceil(rate / minF) + 8), frame = 2 * W, hop = Math.max(64, Math.round(rate * 0.012));
+    const track = [];
+    let peak = 0;
+    for (let i = 0; i < x.length; i++) peak = Math.max(peak, Math.abs(x[i]));
+    const gate = peak * 0.06;
+    const buf = new Float32Array(frame);
+    for (let off = 0, f = 0; off + frame < x.length; off += hop, f++) {
+      for (let i = 0; i < frame; i++) buf[i] = x[off + i];
+      const r = DSP.rms(buf, 0, frame);
+      let midi = null;
+      if (r > gate * 0.35) {
+        const p = DSP.yin(buf, rate, { minFreq: minF, maxFreq: maxF, threshold: 0.15 });
+        if (p && p.confidence > 0.75) midi = Math.round(DSP.freqToMidi(p.freq));
+      }
+      track.push({ t: (off + W) / rate, midi, rms: r });
+      if (f % 500 === 0) await tick();
+    }
+    // median-of-5 smoothing on pitch, then segment runs
+    const sm = track.map((p, i) => {
+      const win = track.slice(Math.max(0, i - 2), i + 3).map((q) => (q.midi == null ? -1 : q.midi)).sort((a, b) => a - b);
+      const m = win[win.length >> 1];
+      return m < 0 ? null : m;
+    });
+    const notes = [];
+    let cur = null;
+    const hopT = hop / rate;
+    for (let i = 0; i < track.length; i++) {
+      const m = sm[i];
+      const reattack = cur && track[i].rms > track[Math.max(0, i - 2)].rms * 1.8 && track[i].t - cur.start > 0.08;
+      if (m == null || (cur && (m !== cur.midi || reattack))) {
+        if (cur) { cur.end = track[i].t; if (cur.end - cur.start >= 0.06) notes.push(cur); cur = null; }
+      }
+      if (m != null && !cur) cur = { midi: m, start: track[i].t - hopT, end: track[i].t, velocity: Math.min(1, track[i].rms / (peak * 0.5)) };
+    }
+    if (cur) { cur.end = track[track.length - 1].t; notes.push(cur); }
+    return notes;
+  }
+
   /** Lookup helpers used by the live coach. */
   function chordAt(analysis, t) {
     const cs = analysis.chords;
@@ -419,6 +481,6 @@
     return analysis.notes.filter((n) => n.start - tol <= t && n.end + tol >= t);
   }
 
-  PM.Analyzer = { analyzeAudio, analyzeMidi, chordAt, notesAt, segmentChords, dynamicsFromCurve, dynLevelAt, dynMarkAt, markFor, DYN_MARKS };
+  PM.Analyzer = { analyzeAudio, analyzeMidi, transcribeMono, chordAt, notesAt, segmentChords, dynamicsFromCurve, dynLevelAt, dynMarkAt, markFor, DYN_MARKS };
   if (typeof module !== 'undefined' && module.exports) module.exports = PM.Analyzer;
 })(typeof self !== 'undefined' ? self : globalThis);

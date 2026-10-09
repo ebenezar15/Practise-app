@@ -1,5 +1,5 @@
 // Loads the browser modules (which attach to globalThis.PM) into Node.
-for (const m of ['dsp', 'theory', 'rhythm', 'midi', 'analyzer', 'coach', 'game']) {
+for (const m of ['dsp', 'theory', 'instruments', 'rhythm', 'midi', 'analyzer', 'separation', 'coach', 'game', 'improv', 'backing']) {
   try { require('../js/core/' + m + '.js'); } catch (e) { if (e.code !== 'MODULE_NOT_FOUND') throw e; }
 }
 const PM = globalThis.PM;

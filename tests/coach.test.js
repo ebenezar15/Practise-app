@@ -65,3 +65,42 @@ test('game: xp, levels, streaks, badges, daily', () => {
   assert.strictEqual(again.state.sessions, 3);
   assert.ok(again.state.daily && again.state.daily.text);
 });
+
+const pitchFrame = (t, cents100, extra) => {
+  const midi = Math.round(cents100 / 100);
+  return Object.assign({ time: t, refTime: t, active: true, db: -20, chord: null, chroma: null, notes: [{ midi }], onset: false, pitch: { midi, cents: Math.round(cents100 - midi * 100), pc: ((midi % 12) + 12) % 12, name: PM.DSP.midiName(midi), confidence: 0.95, freq: 0 } }, extra);
+};
+
+test('bass coach follows chord roots and names string/fret', async () => {
+  const ref = await reference();
+  const msgs = [];
+  const c = new Coach({ instrument: 'bass', reference: ref, onMessage: (m) => msgs.push(m) });
+  for (let t = 0; t < ref.duration; t += 1 / 30) {
+    const at = Analyzer.chordAt(ref, t);
+    if (at && at.chord.name !== 'N') c.update(pitchFrame(t, (36 + at.chord.root) * 100));
+  }
+  assert.ok(c.summary().accuracy > 0.9);
+  const wrong = [];
+  const w = new Coach({ instrument: 'bass', reference: ref, onMessage: (m) => wrong.push(m) });
+  for (let t = 2.6; t < 5; t += 1 / 30) w.update(pitchFrame(t, 37 * 100));
+  assert.ok(wrong.some((m) => /root of .* is .*string/.test(m.text)), wrong.map((m) => m.text).join('\n'));
+});
+
+test('trumpet coach speaks written pitch with valves and flags wobbly long tones', async () => {
+  const ref = await reference();
+  const msgs = [];
+  const c = new Coach({ instrument: 'trumpet', reference: ref, onMessage: (m) => msgs.push(m) });
+  for (let t = 2.6; t < 6; t += 1 / 30) c.update(pitchFrame(t, 6100 + 25 * Math.sin(t * 30)));
+  assert.ok(msgs.some((m) => /wobbles/.test(m.text)), msgs.map((m) => m.text).join('\n'));
+  assert.ok(msgs.some((m) => /valves/.test(m.text)));
+});
+
+test('electric guitar coach measures bends', () => {
+  const msgs = [];
+  const c = new Coach({ instrument: 'electric', onMessage: (m) => msgs.push(m) });
+  let t = 0;
+  for (; t < 0.3; t += 1 / 60) c.update(pitchFrame(t, 6900));
+  for (let k = 0; k <= 12; k++, t += 1 / 60) c.update(pitchFrame(t, 6900 + k * 16));
+  for (let k = 0; k < 30; k++, t += 1 / 60) c.update(pitchFrame(t, 6900 + 196));
+  assert.ok(msgs.some((m) => /Perfect whole-step bend/.test(m.text)), msgs.map((m) => m.text).join('\n'));
+});

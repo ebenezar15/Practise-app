@@ -120,11 +120,18 @@
     if (!T) return [];
     const back = [];
     let prev = new Float32Array(S), cur = new Float32Array(S);
+    let lastInfo = null;
     const emis = frames.map((f) => {
       const e = new Float32Array(S);
       if (f.silent) { e[NO] = 1; return e; }
+      if (f.uninformative) {
+        // a lone note (e.g. a bass approach note) carries little harmony: lean on the previous beat
+        if (lastInfo) for (let j = 0; j < S; j++) e[j] = lastInfo[j] * 0.5;
+        return e;
+      }
       e.set(chordScores(f.chroma, f.bass));
       e[NO] = nScore;
+      lastInfo = e;
       return e;
     });
     prev.set(emis[0]);

@@ -6,28 +6,7 @@
   const PM = (root.PM = root.PM || {});
   const { Theory, Analyzer } = PM;
 
-  const TIPS = {
-    guitar: [
-      'Keep your strumming hand moving like a pendulum — down on the beat, up on the "&", even when you skip a strum.',
-      'Press just behind the fret, not on top of it: cleaner tone with less pressure.',
-      'Relax your thumb behind the neck. Tension slows chord changes.',
-      'Anticipate the change: lift your fingers on the last "&" of the bar so the next chord lands on beat 1.',
-      'Let common fingers stay anchored between chords — pivot instead of lifting everything.',
-      'Accent beats 2 and 4 slightly to lock into a groove.',
-      'If a string buzzes, arch your fingers more so they don’t touch neighbouring strings.',
-      'Practise slow and perfect. Speed is a by-product of accuracy.',
-    ],
-    piano: [
-      'Keep your wrists level and fingers curved, as if holding a small ball.',
-      'Play from the arm weight, not finger force, for a fuller tone.',
-      'Look one chord ahead — your eyes should lead your hands.',
-      'Use the sustain pedal lightly: change it right after each new chord.',
-      'Voice the melody louder than the accompaniment by leaning into the top note.',
-      'Practise hands separately at half tempo before combining.',
-      'Find common tones between chords and keep them held through the change.',
-      'Count out loud for a few bars to anchor your internal pulse.',
-    ],
-  };
+  const TIPS = new Proxy({}, { get: (_, id) => PM.Instruments.get(id).tips });
 
   const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
 
@@ -76,6 +55,7 @@
     constructor(opts) {
       opts = opts || {};
       this.instrument = opts.instrument || 'guitar';
+      this.I = PM.Instruments.get(this.instrument);
       this.onMessage = opts.onMessage || (() => {});
       this.reference = null;
       this.reset();
@@ -85,7 +65,7 @@
     setReference(analysis) {
       this.reference = analysis;
       this.refGrid = analysis && analysis.beats && analysis.beats.length > 3
-        ? beatGrid(analysis.beats, this.instrument === 'guitar' ? (analysis.strum ? analysis.strum.grid : 2) : 2)
+        ? beatGrid(analysis.beats, this.I.strum ? (analysis.strum ? analysis.strum.grid : 2) : 2)
         : null;
       this.reset();
     }
@@ -98,6 +78,7 @@
         intonationSamples: 0, inTune: 0,
         dynSamples: 0, dynMatch: 0,
         score: 0, combo: 0, maxCombo: 0, activeTime: 0, chordsNailed: 0,
+        monoSamples: 0, monoHits: 0, monoClose: 0, steadySamples: 0, steadyOk: 0, bends: 0, goodBends: 0,
       };
       this.cool = {};
       this.lastEval = 0;
@@ -105,6 +86,7 @@
       this.segResults = new Map();
       this.announced = new Set();
       this.pitchRun = { cents: [], since: 0 };
+      this.held = null; this.bend = null; this.monoMiss = null;
       this.liveChroma = new Float32Array(12);
       this.levelRange = { lo: -60, hi: -20 };
       this.recentOffsets = [];
@@ -173,7 +155,7 @@
       }
 
       // --- chord accuracy (sampled every 150 ms while playing)
-      if (frame.active && expected && frame.time - this.lastEval > 0.15) {
+      if (this.I.chordal && frame.active && expected && frame.time - this.lastEval > 0.15) {
         this.lastEval = frame.time;
         const cmp = compareChord(expected, frame.chord, frame.chroma);
         st.chordResult = cmp;
@@ -194,8 +176,12 @@
         if (!seg || k < seg.index) { this.segmentFeedback(r); this.segResults.delete(k); }
       }
 
+      // --- single-line instruments (bass, trumpet): follow the part's notes, or the harmony
+      if (!this.I.chordal) this.monoUpdate(frame, st, expected, ref, refTime);
+      else if (this.I.bends && (!frame.notes || frame.notes.length <= 1)) this.heldUpdate(frame, st);
+
       // --- note accuracy for piano melodies (when reference has notes but no clear chord)
-      if (frame.active && st.expectedNotes && st.expectedNotes.length && !expected && frame.notes && frame.time - this.lastEval > 0.15) {
+      if (this.I.chordal && frame.active && st.expectedNotes && st.expectedNotes.length && !expected && frame.notes && frame.time - this.lastEval > 0.15) {
         this.lastEval = frame.time;
         const livePcs = new Set(frame.notes.map((n) => n.midi % 12));
         const exp = st.expectedNotes;
@@ -232,7 +218,7 @@
       }
 
       // --- intonation (guitar strings / single notes)
-      if (frame.active && frame.pitch && frame.pitch.confidence > 0.88 && this.instrument === 'guitar' && (!frame.notes || frame.notes.length <= 1)) {
+      if (frame.active && frame.pitch && frame.pitch.confidence > 0.88 && this.I.id !== 'piano' && (!this.I.chordal || !frame.notes || frame.notes.length <= 1)) {
         const c = frame.pitch.cents;
         st.intonation = { cents: c, note: frame.pitch.name };
         s.intonationSamples++;
@@ -244,7 +230,9 @@
           const avg = run.cents.reduce((a, b) => a + b, 0) / run.cents.length;
           if (Math.abs(avg) > 15) {
             const dir = avg > 0 ? 'sharp' : 'flat';
-            const hint = avg > 0 ? 'ease off the finger pressure or check your tuning' : 'press a little firmer or tune up slightly';
+            const hint = this.I.family === 'brass'
+              ? (avg > 0 ? 'relax the embouchure, open the throat or pull the tuning slide out slightly' : 'speed up the air and support from the core')
+              : avg > 0 ? 'ease off the finger pressure or check your tuning' : 'press a little firmer or tune up slightly';
             this.say('intonation', 'fix', `Your ${run.note} is ${Math.abs(Math.round(avg))}¢ ${dir} — ${hint}.`, 7);
           }
           run.since = frame.time; run.cents = [];
@@ -297,9 +285,98 @@
 
     refGridAt() { return this.refGrid; }
 
+    /** Name a concert pitch the way this player reads it (trumpet: written pitch + valves). */
+    noteLabel(midi) {
+      const DSP = PM.DSP;
+      if (this.I.transpose) {
+        const t = PM.Instruments.trumpetInfo(midi);
+        return `${DSP.midiName(t.written)} (concert ${DSP.midiName(midi)}${t.valves ? ', valves ' + t.valves : ''})`;
+      }
+      if (this.I.strings) {
+        const pos = PM.Instruments.fretPosition(this.I.id, midi);
+        if (pos) return `${DSP.midiName(midi)} (${this.I.stringNames[pos.string]} string, ${pos.fret ? 'fret ' + pos.fret : 'open'})`;
+      }
+      return DSP.midiName(midi);
+    }
+
+    monoUpdate(frame, st, expected, ref, refTime) {
+      const s = this.stats;
+      const p = frame.pitch;
+      if (!frame.active || !p || p.confidence < 0.8) { this.held = null; this.bend = null; return; }
+      // expected note from the separated/MIDI part, else from the harmony
+      let target = null;
+      if (ref && refTime != null && ref.part && ref.part.notes) {
+        const ns = Analyzer.notesAt({ notes: ref.part.notes }, refTime, 0.06);
+        if (ns.length) target = ns[ns.length - 1].midi;
+      }
+      if (frame.time - this.lastEval > 0.15 && (target != null || expected)) {
+        this.lastEval = frame.time;
+        let result;
+        if (target != null) result = p.pc === target % 12 ? 'hit' : expected && expected.pcs.includes(p.pc) ? 'close' : 'miss';
+        else if (this.I.id === 'bass') result = p.pc === (expected.bass != null ? expected.bass : expected.root) ? 'hit' : expected.pcs.includes(p.pc) ? 'close' : 'miss';
+        else result = expected.pcs.includes(p.pc) ? 'hit' : ref && ref.key && ref.key.scale.includes(p.pc) ? 'close' : 'miss';
+        st.monoResult = { result, target };
+        s.monoSamples++;
+        if (result === 'hit') { s.monoHits++; this.award(10); this.bumpCombo(true); this.monoMiss = null; }
+        else if (result === 'close') { s.monoClose++; this.award(4); }
+        else {
+          this.bumpCombo(false);
+          if (!this.monoMiss) this.monoMiss = frame.time;
+          if (frame.time - this.monoMiss > 0.4) {
+            const want = target != null ? target : (this.I.id === 'bass' ? 36 + (expected.bass != null ? expected.bass : expected.root) : 60 + expected.root);
+            const what = target != null ? 'the part plays' : this.I.id === 'bass' ? `the root of ${expected.name} is` : `${expected.name} wants a chord tone like`;
+            this.say('mono', 'fix', `You played ${this.noteLabel(p.midi)} — ${what} ${this.noteLabel(want)}.`, 4);
+          }
+        }
+        if (result !== 'miss') this.monoMiss = null;
+      }
+      this.heldUpdate(frame, st);
+    }
+
+    /** Held-note analysis: steadiness (brass) and bends (electric guitar). */
+    heldUpdate(frame, st) {
+      const s = this.stats, p = frame.pitch;
+      if (!frame.active || !p || p.confidence < 0.8) { this.held = null; this.bend = null; return; }
+      const abs = p.midi * 100 + p.cents;
+      if (!this.held || Math.abs(abs - this.held.anchor) > 280) this.held = { anchor: abs, start: frame.time, cents: [], midi: p.midi };
+      const h = this.held;
+      h.cents.push(abs);
+      if (this.I.family === 'brass' && frame.time - h.start > 0.8 && h.cents.length > 20) {
+        const xs = h.cents.slice(-20), mean = xs.reduce((a, b) => a + b, 0) / xs.length;
+        const sd = Math.sqrt(xs.reduce((a, b) => a + (b - mean) ** 2, 0) / xs.length);
+        s.steadySamples++;
+        if (sd < 8) s.steadyOk++;
+        else if (sd > 14) this.say('steady', 'fix', `Your ${this.noteLabel(h.midi)} wobbles (±${Math.round(sd)}¢). Keep the air stream steady and support from the diaphragm.`, 9);
+        st.steadiness = sd;
+      }
+      if (this.I.bends) {
+        const rise = abs - h.anchor;
+        if (rise > 60) {
+          if (!this.bend) this.bend = { peak: rise, since: frame.time, reported: false };
+          if (rise > this.bend.peak + 5) { this.bend.peak = rise; this.bend.since = frame.time; }
+          if (!this.bend.reported && frame.time - this.bend.since > 0.2) {
+            this.bend.reported = true;
+            const goal = this.bend.peak > 150 ? 200 : 100;
+            const err = Math.round(this.bend.peak - goal);
+            s.bends++;
+            if (Math.abs(err) <= 15) { s.goodBends++; this.award(25); this.say('bend', 'praise', `Perfect ${goal === 200 ? 'whole-step' : 'half-step'} bend! 🎸`, 3); }
+            else this.say('bend', 'fix', `Bend reached ${Math.round(this.bend.peak)}¢ — ${err < 0 ? 'push a little further' : 'ease back slightly'} for a ${goal === 200 ? 'whole' : 'half'} step (${goal}¢).`, 3);
+            st.bend = { cents: this.bend.peak, goal };
+          }
+        } else if (rise < 30) this.bend = null;
+      }
+    }
+
     describeUpcoming(chord, inSec) {
       const when = inSec < 0.6 ? 'now' : `in ${inSec.toFixed(1)}s`;
-      if (this.instrument === 'guitar') {
+      if (this.I.id === 'bass') {
+        const pos = PM.Instruments.fretPosition('bass', 28 + ((chord.root - 4 + 12) % 12));
+        return `Next up: ${chord.name} ${when} — root ${Theory.spell(chord.bass != null ? chord.bass : chord.root)}${pos ? ` (${this.I.stringNames[pos.string]} string, ${pos.fret ? 'fret ' + pos.fret : 'open'})` : ''}.`;
+      }
+      if (this.I.transpose) {
+        return `Next up: ${chord.name} ${when} — aim for ${chord.pcs.map((p) => Theory.spell(p + this.I.transpose)).join(' · ')} (written).`;
+      }
+      if (this.I.chordal && this.I.strings) {
         const shape = Theory.guitarShape(chord.root, chord.type);
         const tab = shape ? shape.frets.map((f) => (f < 0 ? 'x' : f)).join('') : chord.pcs.map((p) => Theory.spell(p)).join(' ');
         return `Next up: ${chord.name} ${when} — shape ${tab}${shape && shape.barre ? ` (barre at fret ${shape.barre})` : ''}.`;
@@ -326,7 +403,7 @@
       if (miss.length) msg += ` Missing ${miss.join(' & ')}`;
       if (extra.length) msg += `${miss.length ? ';' : ''} extra ${extra.join(' & ')}`;
       if (miss.length || extra.length) msg += '.';
-      if (this.instrument === 'guitar' && miss.length) msg += ' Check every string rings — a muted string often drops a chord tone.';
+      if (this.I.strings && miss.length) msg += ' Check every string rings — a muted string often drops a chord tone.';
       if (this.instrument === 'piano' && extra.length) msg += ' Watch for neighbouring keys.';
       this.say('chord-fix', 'fix', msg, 3.5);
     }
@@ -347,6 +424,8 @@
       const parts = [];
       if (s.chordSamples) parts.push([(s.chordHits + 0.5 * s.chordClose) / s.chordSamples, 2]);
       if (s.noteSamples) parts.push([s.noteHits / s.noteSamples, 2]);
+      if (s.monoSamples) parts.push([(s.monoHits + 0.5 * s.monoClose) / s.monoSamples, 2]);
+      if (s.steadySamples > 5) parts.push([s.steadyOk / s.steadySamples, 0.7]);
       if (s.onsets) parts.push([(s.onTime + 0.6 * s.good) / s.onsets, 1.5]);
       if (s.intonationSamples > 20) parts.push([s.inTune / s.intonationSamples, 0.5]);
       if (s.dynSamples > 20) parts.push([s.dynMatch / s.dynSamples, 0.5]);
@@ -366,6 +445,9 @@
       if (s.chordSamples) insights.push(`Chord accuracy ${Math.round(((s.chordHits + 0.5 * s.chordClose) / s.chordSamples) * 100)}%`);
       if (offsets.length > 5) insights.push(`Timing: average ${mean >= 0 ? '+' : ''}${Math.round(mean)} ms (${mean < -15 ? 'ahead' : mean > 15 ? 'behind' : 'centred'}), spread ±${Math.round(sd)} ms`);
       if (s.intonationSamples > 20) insights.push(`In tune ${Math.round((s.inTune / s.intonationSamples) * 100)}% of the time`);
+      if (s.monoSamples) insights.push(`Right notes ${Math.round(((s.monoHits + 0.5 * s.monoClose) / s.monoSamples) * 100)}% of the time`);
+      if (s.steadySamples > 5) insights.push(`Steady long notes ${Math.round((s.steadyOk / s.steadySamples) * 100)}%`);
+      if (s.bends) insights.push(`Bends in tune: ${s.goodBends}/${s.bends}`);
       if (s.dynSamples > 20) insights.push(`Dynamics matched ${Math.round((s.dynMatch / s.dynSamples) * 100)}%`);
       let focus = 'Keep a steady daily routine — consistency beats intensity.';
       const chordAcc = s.chordSamples ? (s.chordHits + 0.5 * s.chordClose) / s.chordSamples : 1;

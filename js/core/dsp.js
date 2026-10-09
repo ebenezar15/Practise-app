@@ -271,7 +271,15 @@
     return { data: out, sampleRate: sr / factor };
   }
 
+  /** Halve the sample rate (2-tap average) — used for low-pitched YIN. */
+  function decimate2(buf) {
+    const out = new Float32Array(buf.length >> 1);
+    for (let i = 0; i < out.length; i++) out[i] = 0.5 * (buf[2 * i] + buf[2 * i + 1]);
+    return out;
+  }
+
   PM.DSP = {
+    decimate2,
     NOTE_NAMES, fft, hann, spectrumAnalyzer, freqToMidi, midiToFreq, pcName, midiName, describeFreq,
     yin, spectralPeaks, chromaFromPeaks, normalize, polyNotes, rms, toDb, spectralFlatness, prepareMono,
   };
