@@ -1,70 +1,128 @@
-# Cadenza — offline AI practice coach for piano & guitar
+# Cadenza — AI practice coach for piano, guitar, electric guitar, bass & trumpet
 
-Cadenza is a music practice app that **listens while you play** and coaches you in real time:
-chords, timing, strumming, intonation and dynamics. Load a song (audio or MIDI), play over it
-through your mic or audio interface, and the on-device coach tells you what to fix.
-**Everything runs locally — no internet, no uploads, no accounts.**
+Cadenza **listens while you play** and coaches you in real time: chords, notes, timing, strumming,
+intonation, bends, tone steadiness and dynamics. Load a song (audio or MIDI), **separate the
+instruments**, and play along with the full mix, a **backing track without your instrument**, or
+your part on its own — or **improvise** over any track or a generated backing band.
+All listening and analysis run **on your device, offline**. An optional **classroom server** adds
+teacher/student accounts, assignments and sync.
 
-![purple & white UI](icons/icon.svg)
+## Downloads
+
+| What | How to get it |
+| --- | --- |
+| **Windows** | `Cadenza-<version>-win-x64.zip` (unzip → run `Cadenza.exe`), or the `.exe` installer from the *Build desktop apps* GitHub Action |
+| **macOS** | `.dmg` from the *Build desktop apps* GitHub Action (unsigned: right-click → Open the first time) |
+| **Linux** | `Cadenza-<version>-linux-x86_64.AppImage` (`chmod +x`, then run) or `.deb` from the Action |
+| **No install** | `Cadenza-web-<version>.zip` — open `index.html` in Chrome/Edge, or run the start script and click *Install app* |
+
+To build installers for every OS, open the repository's **Actions** tab → *Build desktop apps* →
+*Run workflow*. Pushing a tag such as `v2.0.0` also publishes them as a GitHub Release.
+Local builds: `cd desktop && npm install && npm run dist` (Windows `.exe` installers need Windows or Wine).
 
 ## Features
 
 | Area | What it does |
 | --- | --- |
-| **Live Studio** | Play along with any track via mic, line-in (audio interface) or a **MIDI keyboard**. Real-time chord recognition, a "song chord vs. you" match, next-chord countdown with fingering, harmony radar, timing gauge (rushing/dragging in ms), intonation in cents, dynamics vs. the song (pp–ff), score, combo and accuracy. A coach feed gives corrections ("Missing B; extra C", "You're dragging ~40 ms"), instructions ("Next up: C — shape x32010") and tips. Slow down without pitch change, loop 2 bars or any section, count-in. |
-| **Song Insights** | Key (with relative/alternatives), tempo, time signature (2/4, 3/4, 4/4, 6/8, 9/8, 12/8…), chord progression with roman numerals & harmonic function, main loop, chord shapes (guitar) / voicings (piano), chord timeline, dynamics chart with crescendo/decrescendo detection, and a generated practice plan. |
-| **Guitar strumming transcription** | From audio or MIDI: onsets are quantised to the beat grid (8ths, 16ths or triplets), down/up strokes inferred from the pitch sweep of each strum and hand-motion rules, accents and muted "chucks" marked, and the most common bar pattern reported (e.g. `D - D U - U D U`) with variations. |
-| **Metronome** | Sample-accurate scheduler, any time signature, subdivisions, accents, tap tempo, **speed trainer** (+N BPM every N bars), **gap trainer** (silent bars), and a **live timing check** that scores how tight you play against the click. |
-| **Tuner** | Chromatic YIN tuner (±1 cent), auto string detection for guitar, adjustable A4, reference tones. |
-| **Challenges** | Chord Quest, Rhythm Hero, Note Hunter and Ear Trainer, with difficulty levels and high scores. |
-| **Gamification** | XP & levels (Beginner → Legend), daily streaks, daily challenges, 19 badges, session stars, practice history and a 14-day chart. |
-| **Offline library** | Every analysed song is stored in IndexedDB so you can practise it again offline. |
+| **5 instruments** | Piano, acoustic guitar, electric guitar, bass guitar (4-string, down to low E 41 Hz) and B♭ trumpet (written pitch, valve fingerings). Each has its own fretboard/keyboard/valve view, tuner strings, tips and coaching focus. |
+| **Live Studio** | Real-time coaching via mic, audio interface (line-in) or MIDI device: chord/note matching, next-chord countdown with fingering, harmony radar, timing (rushing/dragging in ms), intonation in cents, dynamics vs. the song, score/combo/accuracy, coach feed. Slow-down without pitch change, loops, count-in. |
+| **Instrument separation** | Split an audio song into **drums, bass, vocals/lead and guitars/keys** on-device (STFT soft-mask HPSS + stereo-centre + bass-band; stems always sum back to the original). MIDI files separate **exactly** by instrument. Presets: *Full song · Backing track (no my instrument) · My part only · Drums & bass*, plus per-stem mute/solo/volume. |
+| **Part following** | For bass and trumpet the coach follows your isolated part (exact from MIDI, transcribed from audio stems) — or the chord roots/chord tones when no part exists. |
+| **Improvise mode** | Chord-scale suggestions for every chord (pentatonic, modes, blues…), chord tones & scale tones mapped on the fretboard/keyboard, live note classification (chord / scale / blue / outside), praise for targeting 3rds & 7ths on changes, clash warnings with resolution hints, range/rhythm/phrasing feedback and creative prompts. |
+| **Backing-track generator** | Any key; pop, ballad, 12-bar blues, jazz ii–V–I, minor, funk and Dorian progressions; rock, swing, ballad and funk grooves; any tempo. Generated **without your instrument**. |
+| **Song Insights** | Key, tempo, time signature, chord progression with roman numerals, chord shapes (guitars), bass roots & positions, trumpet written-key chart, strumming pattern, dynamics chart and a practice plan. |
+| **Electric guitar** | Power chords, bend measurement (half/whole-step accuracy in cents), muting tips. |
+| **Trumpet** | Written-pitch display with valves, transposed instructions, tone-steadiness (wobble) detection, Long Tones challenge. |
+| **Metronome & tuner** | Accents, subdivisions, odd meters, speed & gap trainers, timing check; chromatic tuner with per-instrument strings and B♭ transposition. |
+| **Challenges** | Chord Quest, Rhythm Hero, Note Hunter (per-instrument ranges), Long Tones, Ear Trainer. |
+| **Gamification** | XP, levels, streaks, daily challenges, 21 badges (incl. Improviser & Homework Hero), stars, history. |
+| **Classroom** | Master teacher, teachers & students; invite codes; assignments with songs or backing tracks, practice mode, mix preset, speed, targets and due dates; results with coach insights; teacher feedback; synced progress. |
 
-## Running it
+## Classroom: users, assignments and sync
 
-No build step and no dependencies.
+### 1. Start a classroom server (teacher)
+
+Pick one:
+
+* **Desktop app** — *Classroom → Host classroom on this computer → Start*. It shows the address students use, e.g. `http://192.168.1.20:8787`.
+* **Any computer with Node.js 18+** — `node server/server.js` (or `Start Classroom Server` in the web zip). Data is stored in `server-data/` (`DATA_DIR` to change, `PORT` to change the port).
+* **Online (students at home)** — deploy `server/server.js` to any Node host with a persistent disk (a small VPS, Render, Railway, Fly.io…) and put it behind HTTPS (e.g. Caddy: `music.example.com { reverse_proxy localhost:8787 }`, or set `TLS_CERT`/`TLS_KEY`). Students then use `https://music.example.com`.
+
+### 2. Become the master teacher
+
+Open Cadenza → **Classroom**, enter the server address. On a brand-new server you'll see
+*Set up as master teacher*: choose your school name, username and password. The master teacher can
+add other teachers (and other master teachers); teachers manage students.
+
+### 3. Add students (two ways)
+
+* **Create the account yourself**: *Students → Add a student* (name, username, instrument). Cadenza shows a
+  temporary password — give it to the student with the server address. They choose their own password at first sign-in.
+* **Invite codes**: *Invite codes → Generate*. Send each student a code; they pick *I have an invite code*,
+  enter the server address and code, and choose their own username & password.
+
+You can reset passwords, deactivate or delete accounts, and open any student to see their level,
+streak, practice history and assignment results.
+
+### 4. Set assignments
+
+*Assignments → New assignment*: title, instructions, instrument (or any), practice mode
+(*play the part · improvise · challenge game · free practice*), mix (*full song · backing track ·
+own part only · drums & bass*), speed, targets (accuracy %, minutes, stars), due date, and who it's
+for (everyone or chosen students). Attach a **song file**, the **current Studio track**, or a
+**generated backing track** (each student gets it without their own instrument).
+
+Students see assignments in **Classroom**, press **Start**, and Cadenza opens the Studio (or the
+challenge) with everything set up. When they finish a session the result — accuracy, minutes,
+stars and the coach's insights — is sent to the teacher, who can reply with feedback.
+
+### 5. Install on students' computers and stay in sync
+
+Send students the installer (or the web zip). They install it, open **Classroom**, enter the server
+address and sign in. Everything works **offline**; results wait in an outbox and upload, and
+XP/levels/badges/history merge across devices (conflict-free), whenever the server is reachable.
+
+> **Microphone note:** browsers only allow the microphone on `https://` sites, `localhost` and local
+> files. The installed desktop app and the downloaded web app always work. Opening the app *in a
+> browser* from another computer's `http://192.168…` address does not allow the mic — use the
+> desktop app or serve the classroom over HTTPS.
+
+## Running from source
 
 ```bash
-npm start            # = node serve.js → http://localhost:5173
+npm start        # app at http://localhost:5173 (static server, zero dependencies)
+npm run server   # classroom server at http://localhost:8787 (also serves the app)
+npm test         # unit + integration tests
+npm run package:web   # dist/Cadenza-web-<version>.zip
+cd desktop && npm install && npm start   # desktop app in development
 ```
-
-Open the page once and the service worker caches the whole app; after that it works with no
-connection, and Chrome/Edge offer **Install app** so it launches like a native app. You can also
-just open `index.html` directly from disk in Chrome/Edge (everything except the install prompt works).
-
-**Tips**
-- Wear headphones while playing along so the coach hears only you, not the backing track.
-- Using an audio interface? Select it as the input in the Studio. MIDI keyboards work through Web MIDI (Chrome/Edge).
-- Run **Progress → Settings → Auto-calibrate latency** once per device (Bluetooth audio adds ~150–200 ms).
 
 ## How the "AI" works (all on-device)
 
-- **Pitch:** YIN with parabolic interpolation.
-- **Chords:** peak-picked, harmonically weighted chroma → template matching over 10 chord qualities × 12 roots with bass-note (inversion) detection, then **Viterbi smoothing** across beats.
-- **Key:** Krumhansl–Kessler profile correlation, refined with chord evidence (tonic-chord share, first/last chord) to separate relative major/minor.
-- **Tempo & beats:** log spectral-flux novelty → autocorrelation with a tempo prior → dynamic-programming beat tracker.
-- **Time signature:** accent periodicity of onsets, bass onsets and harmonic change at 2/3/4-beat groupings, plus duple-vs-triple subdivision analysis for compound meters.
-- **Strumming:** onset quantisation to a chosen grid + per-strum low-to-high pitch-sweep direction measurement combined with down-on-the-beat / up-on-the-"&" motion priors.
-- **Dynamics:** smoothed RMS → relative pp–ff markings, sections and crescendo/decrescendo events.
-- **MIDI files:** exact notes, tempo map, time & key signatures; strum direction from note order; rendered to audio with a built-in additive piano / Karplus–Strong guitar synth.
+- **Pitch:** YIN with parabolic interpolation (decimated for bass down to 35 Hz).
+- **Chords:** peak-picked chroma → template matching (10 qualities × 12 roots) with bass/inversion detection → Viterbi smoothing over beats → segment-level quality refinement (e.g. A → A7).
+- **Key:** Krumhansl–Kessler profiles refined by chord evidence (resolves relative major/minor).
+- **Tempo/beats/meter:** spectral-flux novelty, autocorrelation with tempo prior, dynamic-programming beat tracker, accent-periodicity meter with compound-meter detection.
+- **Strumming:** grid quantisation + low-to-high pitch-sweep direction + hand-motion priors.
+- **Separation:** harmonic/percussive median filtering, stereo-centre and frequency-band soft masks on a packed stereo STFT with perfect-reconstruction overlap-add.
+- **Transcription:** monophonic YIN tracking with median smoothing and re-attack detection (bass lines, melodies).
+- **Improvisation:** chord-scale selection by key fit, note classification, targeting detection, inter-onset rhythmic entropy, range and space metrics.
+- **Synthesis:** additive piano, Karplus–Strong guitar/electric/bass, wavetable brass/strings/organ and a synthesized drum kit.
+
+These are signal-processing methods, not neural networks: separation is approximate on dense
+real-world mixes (MIDI is exact), and all results are best treated as a practice guide.
 
 ## Project layout
 
 ```
-index.html, css/styles.css, sw.js, manifest.webmanifest, serve.js
-js/core/     dsp · theory · rhythm · midi · analyzer · coach · game   (pure JS, unit-tested in Node)
+index.html, css/, icons/, sw.js, manifest.webmanifest, serve.js
+js/core/     dsp · theory · instruments · rhythm · midi · analyzer · separation · improv · backing · coach · game · syncmerge
 js/audio/    AudioContext + player + IndexedDB library · live mic/MIDI engines · metronome
-js/ui/       components (keyboard, fretboard, chord diagrams, timeline, radar, charts)
-js/views/    home · studio · insights · games · metronome · tuner · progress
-tests/       node --test suites with synthetic songs
+js/sync/     classroom account, outbox & progress sync client
+js/ui/       components (keyboard, fretboard, valves, chord diagrams, timeline, radar, charts)
+js/views/    home · studio · insights · games · metronome · tuner · progress · classroom
+server/      zero-dependency classroom server (accounts, invites, assignments, files, results, sync)
+desktop/     Electron shell (offline app + "Host classroom"), electron-builder config
+scripts/     packaging helpers
+tests/       node --test suites (synthetic songs, separation, coaching, server)
 ```
-
-## Tests
-
-```bash
-npm test
-```
-
-The suites synthesise songs (strummed guitar progressions, a piano waltz, click tracks) and check
-pitch, chords, inversions, keys, roman numerals, guitar shapes, tempo, meter, strumming patterns,
-MIDI round-trips, the coach's corrections and the gamification rules.

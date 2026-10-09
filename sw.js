@@ -1,7 +1,7 @@
 /* Cadenza service worker — caches the whole app so it runs fully offline. */
 const CACHE = 'cadenza-v2';
 const ASSETS = [
-  './', './index.html', './manifest.webmanifest', './css/styles.css', './icons/icon.svg',
+  './', './index.html', './manifest.webmanifest', './css/styles.css', './icons/icon.svg', './icons/icon.png',
   './js/core/dsp.js', './js/core/theory.js', './js/core/instruments.js', './js/core/separation.js', './js/core/improv.js', './js/core/backing.js', './js/core/rhythm.js', './js/core/midi.js', './js/core/analyzer.js', './js/core/coach.js', './js/core/game.js', './js/core/syncmerge.js', './js/sync/sync.js', './js/views/classroom.js',
   './js/audio/audio.js', './js/audio/live.js', './js/audio/metronome.js',
   './js/ui/components.js', './js/app.js',

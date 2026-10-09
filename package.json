@@ -1,11 +1,14 @@
 {
   "name": "cadenza-practice",
-  "version": "1.0.0",
-  "description": "Cadenza — an offline AI music practice coach for piano and guitar",
+  "version": "2.0.0",
+  "description": "Cadenza \u2014 offline AI music practice coach for piano, guitar, electric guitar, bass and trumpet, with a classroom server",
   "private": true,
   "scripts": {
     "start": "node serve.js",
-    "test": "node --test tests/*.test.js"
+    "server": "node server/server.js",
+    "test": "node --test tests/*.test.js",
+    "package:web": "node scripts/package-web.js",
+    "desktop:prepare": "node scripts/build-desktop.js"
   },
   "license": "MIT"
 }

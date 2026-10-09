@@ -1,5 +1,5 @@
 {
-  "name": "Cadenza — AI Practice Coach",
+  "name": "Cadenza \u2014 AI Practice Coach",
   "short_name": "Cadenza",
   "description": "Offline AI practice coach for piano and guitar.",
   "start_url": "./index.html",
@@ -8,6 +8,17 @@
   "background_color": "#f7f5ff",
   "theme_color": "#2a0f5c",
   "icons": [
-    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+    {
+      "src": "icons/icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
   ]
 }

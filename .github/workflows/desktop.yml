@@ -1,0 +1,72 @@
+name: Build desktop apps
+
+# Builds installers for Windows (.exe installer + portable), macOS (.dmg) and Linux (.AppImage/.deb).
+# Run it from the Actions tab ("Run workflow"), or push a tag like v2.0.0 to also publish a GitHub Release.
+on:
+  workflow_dispatch:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: npm test
+
+  build:
+    needs: test
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - name: Install Electron tooling
+        working-directory: desktop
+        run: npm install --no-audit --no-fund
+      - name: Build installers
+        working-directory: desktop
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false' # unsigned builds; add signing secrets to sign
+        run: npm run dist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cadenza-${{ matrix.os }}
+          path: |
+            desktop/dist/*.exe
+            desktop/dist/*.dmg
+            desktop/dist/*.zip
+            desktop/dist/*.AppImage
+            desktop/dist/*.deb
+          if-no-files-found: ignore
+
+  web-package:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: node scripts/package-web.js
+      - uses: actions/upload-artifact@v4
+        with: { name: cadenza-web, path: dist/*.zip }
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [build, web-package]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with: { path: artifacts }
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: artifacts/**/*

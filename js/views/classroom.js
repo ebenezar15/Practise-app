@@ -152,9 +152,15 @@
       ${st.running ? `<p class="small">Students on the same network connect to:</p><div class="stack" style="margin-top:6px">${st.urls.map((u) => `<span class="code">${esc(u)}</span>`).join('')}</div>
         <div class="row" style="margin-top:12px"><button class="btn sm" id="useLocal">${icon('users')} Use this server here</button><button class="btn sm danger" id="stopSrv">${icon('stop')} Stop server</button></div>
         <p class="small" style="margin-top:8px">For students outside your network, deploy the server online (see README → Classroom server).</p>` :
-        `<p class="small">Turns this computer into your class server (port <b>8787</b>). Your data stays on this machine.</p><button class="btn primary sm" id="startSrv" style="margin-top:10px">${icon('play')} Start classroom server</button>`}`;
+        `<p class="small">Turns this computer into your class server. Your data stays on this machine.</p>
+         <div class="row" style="margin-top:10px"><label class="field" style="flex-direction:row;align-items:center;gap:8px">Port<input type="number" id="srvPort" value="${+localStorage.getItem('cadenza.hostPort') || 8787}" min="1024" max="65535" style="width:96px"></label>
+         <button class="btn primary sm" id="startSrv">${icon('play')} Start classroom server</button></div><p class="small" id="srvErr" style="color:var(--bad);margin-top:6px"></p>`}`;
     const sb = $('#startSrv', box);
-    if (sb) sb.onclick = async () => { await d.startServer({ port: 8787 }); renderHostBox(box, App); };
+    if (sb) sb.onclick = async () => {
+      const port = +$('#srvPort', box).value || 8787;
+      try { await d.startServer({ port }); localStorage.setItem('cadenza.hostPort', port); renderHostBox(box, App); }
+      catch (e) { $('#srvErr', box).textContent = /EADDRINUSE/.test(String(e.message)) ? `Port ${port} is already in use — pick another port (e.g. ${port + 1}).` : 'Could not start the server: ' + e.message; }
+    };
     const stp = $('#stopSrv', box);
     if (stp) stp.onclick = async () => { await d.stopServer(); renderHostBox(box, App); };
     const ul = $('#useLocal', box);
