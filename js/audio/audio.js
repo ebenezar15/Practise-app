@@ -99,7 +99,9 @@
   }
   const Library = {
     async save(entry) {
-      const clean = Object.assign({}, entry, { analysis: Object.assign({}, entry.analysis, { rendered: undefined }) });
+      // keep only what is needed to re-open offline (stems & decoded audio are rebuilt on demand)
+      const clean = { id: entry.id, name: entry.name, kind: entry.kind, instrument: entry.instrument, blob: entry.blob, createdAt: entry.createdAt, backing: !!entry.backing, assignmentId: entry.assignmentId || null,
+        analysis: Object.assign({}, entry.analysis, { rendered: undefined, part: undefined }) };
       return tx('readwrite', (s) => s.put(clean));
     },
     async list() {
@@ -109,6 +111,7 @@
       } catch (e) { return []; }
     },
     async remove(id) { return tx('readwrite', (s) => s.delete(id)); },
+    async get(id) { try { const r = await tx('readonly', (s) => s.get(id)); return r && r.id ? r : null; } catch (e) { return null; } },
   };
 
   PM.Audio = { getCtx, decodeAudioFile, isMidiFile, Player, Library };

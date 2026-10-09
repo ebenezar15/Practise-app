@@ -68,13 +68,13 @@
         <div class="card-head"><h3>${icon('music')} Chord progression</h3><span class="muted small">${a.chordSummary.changes} chord changes</span></div>
         <div class="notice" style="margin-bottom:14px">${icon('loop')}<div><b>Main loop:</b> ${esc(a.chordSummary.loop || '—')}${key ? ` &nbsp;·&nbsp; <span class="muted">${esc(loopRoman(a))}</span>` : ''}</div></div>
         <div class="prog">${uniq.map((u) => `<div class="prog-chord"><b>${esc(u.name)}</b><span>${esc(u.roman || '')}</span><div class="share"><i style="width:${Math.round(u.share * 100)}%"></i></div></div>`).join('')}</div>
-        ${inst === 'guitar' ? `<h3 style="margin:20px 0 10px">Chord shapes</h3><div class="diagrams">${chordsForDiagrams.map((n) => UI.chordDiagram(n)).join('')}</div>` : `<h3 style="margin:20px 0 10px">Voicings</h3><div class="diagrams">${uniq.map((u) => `<div class="prog-chord"><b style="font-size:16px">${esc(u.name)}</b><span>${Theory.chordPcs(u.root, u.type).map((p) => Theory.spell(p, key && key.preferFlat)).join(' · ')}</span></div>`).join('')}</div>`}
+        ${instrumentSection(a, inst, uniq, chordsForDiagrams, key)}
         <h3 style="margin:20px 0 10px">Chord timeline</h3>
         <div class="chord-strip">${a.chords.filter((c) => c.name !== 'N').map((c) => `<div class="cs ${c.fn}" title="${UI.fmtTime(c.start)}">${esc(c.name)}<i>${UI.fmtTime(c.start)} · ${c.beats}b</i></div>`).join('')}</div>
         <div class="legend" style="margin-top:10px"><span><i style="background:var(--v-600)"></i>Tonic</span><span><i style="background:#60a5fa"></i>Subdominant</span><span><i style="background:var(--fuchsia)"></i>Dominant</span><span><i style="background:var(--v-300)"></i>Chromatic</span></div>
       </section>
 
-      ${a.strum ? `
+      ${a.strum && PM.Instruments.get(inst).strum ? `
       <section class="card" style="margin-top:18px">
         <div class="card-head"><h3>${icon('hand')} Strumming pattern</h3><span class="tag">${esc(a.strum.gridLabel)} · ${a.strum.barCount} bars</span></div>
         <div class="row" style="align-items:flex-end;gap:18px"><div class="stat-big mono" style="font-size:30px">${esc(a.strum.patternText.replace(/-/g, '·'))}</div>
@@ -105,6 +105,32 @@
     };
   }
 
+  function writtenKey(key) {
+    if (!key) return '';
+    const k = Theory.keyInfo(Theory.mod12(key.tonic + 2), key.mode);
+    return k.name;
+  }
+
+  function instrumentSection(a, inst, uniq, chordsForDiagrams, key) {
+    const I = PM.Instruments.get(inst);
+    const pf = key && key.preferFlat;
+    if (I.chordal && I.strings) return `<h3 style="margin:20px 0 10px">Chord shapes</h3><div class="diagrams">${chordsForDiagrams.map((n) => UI.chordDiagram(n)).join('')}</div>`;
+    if (I.id === 'piano') return `<h3 style="margin:20px 0 10px">Voicings</h3><div class="diagrams">${uniq.map((u) => `<div class="prog-chord"><b style="font-size:16px">${esc(u.name)}</b><span>${Theory.chordPcs(u.root, u.type).map((p) => Theory.spell(p, pf)).join(' · ')}</span></div>`).join('')}</div>`;
+    if (I.id === 'bass') {
+      return `<h3 style="margin:20px 0 10px">Bass roots & positions</h3><div class="diagrams">${uniq.map((u) => {
+        const r = u.root;
+        const pos = PM.Instruments.fretPosition('bass', 28 + Theory.mod12(r - 4));
+        const fifth = Theory.spell(r + 7, pf);
+        return `<div class="prog-chord"><b style="font-size:16px">${esc(u.name)}</b><span>root ${Theory.spell(r, pf)} · ${pos ? I.stringNames[pos.string] + ' string ' + (pos.fret ? 'fret ' + pos.fret : 'open') : ''}</span><div class="muted small">5th ${fifth}</div></div>`;
+      }).join('')}</div>${a.part && a.part.notes ? `<p class="small" style="margin-top:10px">Bass line: ${a.part.notes.slice(0, 24).map((n) => PM.DSP.midiName(n.midi)).join(' ')}${a.part.notes.length > 24 ? ' …' : ''}</p>` : ''}`;
+    }
+    // trumpet: written pitches
+    return `<h3 style="margin:20px 0 10px">For B♭ trumpet (written pitch)</h3>
+      <div class="notice" style="margin-bottom:10px">${icon('info')}<div>Concert key <b>${esc(key ? key.name : '—')}</b> → written key <b>${esc(writtenKey(key))}</b>. Every note is written a whole step higher than it sounds.</div></div>
+      <div class="diagrams">${uniq.map((u) => `<div class="prog-chord"><b style="font-size:16px">${esc(Theory.chordName(Theory.mod12(u.root + 2), u.type, false))}</b><span>${Theory.chordPcs(u.root, u.type).map((p) => Theory.spell(p + 2)).join(' · ')}</span><div class="muted small">concert ${esc(u.name)}</div></div>`).join('')}</div>
+      ${a.part && a.part.notes ? `<p class="small" style="margin-top:10px">Melody (written): ${a.part.notes.slice(0, 24).map((n) => { const t = PM.Instruments.trumpetInfo(n.midi); return PM.DSP.midiName(t.written) + (t.valves ? '<sub>' + (t.valves === '0' ? 'o' : t.valves.replace(/ /g, '')) + '</sub>' : ''); }).join(' ')}</p>` : ''}`;
+  }
+
   function loopRoman(a) {
     const names = (a.chordSummary.loop || '').split(' → ');
     return names.map((n) => { const c = a.chords.find((x) => x.name === n); return c ? c.roman : '?'; }).join(' – ');
@@ -115,9 +141,12 @@
     const uniq = a.chordSummary.unique.map((u) => u.name);
     const slow = Math.max(50, Math.round(a.tempo.bpm * 0.7));
     steps.push(`Warm up with the <b>${esc(a.key ? a.key.name : '')}</b> scale${a.key ? ` (${esc(a.key.scaleNames.join(' '))})` : ''} for 2 minutes.`);
-    if (uniq.length) steps.push(`Learn the ${uniq.length} chord${uniq.length > 1 ? 's' : ''}: <b>${esc(uniq.slice(0, 6).join(', '))}</b>. ${inst === 'guitar' ? 'Check each string rings clearly.' : 'Play each one hands together, then in inversions.'}`);
+    if (uniq.length) steps.push(`Learn the ${uniq.length} chord${uniq.length > 1 ? 's' : ''}: <b>${esc(uniq.slice(0, 6).join(', '))}</b>. ${PM.Instruments.get(inst).chordal ? (PM.Instruments.get(inst).strings ? 'Check each string rings clearly.' : 'Play each one hands together, then in inversions.') : PM.Instruments.get(inst).id === 'bass' ? 'Find each root on the E and A strings.' : 'Learn the arpeggio (root, 3rd, 5th) of each one.'}`);
     if (a.chordSummary.loop) steps.push(`Drill the main loop <b>${esc(a.chordSummary.loop)}</b> with the metronome at <b>${slow} BPM</b> (70%).`);
-    if (a.strum && inst === 'guitar') steps.push(`Mute the strings and practise the strumming pattern <b class="mono">${esc(a.strum.patternText)}</b> until it feels automatic, then add the chords.`);
+    if (inst === 'bass') steps.push('Play roots on beat 1 of every bar with the drums only (Studio → Drums & bass only), then add the 5th and octave.');
+    if (inst === 'trumpet') steps.push(`Remember: the song is in concert ${esc(a.key ? a.key.name : '')} — on B♭ trumpet you read it in <b>${esc(writtenKey(a.key))}</b>. Do 5 minutes of long tones first.`);
+    steps.push('Try <b>Improvise</b> mode in the Studio with the backing track (no ' + esc(PM.Instruments.get(inst).short.toLowerCase()) + ') to create your own solo.');
+    if (a.strum && PM.Instruments.get(inst).strum) steps.push(`Mute the strings and practise the strumming pattern <b class="mono">${esc(a.strum.patternText)}</b> until it feels automatic, then add the chords.`);
     if (a.meter.beatsPerBar === 3 || a.meter.compound) steps.push(`It's in <b>${esc(a.meter.label)}</b> — count the bar out loud to feel the ${a.meter.compound ? 'lilting triple subdivision' : 'waltz pulse'}.`);
     const ev = a.dynamics.events;
     if (ev.length) steps.push(`Shape your volume with the song: ${ev.length === 1 ? `there's a ${ev[0].type} at ${UI.fmtTime(ev[0].start)}` : `it has ${ev.length} crescendos/decrescendos`} — follow the dynamics chart above.`);
@@ -131,7 +160,7 @@
     container.innerHTML = `<div class="list">${items.map((it) => `
       <div class="list-item" data-id="${esc(it.id)}">
         <div class="li-ic">${icon(it.kind === 'midi' ? 'midi' : 'music')}</div>
-        <div class="li-main"><b>${esc(it.name)}</b><span>${it.analysis.key ? esc(it.analysis.key.name) + ' · ' : ''}${Math.round(it.analysis.tempo.bpm)} BPM · ${esc(it.analysis.meter.label)} · ${UI.fmtTime(it.analysis.duration)} · ${it.instrument === 'piano' ? '🎹' : '🎸'}</span></div>
+        <div class="li-main"><b>${esc(it.name)}</b><span>${it.analysis.key ? esc(it.analysis.key.name) + ' · ' : ''}${Math.round(it.analysis.tempo.bpm)} BPM · ${esc(it.analysis.meter.label)} · ${UI.fmtTime(it.analysis.duration)} · ${PM.Instruments.get(it.instrument).emoji}</span></div>
         <button class="btn sm" data-open>${icon('play')} Open</button>
         <button class="btn sm ghost icon" data-del title="Delete">${icon('trash')}</button>
       </div>`).join('')}</div>`;

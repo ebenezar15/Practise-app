@@ -1,8 +1,9 @@
-/* Cadenza — Live Studio: play over a track (or freely) with real-time AI coaching. */
+/* Cadenza — Live Studio: play the part or improvise over a track (full mix, backing track
+ * or your isolated part) with real-time AI coaching for piano, guitars, bass and trumpet. */
 (function (root) {
   'use strict';
   const PM = root.PM;
-  const { UI, Theory, Analyzer, Rhythm, DSP } = PM;
+  const { UI, Theory, Analyzer, Rhythm, DSP, Instruments } = PM;
   const { icon, esc, $, $$ } = UI;
 
   const MSG_ICON = { praise: '✅', fix: '🛠️', instruction: '👉', tip: '💡', info: '🎼' };
@@ -11,19 +12,27 @@
     id: 'studio', title: 'Live Studio', nav: 'Studio', icon: 'mic',
     render(host, App) {
       const inst = App.instrument;
+      const I = Instruments.get(inst);
       const track = App.track;
       const a = track && track.analysis;
       const player = App.player;
       const engineName = App.settings.source === 'midi' ? 'midi' : 'mic';
+      const mode = App.settings.studioMode === 'improv' ? 'improv' : 'part';
+      const improv = mode === 'improv';
+      const visual = I.family === 'keys' ? 'keys' : I.family === 'brass' ? 'brass' : 'fret';
 
       host.innerHTML = `
         <div class="page-head">
-          <div><div class="eyebrow">Live Studio · ${inst === 'guitar' ? 'Guitar' : 'Piano'}</div><h1>Play along & get coached</h1>
-          <p>${a ? 'Hit play, start listening and play over the track. The coach compares every chord, strum and note to the song.' : 'Load a track to play along with — or just start listening for free-play chord tracking, tuning and timing feedback with the metronome.'}</p></div>
-          <div class="row mobile-inst"><div class="seg"><button data-inst="guitar" class="${inst === 'guitar' ? 'on' : ''}">🎸 Guitar</button><button data-inst="piano" class="${inst === 'piano' ? 'on' : ''}">🎹 Piano</button></div></div>
+          <div><div class="eyebrow">Live Studio · ${esc(I.label)}</div><h1>${improv ? 'Improvise & get coached' : 'Play along & get coached'}</h1>
+          <p>${improv ? 'Solo over a backing track. The coach shows which notes fit each chord, praises good targeting and tells you when a note clashes.' : a ? 'Hit play, start listening and play over the track — full mix, a backing track without your part, or your part alone.' : 'Load a song, generate a backing track — or just start listening for free-play coaching.'}</p></div>
+          <div class="row">
+            <div class="seg" id="modeSeg"><button data-mode="part" class="${!improv ? 'on' : ''}">${icon('music')} Play the part</button><button data-mode="improv" class="${improv ? 'on' : ''}">${icon('improv')} Improvise</button></div>
+          </div>
         </div>
+        <div class="row mobile-inst" style="margin-bottom:12px"><div class="seg">${Instruments.list().map((x) => `<button data-inst="${x.id}" class="${x.id === inst ? 'on' : ''}">${x.emoji} ${esc(x.short)}</button>`).join('')}</div></div>
 
         <section class="card" id="trackCard"></section>
+        ${a ? '<section class="card" id="mixCard" style="margin-top:18px"></section>' : ''}
 
         <section class="card stage" style="margin-top:18px">
           <div class="input-bar">
@@ -34,28 +43,34 @@
             <select id="devSel" title="Audio input" class="${engineName === 'midi' ? 'hidden' : ''}"><option value="">Default input</option></select>
             <div class="row small" style="gap:8px"><span class="muted">Level</span><div class="level-meter"><i id="lvl" style="width:0"></i></div></div>
             <label class="switch small" title="Hear your input through the speakers/headphones"><input type="checkbox" id="monitor"><span class="track"></span>Monitor</label>
-            ${a ? '' : `<label class="switch small"><input type="checkbox" id="metroAlong"><span class="track"></span>Metronome <span class="muted" id="metroBpm">${App.metronome.bpm}</span></label>`}
+            ${a ? '' : `<label class="switch small"><input type="checkbox" id="metroAlong"><span class="track"></span>Metronome <span class="muted">${App.metronome.bpm}</span></label>`}
             <div class="spacer"></div>
-            <span class="muted small" id="devLabel"></span>
+            <span class="muted small" id="devLabel" style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
             <button class="btn primary" id="listenBtn">${icon('mic')} Start listening</button>
           </div>
         </section>
 
         <div class="live-grid">
           <section class="card stage now-card">
-            ${a ? `
+            ${improv ? `
             <div class="chord-pair">
-              <div class="chord-box" id="expBox"><div class="now-label">Song chord</div><div class="cb-name" id="expName">—</div><div class="cb-sub" id="expSub"></div></div>
+              <div class="chord-box"><div class="now-label">Chord now</div><div class="cb-name" id="expName">—</div><div class="cb-sub" id="expSub"></div></div>
+              <div class="chord-box" id="youBox"><div class="now-label">Your note</div><div class="cb-name" id="youName">—</div><div class="cb-sub" id="youSub">Start listening</div></div>
+            </div>
+            <div class="next-row" style="flex-direction:column;align-items:flex-start;gap:6px"><span class="now-label">Try this scale</span><b id="scaleName" style="font-size:17px">—</b><span class="muted small" id="targets"></span></div>
+            <div class="improv-bar"><span class="now-label">Harmony fit</span><div class="fit-meter"><i id="fit" style="width:0"></i></div><span class="note-class" id="noteClass">—</span></div>` : a ? `
+            <div class="chord-pair">
+              <div class="chord-box" id="expBox"><div class="now-label">${I.chordal ? 'Song chord' : 'Song chord · your note'}</div><div class="cb-name" id="expName">—</div><div class="cb-sub" id="expSub"></div></div>
               <div class="chord-box" id="youBox"><div class="now-label">You're playing</div><div class="cb-name" id="youName">—</div><div class="cb-sub" id="youSub">Start listening</div></div>
             </div>
             <div class="next-row"><span class="now-label">Next</span><b id="nextName" style="font-size:20px;min-width:60px">—</b><div class="countdown"><i id="nextBar" style="width:0"></i></div><span class="muted small" id="nextIn"></span></div>` : `
-            <div><div class="now-label">You're playing</div><div class="big-chord" id="youName">—</div><div class="muted" id="youSub" style="margin-top:6px">Start listening and play a chord</div></div>
-            <div><div class="now-label" style="margin-bottom:8px">Chord history</div><div class="chord-history" id="history"><span class="muted small">Your chords appear here</span></div></div>
+            <div><div class="now-label">You're playing</div><div class="big-chord" id="youName">—</div><div class="muted" id="youSub" style="margin-top:6px">Start listening and play</div></div>
+            <div><div class="now-label" style="margin-bottom:8px">${I.chordal ? 'Chord history' : 'Note history'}</div><div class="chord-history" id="history"><span class="muted small">Appears here as you play</span></div></div>
             <div class="next-row"><span class="now-label">Key</span><b id="liveKey" style="font-size:16px">listening…</b></div>`}
             <div class="score-row">
               <div class="score-cell"><b id="score">0</b><span>Score</span></div>
               <div class="score-cell" id="comboCell"><b id="combo">0×</b><span>Combo</span></div>
-              <div class="score-cell"><b id="acc">—</b><span>Accuracy</span></div>
+              <div class="score-cell"><b id="acc">—</b><span>${improv ? 'Fit' : 'Accuracy'}</span></div>
             </div>
           </section>
           <section class="card stage">
@@ -65,8 +80,8 @@
           <section class="card stage">
             <div class="card-head"><h3>${icon('bolt')} AI coach</h3><span class="tag" id="coachState">idle</span></div>
             <div class="coach-feed" id="feed">
-              <div class="msg info"><span class="m-ic">🎼</span><div>Hi! I listen locally and coach you on chords, timing${inst === 'guitar' ? ', strumming, tuning' : ', notes'} and dynamics. Press <b>Start listening</b>, then play.</div></div>
-              ${a ? `<div class="msg tip"><span class="m-ic">🎧</span><div>Wear headphones so I hear only your ${inst}, not the backing track.</div></div>` : ''}
+              <div class="msg info"><span class="m-ic">🎼</span><div>Hi! I listen locally and coach your ${esc(I.label.toLowerCase())}: ${improv ? 'note choices, targeting, range, rhythm and phrasing' : I.chordal ? 'chords, timing' + (I.strum ? ', strumming' : '') + (I.bends ? ', bends' : '') + ' and dynamics' : 'the right notes, timing, intonation' + (I.family === 'brass' ? ', tone steadiness' : '') + ' and dynamics'}. Press <b>Start listening</b>, then play.</div></div>
+              ${a ? `<div class="msg tip"><span class="m-ic">🎧</span><div>Wear headphones so I hear only your ${esc(I.short.toLowerCase())}, not the track.</div></div>` : ''}
             </div>
           </section>
         </div>
@@ -74,8 +89,8 @@
         <div class="meters">
           <section class="card"><div class="card-head"><h3>${icon('target')} Timing</h3><span class="tag" id="timingTag">—</span></div>
             <div class="meter-val" id="timingVal">— ms</div><div class="meter-sub" id="timingSub">${a ? 'vs. the song’s beat grid' : 'Turn on the metronome to check timing'}</div>${UI.gaugeHtml(['early', '−50', '0', '+50', 'late'])}</section>
-          <section class="card"><div class="card-head"><h3>${icon('tuner')} ${inst === 'guitar' ? 'Intonation' : 'Pitch'}</h3><span class="tag" id="tuneTag">—</span></div>
-            <div class="meter-val" id="tuneVal">—</div><div class="meter-sub" id="tuneSub">Single notes are measured in cents</div>${UI.gaugeHtml(['♭', '−25', '0', '+25', '♯'])}</section>
+          <section class="card"><div class="card-head"><h3>${icon('tuner')} ${I.id === 'piano' ? 'Pitch' : 'Intonation'}</h3><span class="tag" id="tuneTag">—</span></div>
+            <div class="meter-val" id="tuneVal">—</div><div class="meter-sub" id="tuneSub">${I.family === 'brass' ? 'Cents & steadiness of each note' : I.bends ? 'Cents — bends are measured too' : 'Single notes are measured in cents'}</div>${UI.gaugeHtml(['♭', '−25', '0', '+25', '♯'])}</section>
           <section class="card"><div class="card-head"><h3>${icon('wave')} Dynamics</h3><span class="tag" id="dynTag">—</span></div>
             <div class="dyn-bars">
               ${a ? '<div class="dyn-col"><div class="bar target"><i id="dynTarget" style="height:0"></i></div><span>Song</span></div>' : ''}
@@ -85,19 +100,23 @@
         </div>
 
         <section class="card instrument-panel">
-          <div class="card-head"><h3>${icon(inst)} ${inst === 'guitar' ? 'Fretboard' : 'Keyboard'}</h3>
-            <div class="legend">${inst === 'guitar' ? '<span><i style="background:#a855f7"></i>Chord shape</span><span><i style="background:#10b981"></i>Heard</span><span><i style="background:#f43f5e"></i>Missing</span>' : '<span><i style="background:#ede9fe;border:1px solid #c4b5fd"></i>Expected</span><span><i style="background:#d946ef"></i>You played</span><span><i style="background:#10b981"></i>Correct</span>'}</div></div>
-          ${inst === 'guitar' ? `
-            <div class="inst-row"><div class="fret-wrap" id="fret"></div><div id="diagram" style="min-width:110px;display:grid;place-items:center"></div></div>
-            ${a && a.strum ? `<div class="card-head" style="margin:16px 0 6px"><h3>${icon('hand')} Strumming pattern <span class="muted small" style="font-weight:600">· ${esc(a.strum.gridLabel)} · ${Math.round(a.strum.consistency * 100)}% of bars</span></h3></div><div id="strum">${UI.strumLaneHtml(a.strum)}</div>` : ''}` :
-            '<div class="keyboard-wrap" id="kbd"></div>'}
+          <div class="card-head"><h3>${icon(I.icon)} ${visual === 'keys' ? 'Keyboard' : visual === 'brass' ? 'Valves' : 'Fretboard'}</h3>
+            <div class="legend">${improv ? '<span><i style="background:#a855f7"></i>Chord tones</span><span><i style="background:#ddd6fe;border:1px solid #c4b5fd"></i>Scale tones</span><span><i style="background:#f0abfc"></i>You</span>' : visual === 'fret' ? (I.chordal ? '<span><i style="background:#a855f7"></i>Chord shape</span><span><i style="background:#10b981"></i>Heard</span><span><i style="background:#f43f5e"></i>Missing</span>' : '<span><i style="background:#10b981"></i>Target note</span><span><i style="background:#a855f7"></i>Chord tones</span><span><i style="background:#f0abfc"></i>You</span>') : visual === 'keys' ? '<span><i style="background:#ede9fe;border:1px solid #c4b5fd"></i>Expected</span><span><i style="background:#d946ef"></i>You played</span><span><i style="background:#10b981"></i>Correct</span>' : '<span>Written pitch for B♭ trumpet</span>'}</div></div>
+          ${visual === 'fret' ? `<div class="inst-row"><div class="fret-wrap" id="fret"></div>${I.chordal ? '<div id="diagram" style="min-width:110px;display:grid;place-items:center"></div>' : ''}</div>
+            ${a && a.strum && I.strum && !improv ? `<div class="card-head" style="margin:16px 0 6px"><h3>${icon('hand')} Strumming pattern <span class="muted small" style="font-weight:600">· ${esc(a.strum.gridLabel)} · ${Math.round(a.strum.consistency * 100)}% of bars</span></h3></div><div id="strum">${UI.strumLaneHtml(a.strum)}</div>` : ''}` :
+            visual === 'keys' ? '<div class="keyboard-wrap" id="kbd"></div>' : `<div id="valves">${UI.valvesHtml()}</div>`}
         </section>`;
+
+      $$('#modeSeg button', host).forEach((b) => (b.onclick = () => { App.settings.studioMode = b.dataset.mode; App.saveSettings(); App.rerender(); }));
+      $$('.mobile-inst [data-inst]', host).forEach((b) => (b.onclick = () => App.setInstrument(b.dataset.inst)));
 
       // ---------- Track card ----------
       const trackCard = $('#trackCard', host);
-      let timeline = null;
+      let timeline = null, cleanupTrack = null;
       if (!a) {
-        PM.Shared.uploader(trackCard, () => App.rerender());
+        trackCard.innerHTML = `<div class="grid g2"><div id="up"></div><div id="backingBox"></div></div>`;
+        PM.Shared.uploader($('#up', trackCard), () => App.rerender());
+        PM.Shared.backingForm($('#backingBox', trackCard), () => App.rerender());
       } else {
         trackCard.innerHTML = `
           <div class="track-head">
@@ -116,7 +135,7 @@
             <div class="spacer"></div>
             <div class="speed">Speed <input type="range" id="speed" min="0.5" max="1.25" step="0.05" value="${player.rate || 1}"><b id="speedLbl">${Math.round((player.rate || 1) * 100)}%</b></div>
           </div>
-          <p class="muted small" style="margin-top:8px">Tip: click the timeline to seek · Shift-drag to loop a section · Space to play/pause · slow it down — pitch stays the same.</p>`;
+          <p class="muted small" style="margin-top:8px">Click the timeline to seek · Shift-drag to loop · Space play/pause · L listen · slowing down keeps the pitch.</p>`;
         timeline = new UI.Timeline($('#tl', host), a, {
           onSeek: (t) => { player.time = t; timeline.setTime(t); },
           onLoop: (loop) => { player.setLoop(loop && loop.a, loop && loop.b); $('#loopBtn', host).classList.toggle('primary', !!loop); },
@@ -164,20 +183,20 @@
           $('#loopBtn', host).classList.add('primary');
           UI.toast(`Looping ${UI.fmtTime(A)} – ${UI.fmtTime(B)}`, { icon: '🔁' });
         };
-        var keyHandler = (e) => {
+        const keyHandler = (e) => {
           if (e.target.matches('input, select, textarea')) return;
           if (e.code === 'Space') { e.preventDefault(); togglePlay(); }
           if (e.key === 'l' || e.key === 'L') listenBtn.click();
         };
         addEventListener('keydown', keyHandler);
-        var cleanupTrack = () => { offPlayer(); removeEventListener('keydown', keyHandler); };
+        cleanupTrack = () => { offPlayer(); removeEventListener('keydown', keyHandler); };
+        PM.Shared.mixer($('#mixCard', host), App);
       }
 
-      $$('.mobile-inst [data-inst]', host).forEach((b) => (b.onclick = () => App.setInstrument(b.dataset.inst)));
-
       // ---------- Instrument visuals ----------
-      const kbd = inst === 'piano' ? new UI.PianoKeyboard($('#kbd', host), 36, 96) : null;
-      const fret = inst === 'guitar' ? new UI.Fretboard($('#fret', host), 15) : null;
+      const kbd = visual === 'keys' ? new UI.PianoKeyboard($('#kbd', host), I.viewRange[0], I.viewRange[1]) : null;
+      const fret = visual === 'fret' ? new UI.Fretboard($('#fret', host), { strings: I.strings, names: I.stringNames, frets: I.frets }) : null;
+      const valves = visual === 'brass' ? $('#valves', host) : null;
       const ring = new UI.ChromaRing($('#ring', host));
       const strumSlots = $$('#strum .strum-slot', host);
 
@@ -206,7 +225,7 @@
       }
 
       // ---------- Listening & coaching ----------
-      let listening = false, unsub = null, coach = null, sessionStart = 0, latest = null, lastState = {};
+      let listening = false, unsub = null, coach = null, sessionStart = 0, latest = null;
       const history = [];
       const feed = $('#feed', host);
       const pushMsg = (m) => {
@@ -222,6 +241,7 @@
         const engine = App.settings.source === 'midi' ? App.midiIn : App.live;
         try {
           App.live.latency = App.settings.latency;
+          App.live.instrument = inst;
           const label = engine === App.live ? await App.live.start(App.settings.deviceId) : await App.midiIn.start();
           $('#devLabel', host).textContent = label || '';
           if (engine === App.live) fillDevices();
@@ -230,7 +250,7 @@
           UI.toast(e.name === 'NotAllowedError' ? 'Microphone permission was denied. Allow mic access in your browser settings.' : 'Could not open the input: ' + (e.message || e), { icon: '🎤', duration: 5000 });
           return;
         }
-        coach = new PM.Coach({ instrument: inst, reference: a, onMessage: pushMsg });
+        coach = improv ? new PM.Improv.ImprovCoach({ instrument: inst, reference: a, onMessage: pushMsg }) : new PM.Coach({ instrument: inst, reference: a, onMessage: pushMsg });
         listening = true;
         sessionStart = performance.now();
         listenBtn.className = 'btn live';
@@ -252,7 +272,7 @@
         if (cs) { cs.textContent = 'idle'; cs.className = 'tag'; }
         const summary = coach.summary();
         const wall = (performance.now() - sessionStart) / 1000;
-        const meta = { mode: 'studio', instrument: inst, seconds: Math.min(wall, summary.activeTime + 20), title: a ? track.name : 'Free play' };
+        const meta = { mode: improv ? 'improv' : 'studio', instrument: inst, seconds: Math.min(wall, summary.activeTime + 20), title: (improv ? 'Improv · ' : '') + (a ? track.name : 'Free play'), assignmentId: track && track.assignmentId, mixPreset: track && track.mixPreset };
         if (summary.activeTime > 8) {
           if (showSummary) PM.Shared.sessionSummary(summary, meta);
           else App.game.recordSession(Object.assign({ summary }, meta));
@@ -260,49 +280,52 @@
       }
       listenBtn.onclick = () => (listening ? stopListening(true) : startListening());
 
+      let lastResult = null, lastResultAt = 0;
       function onFrame(frame) {
         frame.refTime = a && player.playing ? player.time - (frame.source === 'mic' ? App.settings.latency : 0) * player.rate : null;
         frame.rate = player.rate;
-        const grid = !(a && player.playing) && App.metronome.running ? App.metronome.grid(inst === 'guitar' ? 2 : 1) : null;
-        const st = coach.update(frame, grid);
+        const grid = !(a && player.playing) && App.metronome.running ? App.metronome.grid(I.strum ? 2 : 1) : null;
+        const st = improv ? coach.update(frame, frame.refTime) : coach.update(frame, grid);
         latest = frame;
-        lastState = st;
-        // level meter
+        latest.state = st;
         $('#lvl', host).style.width = Math.max(0, Math.min(100, (frame.db + 70) * 1.6)) + '%';
-        // live chord
         const youName = $('#youName', host), youSub = $('#youSub', host);
-        if (frame.active && frame.chord) {
+        const single = frame.active && frame.pitch && (!I.chordal || !frame.chord);
+        if (frame.active && frame.chord && I.chordal && !improv) {
           youName.textContent = frame.chord.name;
           youSub.textContent = frame.chord.quality + (frame.chord.bass != null ? ' · inversion' : '');
-          if (!a) {
-            if (!history.length || history[history.length - 1] !== frame.chord.name) {
-              history.push(frame.chord.name);
-              if (history.length > 16) history.shift();
-              $('#history', host).innerHTML = history.map((c) => `<span class="ch">${esc(c)}</span>`).join('');
-              $('#history', host).scrollLeft = 1e6;
-            }
+        } else if (single || (improv && frame.active && frame.pitch)) {
+          const nm = I.transpose ? DSP.midiName(frame.pitch.midi + I.transpose) : frame.pitch.name;
+          youName.textContent = nm;
+          youSub.textContent = I.transpose ? `concert ${frame.pitch.name}` : I.strings ? (() => { const p = Instruments.fretPosition(inst, frame.pitch.midi); return p ? `${I.stringNames[p.string]} string · ${p.fret ? 'fret ' + p.fret : 'open'}` : 'single note'; })() : 'single note';
+        } else if (!frame.active) youSub.textContent = 'listening…';
+        if (!a && frame.active) {
+          const label = I.chordal && frame.chord ? frame.chord.name : frame.pitch && frame.pitch.confidence > 0.85 ? (I.transpose ? DSP.midiName(frame.pitch.midi + I.transpose) : frame.pitch.name) : null;
+          if (label && (!history.length || history[history.length - 1] !== label)) {
+            history.push(label);
+            if (history.length > 16) history.shift();
+            const h = $('#history', host);
+            if (h) { h.innerHTML = history.map((c) => `<span class="ch">${esc(c)}</span>`).join(''); h.scrollLeft = 1e6; }
           }
-        } else if (frame.active && frame.pitch) {
-          youName.textContent = frame.pitch.name;
-          youSub.textContent = 'single note';
-        } else if (!frame.active) {
-          youSub.textContent = 'listening…';
         }
         const youBox = $('#youBox', host);
         if (youBox) {
           youBox.classList.remove('hit', 'close', 'miss');
-          if (st.chordResult && frame.active) youBox.classList.add(st.chordResult.result);
+          const res = improv ? (st.cls ? { chord: 'hit', scale: 'hit', blue: 'close', outside: 'miss' }[st.cls] : null) : st.chordResult ? st.chordResult.result : st.monoResult ? st.monoResult.result : null;
+          if (res && frame.active) { youBox.classList.add(res); lastResult = res; lastResultAt = performance.now(); }
           else if (lastResult && frame.active && performance.now() - lastResultAt < 400) youBox.classList.add(lastResult);
-          if (st.chordResult) { lastResult = st.chordResult.result; lastResultAt = performance.now(); }
         }
         $('#notesHeard', host).textContent = frame.active && frame.notes.length ? frame.notes.slice(0, 6).map((n) => DSP.midiName(n.midi)).join(' ') : '';
-        // score
         $('#score', host).textContent = st.score;
         $('#combo', host).textContent = st.combo + '×';
         $('#comboCell', host).classList.toggle('combo-hot', st.combo >= 10);
-        $('#acc', host).textContent = st.accuracy == null ? '—' : Math.round(st.accuracy * 100) + '%';
-        if (st.liveKey) $('#liveKey', host) && ($('#liveKey', host).textContent = st.liveKey.name);
-        // timing
+        const accVal = improv ? st.fit : st.accuracy;
+        $('#acc', host).textContent = accVal == null ? '—' : Math.round(accVal * 100) + '%';
+        if (st.liveKey && $('#liveKey', host)) $('#liveKey', host).textContent = st.liveKey.name;
+        if (improv) {
+          if (st.cls) { const nc = $('#noteClass', host); nc.textContent = { chord: 'chord tone', scale: 'scale tone', blue: 'blue note', outside: 'outside' }[st.cls]; nc.className = 'note-class ' + st.cls; }
+          if (st.fit != null) $('#fit', host).style.width = Math.round(st.fit * 100) + '%';
+        }
         if (st.timing) {
           const ms = Math.round(st.timing.offsetMs);
           $('#timingVal', host).textContent = (ms > 0 ? '+' : '') + ms + ' ms';
@@ -312,20 +335,18 @@
           UI.setGauge($$('.gauge', host)[0], ms, 100);
           $('#timingSub', host).textContent = st.timing.label === 'perfect' ? 'Right on the beat!' : ms < 0 ? 'Ahead of the beat (rushing)' : 'Behind the beat (dragging)';
         }
-        // tuning
         if (frame.active && frame.pitch && frame.pitch.confidence > 0.85 && (!frame.notes || frame.notes.length <= 2)) {
           const c = frame.pitch.cents;
-          $('#tuneVal', host).textContent = `${frame.pitch.name} ${c > 0 ? '+' : ''}${c}¢`;
+          $('#tuneVal', host).textContent = `${I.transpose ? DSP.midiName(frame.pitch.midi + I.transpose) : frame.pitch.name} ${c > 0 ? '+' : ''}${c}¢`;
           const tag = $('#tuneTag', host);
           tag.textContent = Math.abs(c) <= 8 ? 'in tune' : c > 0 ? 'sharp' : 'flat';
           tag.className = 'tag ' + (Math.abs(c) <= 8 ? 'ok' : Math.abs(c) <= 20 ? 'warn' : 'bad');
           UI.setGauge($$('.gauge', host)[1], c, 50);
-          $('#tuneSub', host).textContent = `${frame.pitch.freq.toFixed(1)} Hz`;
+          $('#tuneSub', host).textContent = st.bend ? `Bend ${Math.round(st.bend.cents)}¢ of ${st.bend.goal}¢` : st.steadiness != null ? `Steadiness ±${Math.round(st.steadiness)}¢` : `${frame.pitch.freq.toFixed(1)} Hz`;
         }
-        // dynamics
         if (st.dynamics) {
           $('#dynLive', host).style.height = Math.round((st.dynamics.live || 0) * 100) + '%';
-          if (st.dynamics.target != null) $('#dynTarget', host).style.height = Math.round(st.dynamics.target * 100) + '%';
+          if (st.dynamics.target != null && $('#dynTarget', host)) $('#dynTarget', host).style.height = Math.round(st.dynamics.target * 100) + '%';
           const tag = $('#dynTag', host);
           tag.textContent = st.dynamics.mark;
           if (st.dynamics.delta != null) {
@@ -334,11 +355,9 @@
           }
         }
       }
-      let lastResult = null, lastResultAt = 0;
 
-      // ---------- Visual loop (playback + ring) ----------
-      let raf = 0;
-      let lastStrumSlot = -1;
+      // ---------- Visual loop (playback + instrument) ----------
+      let raf = 0, lastStrumSlot = -1;
       const tick = () => {
         raf = requestAnimationFrame(tick);
         const t = player.time;
@@ -346,20 +365,29 @@
           timeline.setTime(t);
           $('#timeLbl', host).textContent = `${UI.fmtTime(t)} / ${UI.fmtTime(a.duration)}`;
         }
-        let expected = null;
+        let expected = null, at = null, partNote = null;
         if (a) {
-          const at = Analyzer.chordAt(a, t);
+          at = Analyzer.chordAt(a, t);
           expected = at && at.chord.name !== 'N' ? at.chord : null;
-          $('#expName', host).textContent = expected ? expected.name : '—';
-          $('#expSub', host).textContent = expected ? `${expected.roman || ''} ${expected.fn ? '· ' + expected.fn : ''}` : player.playing ? 'no chord' : 'press play';
-          const nxt = at && at.next && at.next.name !== 'N' ? at.next : at && at.next ? (a.chords[at.index + 2] || null) : null;
-          $('#nextName', host).textContent = nxt ? nxt.name : '—';
-          if (nxt && at) {
-            const span = Math.max(0.01, nxt.start - at.chord.start), left = nxt.start - t;
-            $('#nextBar', host).style.width = Math.max(0, Math.min(100, (1 - left / span) * 100)) + '%';
-            $('#nextIn', host).textContent = left > 0 ? left.toFixed(1) + 's' : '';
+          if (a.part && a.part.notes && player.playing) {
+            const ns = Analyzer.notesAt({ notes: a.part.notes }, t, 0.04);
+            if (ns.length) partNote = ns[ns.length - 1].midi;
           }
-          // strum lane
+          const expName = $('#expName', host);
+          if (expName) {
+            expName.textContent = expected ? expected.name + (!I.chordal && !improv && partNote != null ? ' · ' + (I.transpose ? DSP.pcName(partNote + I.transpose) : DSP.pcName(partNote)) : '') : '—';
+            $('#expSub', host).textContent = expected ? `${expected.roman || ''} ${expected.fn ? '· ' + expected.fn : ''}` : player.playing ? 'no chord' : 'press play';
+          }
+          const nextEl = $('#nextName', host);
+          if (nextEl) {
+            const nxt = at && at.next && at.next.name !== 'N' ? at.next : at && at.next ? (a.chords[at.index + 2] || null) : null;
+            nextEl.textContent = nxt ? nxt.name : '—';
+            if (nxt && at) {
+              const span = Math.max(0.01, nxt.start - at.chord.start), left = nxt.start - t;
+              $('#nextBar', host).style.width = Math.max(0, Math.min(100, (1 - left / span) * 100)) + '%';
+              $('#nextIn', host).textContent = left > 0 ? left.toFixed(1) + 's' : '';
+            }
+          }
           if (strumSlots.length && a.strum) {
             const pos = Rhythm.beatPosition(t, a.beats);
             let slot = -1;
@@ -376,22 +404,43 @@
           }
         }
         const f = latest && latest.active ? latest : null;
+        const sug = improv ? PM.Improv.suggestions(expected, a ? a.key : f && f.state && f.state.liveKey) : null;
+        if (improv && sug) {
+          $('#scaleName', host).textContent = sug.scaleName;
+          const pf = a && a.key && a.key.preferFlat;
+          const tr = I.transpose || 0;
+          $('#targets', host).textContent = `Chord tones ${sug.chordPcs.map((p) => Theory.spell(p + tr, pf)).join(' ')} · aim for ${sug.targetPcs.map((p) => Theory.spell(p + tr, pf)).join(' / ')} on the change${tr ? ' (written)' : ''}`;
+        }
         const shownChord = expected || (f && f.chord) || null;
-        ring.draw(f ? f.chroma : null, expected ? expected.pcs : f && f.chord ? f.chord.pcs : [], f && f.chord ? f.chord.name : f && f.pitch ? f.pitch.name : '', expected ? 'target ' + expected.name : listening ? 'listening' : 'idle', f ? Math.max(0, (f.db + 60) / 50) : 0);
+        ring.draw(f ? f.chroma : null, improv && sug ? sug.chordPcs : expected ? expected.pcs : f && f.chord ? f.chord.pcs : [], f && f.chord && I.chordal ? f.chord.name : f && f.pitch ? f.pitch.name : '', expected ? 'target ' + expected.name : listening ? 'listening' : 'idle', f ? Math.max(0, (f.db + 60) / 50) : 0);
         const livePcs = f && f.chroma ? new Set(PM.CoachUtil.topPcs(f.chroma)) : null;
+        const liveNote = f && f.pitch && (!f.notes || f.notes.length <= 1 || !I.chordal) ? f.pitch.midi : null;
         if (fret) {
-          const shape = shownChord && shownChord.root != null ? Theory.guitarShape(shownChord.root, shownChord.type) : null;
-          fret.set(shape, livePcs, f && f.pitch && (!f.notes || f.notes.length <= 1) ? f.pitch.midi : null);
-          const dname = shownChord ? Theory.chordName(shownChord.root, shownChord.type, a && a.key && a.key.preferFlat) : null;
-          const d = $('#diagram', host);
-          if (d && d.dataset.name !== dname) { d.dataset.name = dname || ''; d.innerHTML = dname ? UI.chordDiagram(dname) : '<span class="muted small">No chord</span>'; }
+          if (improv && sug) fret.setMap(sug.chordPcs, sug.scalePcs, liveNote, null);
+          else if (I.chordal) {
+            const shape = shownChord && shownChord.root != null ? Theory.guitarShape(shownChord.root, shownChord.type) : null;
+            fret.set(shape, livePcs, liveNote);
+            const dname = shownChord && shownChord.root != null ? Theory.chordName(shownChord.root, shownChord.type, a && a.key && a.key.preferFlat) : null;
+            const d = $('#diagram', host);
+            if (d && d.dataset.name !== (dname || '')) { d.dataset.name = dname || ''; d.innerHTML = dname ? UI.chordDiagram(dname) : '<span class="muted small">No chord</span>'; }
+          } else {
+            const target = partNote != null ? partNote : expected ? 28 + ((((expected.bass != null ? expected.bass : expected.root) - 4) % 12) + 12) % 12 : null;
+            fret.setMap(expected ? expected.pcs : [], [], liveNote, target);
+          }
         }
         if (kbd) {
-          let exp = [];
-          if (a && player.playing) {
-            exp = a.source === 'midi' ? Analyzer.notesAt(a, t, 0.02).map((n) => n.midi) : expected ? Theory.pianoVoicing(expected.root, expected.type) : [];
-          } else if (expected) exp = Theory.pianoVoicing(expected.root, expected.type);
-          kbd.set(exp, f ? f.notes.map((n) => n.midi) : []);
+          if (improv && sug) kbd.setMap(sug.chordPcs, sug.scalePcs, f ? f.notes.map((n) => n.midi) : []);
+          else {
+            let exp = [];
+            if (a && player.playing) exp = track.kind === 'midi' ? (a.part ? Analyzer.notesAt({ notes: a.part.notes }, t, 0.02) : Analyzer.notesAt(a, t, 0.02)).map((n) => n.midi) : expected ? Theory.pianoVoicing(expected.root, expected.type) : [];
+            else if (expected) exp = Theory.pianoVoicing(expected.root, expected.type);
+            kbd.set(exp, f ? f.notes.map((n) => n.midi) : []);
+          }
+        }
+        if (valves) {
+          let target = partNote;
+          if (target == null && expected) target = 60 + expected.pcs[improv && sug ? 1 : 0] + (expected.pcs[0] < 4 ? 12 : 0);
+          UI.setValves(valves, target, liveNote);
         }
       };
       raf = requestAnimationFrame(tick);
@@ -399,7 +448,7 @@
       return () => {
         cancelAnimationFrame(raf);
         stopListening(false);
-        if (typeof cleanupTrack === 'function') cleanupTrack();
+        if (cleanupTrack) cleanupTrack();
       };
     },
   });

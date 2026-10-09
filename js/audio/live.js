@@ -118,11 +118,19 @@
         DSP.normalize(c);
         for (let i = 0; i < 12; i++) this.chromaEma[i] = this.chromaEma[i] * 0.6 + c[i] * 0.4;
         chroma = Float32Array.from(this.chromaEma);
-        notes = DSP.polyNotes(peaks, this.instrument === 'piano' ? { lowMidi: 28, highMidi: 100, maxNotes: 8 } : { lowMidi: 38, highMidi: 88, maxNotes: 6 });
-        const p = DSP.yin(this.time.subarray(2048), this.sr, { minFreq: 60, maxFreq: 1400, threshold: 0.12 });
-        if (p && p.confidence > 0.75) pitch = Object.assign(DSP.describeFreq(p.freq), { confidence: p.confidence });
+        const I = PM.Instruments.get(this.instrument);
+        if (I.mono) {
+          // single-line instruments: decimate so YIN reaches low bass notes (E1 = 41 Hz)
+          const p = DSP.yin(DSP.decimate2(this.time), this.sr / 2, { minFreq: I.minFreq, maxFreq: I.maxFreq, threshold: 0.12 });
+          if (p && p.confidence > 0.75) pitch = Object.assign(DSP.describeFreq(p.freq), { confidence: p.confidence });
+          notes = pitch ? [{ midi: pitch.midi, salience: 1 }] : [];
+        } else {
+          notes = DSP.polyNotes(peaks, I.id === 'piano' ? { lowMidi: 28, highMidi: 100, maxNotes: 8 } : { lowMidi: 38, highMidi: 90, maxNotes: 6 });
+          const p = DSP.yin(this.time.subarray(2048), this.sr, { minFreq: 60, maxFreq: 1400, threshold: 0.12 });
+          if (p && p.confidence > 0.75) pitch = Object.assign(DSP.describeFreq(p.freq), { confidence: p.confidence });
+        }
         const pcsCount = PM.CoachUtil ? PM.CoachUtil.topPcs(chroma).length : 3;
-        const cand = pcsCount >= 2 ? Theory.detectChord(chroma) : null;
+        const cand = pcsCount >= 2 && PM.Instruments.get(this.instrument).chordal ? Theory.detectChord(chroma) : null;
         const cname = cand && cand.score > 0.62 ? cand.name : null;
         if (cname === (this.candChord && this.candChord.name)) this.candCount++;
         else { this.candChord = cname ? cand : null; this.candCount = 1; }

@@ -13,14 +13,13 @@
       <div class="dropzone" tabindex="0" role="button" aria-label="Upload a song, audio or MIDI clip">
         <div class="dz-icon">${icon('upload')}</div>
         <h3>${esc(opts.title || 'Drop a song, audio clip or MIDI file')}</h3>
-        <p>${esc(opts.sub || 'Cadenza analyses it on your device — key, chords, tempo, time signature, dynamics' + (App.instrument === 'guitar' ? ' and strumming pattern' : '') + '. Nothing is uploaded.')}</p>
+        <p>${esc(opts.sub || 'Cadenza analyses it on your device — key, chords, tempo, time signature, dynamics' + (PM.Instruments.get(App.instrument).strum ? ' and strumming pattern' : '') + '. Nothing is uploaded.')}</p>
         <div class="formats"><span class="tag">MP3</span><span class="tag">WAV</span><span class="tag">M4A</span><span class="tag">OGG</span><span class="tag">FLAC</span><span class="tag">MIDI</span></div>
         <input type="file" accept="audio/*,.mid,.midi,.kar,.mp3,.wav,.m4a,.ogg,.flac,.aac,.webm" hidden>
       </div>
       <div class="row" style="justify-content:center;margin-top:12px">
         <span class="muted small">No file handy?</span>
-        <button class="btn sm ghost" data-demo="guitar">${icon('guitar')} Guitar demo</button>
-        <button class="btn sm ghost" data-demo="piano">${icon('piano')} Piano demo</button>
+        ${(() => { const I = PM.Instruments.get(App.instrument); return `<button class="btn sm ghost" data-demo="${I.id}">${icon(I.icon)} ${esc(I.short)} demo</button>`; })()}
       </div>`;
     const dz = container.querySelector('.dropzone');
     const input = dz.querySelector('input');
@@ -58,7 +57,7 @@
       <span class="chip">${icon('metronome')} <b>${Math.round(a.tempo.bpm)}</b> BPM</span>
       <span class="chip">${icon('bolt')} <b>${esc(meter)}</b></span>
       <span class="chip">${icon('music')} <b>${a.chordSummary.unique.length}</b> chords</span>
-      ${a.strum && instrument !== 'piano' ? `<span class="chip">${icon('hand')} <b>${esc(a.strum.patternText.replace(/ /g, ''))}</b></span>` : ''}`;
+      ${a.strum && PM.Instruments.get(instrument).strum ? `<span class="chip">${icon('hand')} <b>${esc(a.strum.patternText.replace(/ /g, ''))}</b></span>` : ''}`;
   }
 
   function stars(n) { return '★'.repeat(n) + '☆'.repeat(3 - n); }
@@ -119,5 +118,93 @@
     return Math.max(0, Math.min(0.3, offsets[Math.floor(offsets.length / 2)]));
   }
 
-  PM.Shared = { uploader, trackChips, stars, sessionSummary, calibrateLatency };
+  /** Backing-track generator form (any key, progression, style, tempo). */
+  function backingForm(container, onDone) {
+    const App = PM.App, I = PM.Instruments.get(App.instrument);
+    const keys = PM.Theory.FLATS.map((n, i) => `<option value="${i}" ${i === 7 ? 'selected' : ''}>${n}</option>`).join('');
+    container.innerHTML = `
+      <div class="dropzone" style="cursor:default;text-align:left">
+        <div class="row" style="gap:12px;margin-bottom:12px"><div class="dz-icon" style="margin:0;width:48px;height:48px">${icon('layers')}</div>
+        <div><h3>Generate a backing track</h3><p style="margin-top:2px">Drums, bass & chords — <b>without your ${esc(I.short.toLowerCase())}</b>. Perfect for improvising.</p></div></div>
+        <div class="grid g2" style="gap:10px">
+          <label class="field">Key<select data-k="tonic">${keys}</select></label>
+          <label class="field">Progression<select data-k="progression">${Object.entries(PM.Backing.PROGRESSIONS).map(([k, v]) => `<option value="${k}">${esc(v.name)}</option>`).join('')}</select></label>
+          <label class="field">Style<select data-k="style">${Object.entries(PM.Backing.STYLES).map(([k, v]) => `<option value="${k}">${esc(v)}</option>`).join('')}</select></label>
+          <label class="field">Tempo (BPM)<input type="number" data-k="bpm" value="96" min="40" max="220"></label>
+        </div>
+        <button class="btn primary" style="margin-top:14px;width:100%">${icon('sparkle')} Create backing track</button>
+      </div>`;
+    container.querySelector('[data-k="progression"]').onchange = (e) => {
+      const st = container.querySelector('[data-k="style"]');
+      st.value = { blues: 'swing', jazz: 'swing', funk: 'funk', ballad: 'ballad' }[e.target.value] || 'rock';
+    };
+    container.querySelector('button').onclick = async (e) => {
+      const opts = {};
+      container.querySelectorAll('[data-k]').forEach((x) => (opts[x.dataset.k] = x.dataset.k === 'progression' || x.dataset.k === 'style' ? x.value : +x.value));
+      opts.choruses = Math.max(2, Math.ceil(48 / PM.Backing.PROGRESSIONS[opts.progression].bars.length));
+      e.currentTarget.disabled = true;
+      try {
+        const entry = await App.loadBacking(opts);
+        UI.toast('Backing track ready: ' + entry.name.replace('Backing — ', ''), { icon: '🥁' });
+        if (App.settings.studioMode !== 'improv') { App.settings.studioMode = 'improv'; App.saveSettings(); }
+        onDone && onDone(entry);
+      } catch (err) { console.error(err); UI.toast('Could not create the backing track: ' + err.message, { icon: '⚠️' }); }
+    };
+  }
+
+  /** Stem mixer: separate (audio) or list (MIDI) instruments, presets, mute/solo/volume. */
+  function mixer(container, App) {
+    const t = App.track, I = PM.Instruments.get(App.instrument);
+    if (!container || !t) return;
+    const head = `<div class="card-head"><h3>${icon('layers')} Instruments & practice mix</h3><span class="muted small">${t.kind === 'midi' ? 'Exact separation from MIDI' : 'On-device separation (approximate)'}</span></div>`;
+    if (!t.stemsReady) {
+      container.innerHTML = `${head}
+        <div class="row"><p style="flex:1;min-width:240px">Split this song into <b>drums, bass, vocals/lead and guitars/keys</b>. Then play along with the full song, a <b>backing track without your ${esc(I.short.toLowerCase())}</b>, or your part on its own.</p>
+        <button class="btn primary" id="sepBtn">${icon('layers')} Separate instruments</button></div>
+        <div id="sepProg" class="hidden" style="margin-top:12px"><div class="row"><span class="small an-label">Preparing…</span></div><div class="progress" style="margin-top:6px"><i style="width:0"></i></div></div>`;
+      container.querySelector('#sepBtn').onclick = async (e) => {
+        e.currentTarget.disabled = true;
+        const prog = container.querySelector('#sepProg');
+        prog.classList.remove('hidden');
+        try {
+          await App.separateStems((p, l) => { prog.querySelector('i').style.width = Math.round(p * 100) + '%'; if (l) prog.querySelector('.an-label').textContent = l; });
+          UI.toast('Instruments separated', { icon: '🎚️' });
+          mixer(container, App);
+        } catch (err) { console.error(err); UI.toast('Separation failed: ' + err.message, { icon: '⚠️' }); e.currentTarget.disabled = false; }
+      };
+      return;
+    }
+    const stems = t.sep.stems, part = t.partStem;
+    const gains = Object.assign({}, t.gains || {});
+    const presets = [
+      { id: 'full', label: 'Full song', g: {} },
+      { id: 'backing', label: `Backing track (no ${I.short.toLowerCase()})`, g: part ? { [part]: 0 } : null },
+      { id: 'part', label: `My ${I.short.toLowerCase()} part only`, g: part ? Object.fromEntries(stems.map((s) => [s.id, s.id === part ? 1 : 0])) : null },
+      { id: 'rhythm', label: 'Drums & bass only', g: Object.fromEntries(stems.map((s) => [s.id, ['drums', 'bass'].includes(s.id) ? 1 : 0])) },
+    ];
+    container.innerHTML = `${head}
+      <div class="presets">${presets.map((p) => `<button class="btn sm ${t.mixPreset === p.id ? 'primary' : 'ghost'}" data-p="${p.id}" ${p.g ? '' : 'disabled title="Your instrument is not in this song"'}>${esc(p.label)}</button>`).join('')}</div>
+      ${part ? '' : `<p class="small" style="margin-top:8px">No separate ${esc(I.short.toLowerCase())} part was found in this track — use the full song or improvise over it.</p>`}
+      <div class="mixer">${stems.map((s) => `
+        <div class="stem-row ${s.id === part ? 'part' : ''} ${gains[s.id] === 0 ? 'muted' : ''}" data-id="${s.id}">
+          <span class="s-ic">${s.icon}</span><div><b>${esc(s.name)}</b>${s.id === part ? '<span class="tag">your part</span>' : ''}</div>
+          <button class="mini-btn mute ${gains[s.id] === 0 ? 'on' : ''}" title="Mute">M</button>
+          <button class="mini-btn solo" title="Solo">S</button>
+          <input type="range" min="0" max="1.5" step="0.05" value="${gains[s.id] == null ? 1 : gains[s.id]}">
+        </div>`).join('')}</div>`;
+    const apply = (g, presetId) => {
+      t.mixPreset = presetId || null;
+      App.applyMix(g);
+      mixer(container, App);
+    };
+    container.querySelectorAll('[data-p]').forEach((b) => (b.onclick = () => { const p = presets.find((x) => x.id === b.dataset.p); apply(p.g, p.id); }));
+    container.querySelectorAll('.stem-row').forEach((row) => {
+      const id = row.dataset.id;
+      row.querySelector('.mute').onclick = () => { gains[id] = gains[id] === 0 ? 1 : 0; apply(gains); };
+      row.querySelector('.solo').onclick = () => apply(Object.fromEntries(stems.map((s) => [s.id, s.id === id ? 1 : 0])));
+      row.querySelector('input').onchange = (e) => { gains[id] = +e.target.value; apply(gains); };
+    });
+  }
+
+  PM.Shared = { uploader, trackChips, stars, sessionSummary, calibrateLatency, backingForm, mixer };
 })(typeof self !== 'undefined' ? self : globalThis);

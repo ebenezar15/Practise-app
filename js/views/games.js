@@ -9,6 +9,7 @@
     { id: 'chord-quest', name: 'Chord Quest', art: '🎸', desc: 'A chord appears — play it as fast as you can. Speed + accuracy = points.', needsInput: true },
     { id: 'rhythm-hero', name: 'Rhythm Hero', art: '🥁', desc: 'Gems fly to the line on every beat. Hit them in time for perfect streaks.', needsInput: true },
     { id: 'note-hunter', name: 'Note Hunter', art: '🎯', desc: 'Find the note on your instrument. Learn the fretboard / keyboard by heart.', needsInput: true },
+    { id: 'long-tones', name: 'Long Tones', art: '🌬️', desc: 'Hold the note dead-steady for 4 seconds. Builds tone, breath control and intonation.', needsInput: true },
     { id: 'ear-trainer', name: 'Ear Trainer', art: '👂', desc: 'Listen to a chord and name its quality. No instrument needed.', needsInput: false },
   ];
 
@@ -43,7 +44,7 @@
       host.innerHTML = `
         <div class="page-head"><div><div class="eyebrow">Challenges</div><h1>Level up with games</h1><p>Short, focused drills that turn practice into play. Every round earns XP, and high scores are saved.</p></div>
         <div class="row"><label class="field">Difficulty<select id="diff"><option value="easy">Easy</option><option value="medium" selected>Medium</option><option value="hard">Hard</option></select></label></div></div>
-        <div class="grid g4" id="cards">${GAMES.map((g) => `
+        <div class="grid" id="cards" style="grid-template-columns:repeat(auto-fill,minmax(230px,1fr))">${GAMES.filter((g) => (g.id !== 'chord-quest' || PM.Instruments.get(App.instrument).chordal) && (g.id !== 'long-tones' || App.instrument !== 'piano')).map((g) => `
           <section class="card game-card">
             <div class="game-art"><span>${g.art}</span></div>
             <h3>${g.name}</h3><p class="small" style="flex:1">${g.desc}</p>
@@ -108,7 +109,7 @@
       const acc = round ? correct / round : 0;
       const summary = { accuracy: acc, score, maxCombo, stars: acc >= 0.9 ? 3 : acc >= 0.7 ? 2 : acc >= 0.45 ? 1 : 0, chordsNailed: id === 'chord-quest' ? correct : 0, insights: [`${correct}/${round} correct`, `Best combo ${maxCombo}×`], focus: acc < 0.6 ? 'Try the Easy difficulty and slow, deliberate playing.' : 'Bump up the difficulty for more XP!' };
       if (id === 'rhythm-hero') { summary.timingAccuracy = acc; summary.onsets = round; App.game.progressDaily('rhythmHits', correct); }
-      if (id === 'note-hunter') App.game.progressDaily('notes', correct);
+      if (id === 'note-hunter' || id === 'long-tones') App.game.progressDaily('notes', correct);
       if (id === 'chord-quest') App.game.progressDaily('chords', correct);
       const meta = { mode: 'challenge', challenge: id, score, instrument: inst, seconds: (performance.now() - startedAt) / 1000, title: game.name + ' (' + diff + ')' };
       if (showSummary && round > 0) PM.Shared.sessionSummary(summary, meta);
@@ -121,7 +122,7 @@
     // ---------------- Chord Quest ----------------
     async function chordQuest() {
       if (!(await openInput())) return;
-      const pool = shuffle(LEVELS[inst][diff]);
+      const pool = shuffle(LEVELS[PM.Instruments.get(inst).family === 'keys' ? 'piano' : 'guitar'][diff]);
       const limit = diff === 'easy' ? 15 : diff === 'medium' ? 10 : 8;
       let target = null, since = 0, holdStart = 0, done = false;
       const next = () => {
@@ -132,7 +133,7 @@
         target.pcs = Theory.chordPcs(target.root, target.type);
         since = performance.now(); holdStart = 0; done = false;
         body.innerHTML = `<div class="game-target pop">${esc(target.name)}</div>
-          ${inst === 'guitar' ? `<div style="background:#fff;border-radius:18px;padding:10px 14px">${UI.chordDiagram(target.name)}</div>` : `<div class="chips">${target.pcs.map((p) => `<span class="chip">${Theory.spell(p)}</span>`).join('')}</div>`}
+          ${PM.Instruments.get(inst).strings ? `<div style="background:#fff;border-radius:18px;padding:10px 14px">${UI.chordDiagram(target.name)}</div>` : `<div class="chips">${target.pcs.map((p) => `<span class="chip">${Theory.spell(p)}</span>`).join('')}</div>`}
           <div class="timer-bar"><i id="tb" style="width:100%"></i></div><div class="muted small" id="heard">listening…</div>`;
         feedback('', '');
       };
@@ -216,16 +217,26 @@
     // ---------------- Note Hunter ----------------
     async function noteHunter() {
       if (!(await openInput())) return;
-      const range = inst === 'guitar' ? (diff === 'easy' ? [40, 52] : diff === 'medium' ? [40, 64] : [40, 76]) : (diff === 'easy' ? [60, 72] : diff === 'medium' ? [48, 76] : [36, 88]);
-      const natural = (m) => ![1, 3, 6, 8, 10].includes(m % 12);
+      const I = PM.Instruments.get(inst), tr = I.transpose || 0;
+      const RANGES = {
+        piano: { easy: [60, 72], medium: [48, 76], hard: [36, 88] },
+        guitar: { easy: [40, 52], medium: [40, 64], hard: [40, 76] },
+        electric: { easy: [40, 52], medium: [40, 67], hard: [40, 79] },
+        bass: { easy: [28, 40], medium: [28, 48], hard: [28, 55] },
+        trumpet: { easy: [58, 70], medium: [55, 74], hard: [52, 79] },
+      };
+      const range = RANGES[inst][diff];
+      const natural = (m) => ![1, 3, 6, 8, 10].includes((m + tr) % 12);
       const pool = [];
       for (let m = range[0]; m <= range[1]; m++) if (diff === 'hard' || natural(m)) pool.push(m);
       let target = null, since = 0, done = false, holdStart = 0;
       const exactOctave = diff !== 'easy';
+      const ordinals = I.strings ? I.strings.map((_, i) => ['1st', '2nd', '3rd', '4th', '5th', '6th'][I.strings.length - 1 - i]) : [];
       const where = (m) => {
-        if (inst !== 'guitar') return '';
+        if (I.transpose) { const t = PM.Instruments.trumpetInfo(m); return diff === 'hard' ? 'No hints — trust your ears!' : `Valves: ${t.valves === '0' ? 'open' : t.valves || '?'} (concert ${DSP.midiName(m)})`; }
+        if (!I.strings) return '';
         const opts = [];
-        Theory.STANDARD_TUNING.forEach((open, s) => { const f = m - open; if (f >= 0 && f <= 12) opts.push(`${['6th', '5th', '4th', '3rd', '2nd', '1st'][s]} string, ${f === 0 ? 'open' : 'fret ' + f}`); });
+        I.strings.forEach((open, s) => { const f = m - open; if (f >= 0 && f <= 12) opts.push(`${ordinals[s]} string, ${f === 0 ? 'open' : 'fret ' + f}`); });
         return diff === 'easy' ? opts.slice(0, 1).join('') : 'Find it anywhere on the neck';
       };
       const next = () => {
@@ -233,7 +244,7 @@
         round++; hud();
         target = pool[(Math.random() * pool.length) | 0];
         since = performance.now(); done = false; holdStart = 0;
-        body.innerHTML = `<div class="game-target pop">${DSP.pcName(target)}<sub style="font-size:40px;color:var(--v-300)">${exactOctave ? Math.floor(target / 12) - 1 : ''}</sub></div>
+        body.innerHTML = `<div class="game-target pop">${DSP.pcName(target + tr)}<sub style="font-size:40px;color:var(--v-300)">${exactOctave ? Math.floor((target + tr) / 12) - 1 : ''}</sub></div>
           <div class="muted">${esc(where(target)) || (exactOctave ? 'Play this exact pitch' : 'Any octave')}</div>
           <div class="timer-bar"><i id="tb" style="width:100%"></i></div><div class="muted small" id="heard">listening…</div>`;
         feedback('', '');
@@ -242,14 +253,57 @@
         if (!target || done) return;
         const el = performance.now() - since;
         const tb = $('#tb', body); if (tb) tb.style.width = Math.max(0, 100 - el / 100) + '%';
-        if (el > 10000) { done = true; add(0, false); feedback(`⏰ It was ${DSP.midiName(target)}`, 'miss'); later(next, 1200); return; }
+        if (el > 10000) { done = true; add(0, false); feedback(`⏰ It was ${DSP.midiName(target + tr)}`, 'miss'); later(next, 1200); return; }
         if (!f.active || !f.pitch) { holdStart = 0; return; }
-        $('#heard', body).textContent = 'hearing ' + f.pitch.name;
+        $('#heard', body).textContent = 'hearing ' + DSP.midiName(f.pitch.midi + tr);
         const ok = exactOctave ? f.pitch.midi === target : f.pitch.pc === target % 12;
         if (ok) {
           if (!holdStart) holdStart = performance.now();
-          if (performance.now() - holdStart > 250) { done = true; add(Math.round(60 + Math.max(0, 10 - el / 1000) * 10), true); feedback(`🎯 ${f.pitch.name}!`, 'perfect'); $('.game-target', body).classList.add('good'); later(next, 800); }
+          if (performance.now() - holdStart > 250) { done = true; add(Math.round(60 + Math.max(0, 10 - el / 1000) * 10), true); feedback(`🎯 ${DSP.midiName(f.pitch.midi + tr)}!`, 'perfect'); $('.game-target', body).classList.add('good'); later(next, 800); }
         } else holdStart = 0;
+      });
+      next();
+    }
+
+    // ---------------- Long Tones ----------------
+    async function longTones() {
+      if (!(await openInput())) return;
+      const I = PM.Instruments.get(inst), tr = I.transpose || 0;
+      const pool = { trumpet: [58, 60, 62, 65, 67, 70], bass: [28, 33, 36, 38, 43], guitar: [52, 55, 57, 59, 64], electric: [52, 55, 57, 59, 64] }[inst] || [60, 64, 67];
+      const tol = diff === 'easy' ? 15 : diff === 'medium' ? 10 : 6;
+      let target = null, hold = [], startHold = 0, done = false, since = 0;
+      const next = () => {
+        if (round >= ROUNDS) return stop(true);
+        round++; hud();
+        target = pool[(Math.random() * pool.length) | 0];
+        hold = []; startHold = 0; done = false; since = performance.now();
+        body.innerHTML = `<div class="game-target pop">${DSP.midiName(target + tr)}</div>
+          <div class="muted">${tr ? `concert ${DSP.midiName(target)} · ` : ''}hold it within ±${tol}¢ for 4 seconds</div>
+          <div class="timer-bar"><i id="tb" style="width:0%"></i></div>
+          <div class="meter-val" id="lt" style="color:#fff">—</div>`;
+        feedback('', '');
+      };
+      unsub = engine.on((f) => {
+        if (!target || done) return;
+        if (performance.now() - since > 15000) { done = true; add(0, false); feedback('⏰ Take a breath and try the next one', 'miss'); later(next, 1200); return; }
+        const p = f.pitch;
+        if (!f.active || !p || Math.round(p.midi) !== target) { if (startHold) feedback('Keep the note going…', 'good'); startHold = 0; hold = []; $('#tb', body).style.width = '0%'; return; }
+        if (!startHold) startHold = performance.now();
+        hold.push(p.cents);
+        const held = (performance.now() - startHold) / 1000;
+        const recent = hold.slice(-30), mean = recent.reduce((x, y) => x + y, 0) / recent.length;
+        const sd = Math.sqrt(recent.reduce((x, y) => x + (y - mean) ** 2, 0) / recent.length);
+        $('#tb', body).style.width = Math.min(100, (held / 4) * 100) + '%';
+        $('#lt', body).textContent = `${mean > 0 ? '+' : ''}${Math.round(mean)}¢ · ±${Math.round(sd)}¢`;
+        if (held >= 4) {
+          done = true;
+          const all = hold.reduce((x, y) => x + y, 0) / hold.length;
+          const dev = Math.sqrt(hold.reduce((x, y) => x + (y - all) ** 2, 0) / hold.length);
+          const ok = Math.abs(all) <= tol && dev <= tol;
+          add(ok ? Math.round(80 + Math.max(0, tol - dev) * 8) : 10, ok);
+          feedback(ok ? `🌟 Rock steady: ${Math.round(all)}¢ ±${Math.round(dev)}¢` : `${Math.abs(all) > tol ? (all > 0 ? 'A little sharp' : 'A little flat') : 'Pitch wandered'} (${Math.round(all)}¢ ±${Math.round(dev)}¢)`, ok ? 'perfect' : 'miss');
+          later(next, 1400);
+        }
       });
       next();
     }
@@ -285,7 +339,7 @@
       next();
     }
 
-    ({ 'chord-quest': chordQuest, 'rhythm-hero': rhythmHero, 'note-hunter': noteHunter, 'ear-trainer': earTrainer })[id]();
+    ({ 'chord-quest': chordQuest, 'rhythm-hero': rhythmHero, 'note-hunter': noteHunter, 'long-tones': longTones, 'ear-trainer': earTrainer })[id]();
     return { stop };
   }
 })(typeof self !== 'undefined' ? self : globalThis);

@@ -23,7 +23,7 @@
       host.innerHTML = `
         <section class="card stage hero">
           <div>
-            <div class="now-label">${greeting()}${s.name ? ', ' + esc(s.name) : ''} · ${inst === 'guitar' ? '🎸 Guitar' : '🎹 Piano'} mode</div>
+            <div class="now-label">${greeting()}${s.name ? ', ' + esc(s.name) : ''} · ${PM.Instruments.get(inst).emoji} ${esc(PM.Instruments.get(inst).label)} mode</div>
             <h1 style="margin-top:10px">Ready to make music, ${esc(g.title)}?</h1>
             <p class="hero-sub">Upload any song or MIDI clip, plug in or open your mic, and play along. Your on-device coach listens in real time and tells you exactly what to fix — no internet needed.</p>
             <div class="row" style="margin-top:20px">
@@ -64,7 +64,7 @@
         <h2 style="margin:28px 0 14px">Jump in</h2>
         <div class="tiles">
           <a class="card tile feature" href="#/studio"><div class="tile-ic">${icon('mic')}</div><h3>Live Studio</h3><p>Play over a track with real-time chord, timing, intonation & dynamics coaching.</p></a>
-          <a class="card tile" href="#/insights"><div class="tile-ic">${icon('insights')}</div><h3>Song Insights</h3><p>Key, chords, tempo, time signature${inst === 'guitar' ? ', strumming' : ''} & dynamics.</p></a>
+          <a class="card tile" href="#/insights"><div class="tile-ic">${icon('insights')}</div><h3>Song Insights</h3><p>Key, chords, tempo, meter${PM.Instruments.get(inst).strum ? ', strumming' : ''} & dynamics — plus instrument separation.</p></a>
           <a class="card tile" href="#/games"><div class="tile-ic">${icon('games')}</div><h3>Challenges</h3><p>Chord Quest, Rhythm Hero, Note Hunter & Ear Trainer.</p></a>
           <a class="card tile" href="#/metronome"><div class="tile-ic">${icon('metronome')}</div><h3>Metronome</h3><p>Accents, subdivisions, speed trainer & timing check.</p></a>
         </div>
@@ -73,13 +73,13 @@
           <div class="card">
             <div class="card-head"><h3>${icon('progress')} Recent sessions</h3><a class="btn sm ghost" href="#/progress">History</a></div>
             ${recent.length ? `<div class="list">${recent.map((r) => `
-              <div class="list-item"><div class="li-ic">${r.instrument === 'piano' ? '🎹' : '🎸'}</div>
+              <div class="list-item"><div class="li-ic">${PM.Instruments.get(r.instrument).emoji}</div>
               <div class="li-main"><b>${esc(r.title || r.mode)}</b><span>${new Date(r.date).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })} · ${Math.max(1, Math.round(r.seconds / 60))} min${r.accuracy != null ? ' · ' + Math.round(r.accuracy * 100) + '%' : ''}</span></div>
               <span class="stars">${PM.Shared.stars(r.stars || 0)}</span></div>`).join('')}</div>` : '<div class="empty">No sessions yet — your first one earns the <b>First Note</b> badge 🎵</div>'}
           </div>
           <div class="card">
             <div class="card-head"><h3>${icon('sparkle')} Coach's tip of the day</h3></div>
-            <p style="font-size:15px">${esc(PM.CoachUtil.TIPS[inst][new Date().getDate() % PM.CoachUtil.TIPS[inst].length])}</p>
+            <p style="font-size:15px">${esc(PM.Instruments.get(inst).tips[new Date().getDate() % PM.Instruments.get(inst).tips.length])}</p>
             <div class="notice" style="margin-top:16px">${icon('headphones')}<div><b>Best results:</b> wear headphones while playing along so the coach hears only <i>you</i>, not the backing track. Using an audio interface? Pick it as the input in the Studio.</div></div>
           </div>
         </div>`;

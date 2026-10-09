@@ -38,7 +38,7 @@
         <div class="grid g2" style="margin-top:18px">
           <section class="card"><div class="card-head"><h3>${icon('insights')} Last 14 days</h3><span class="muted small">minutes per day</span></div><canvas class="bar-chart" id="chart"></canvas></section>
           <section class="card"><div class="card-head"><h3>${icon('progress')} History</h3></div>
-            ${s.history.length ? `<div class="list" style="max-height:220px;overflow:auto">${s.history.slice(0, 30).map((r) => `<div class="list-item"><div class="li-ic">${r.instrument === 'piano' ? '🎹' : '🎸'}</div><div class="li-main"><b>${esc(r.title || r.mode)}</b><span>${new Date(r.date).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })} · ${Math.max(1, Math.round(r.seconds / 60))} min · ${r.score || 0} pts</span></div><span class="stars">${PM.Shared.stars(r.stars || 0)}</span></div>`).join('')}</div>` : '<div class="empty">Your sessions will appear here.</div>'}
+            ${s.history.length ? `<div class="list" style="max-height:220px;overflow:auto">${s.history.slice(0, 30).map((r) => `<div class="list-item"><div class="li-ic">${PM.Instruments.get(r.instrument).emoji}</div><div class="li-main"><b>${esc(r.title || r.mode)}</b><span>${new Date(r.date).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })} · ${Math.max(1, Math.round(r.seconds / 60))} min · ${r.score || 0} pts</span></div><span class="stars">${PM.Shared.stars(r.stars || 0)}</span></div>`).join('')}</div>` : '<div class="empty">Your sessions will appear here.</div>'}
           </section>
         </div>
         <section class="card" style="margin-top:18px">

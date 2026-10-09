@@ -23,7 +23,9 @@
     { id: 'combo-100', icon: '🌈', name: 'Flow State', desc: 'Reach a 100× combo', check: (s) => s.bestCombo >= 100 },
     { id: 'perfect', icon: '🏆', name: 'Three Stars', desc: 'Earn 3 stars in a session', check: (s) => s.threeStars >= 1 },
     { id: 'timing', icon: '🎯', name: 'Human Metronome', desc: '90%+ timing accuracy in a session', check: (s, x) => x && x.timingAccuracy != null && x.timingAccuracy >= 0.9 && x.onsets >= 20 },
-    { id: 'both', icon: '🎹', name: 'Multi-Instrumentalist', desc: 'Practise both piano and guitar', check: (s) => s.instruments.piano > 0 && s.instruments.guitar > 0 },
+    { id: 'both', icon: '🎹', name: 'Multi-Instrumentalist', desc: 'Practise two or more instruments', check: (s) => Object.values(s.instruments).filter((x) => x > 0).length >= 2 },
+    { id: 'improviser', icon: '🎷', name: 'Improviser', desc: 'Complete an improvisation session', check: (s) => s.improvSessions >= 1 },
+    { id: 'homework', icon: '📝', name: 'Homework Hero', desc: 'Complete 5 assignments from your teacher', check: (s) => s.assignmentsDone >= 5 },
     { id: 'speed', icon: '🚀', name: 'Speed Demon', desc: 'Complete a Speed Trainer run to 140 BPM', check: (s) => s.maxTrainerBpm >= 140 },
     { id: 'challenger', icon: '🎮', name: 'Challenger', desc: 'Complete 10 challenges', check: (s) => s.challengesDone >= 10 },
     { id: 'night', icon: '🦉', name: 'Night Owl', desc: 'Practise after 10 pm', check: (s, x) => x && x.hour >= 22 },
@@ -57,7 +59,7 @@
     return {
       xp: 0, level: 1, sessions: 0, totalSeconds: 0, streak: 0, bestStreak: 0, lastDay: null,
       songsAnalyzed: 0, chordsNailed: 0, bestCombo: 0, threeStars: 0, challengesDone: 0, maxTrainerBpm: 0,
-      instruments: { piano: 0, guitar: 0 }, badges: {}, days: {}, history: [], daily: null,
+      instruments: { piano: 0, guitar: 0 }, improvSessions: 0, assignmentsDone: 0, badges: {}, days: {}, history: [], daily: null,
       dailyGoalMinutes: 15, highScores: {}, name: '',
     };
   }
@@ -125,12 +127,14 @@
       s.bestCombo = Math.max(s.bestCombo, sum.maxCombo || 0);
       if (sum.stars === 3) s.threeStars++;
       if (session.challenge) s.challengesDone++;
+      if (session.mode === 'improv') s.improvSessions = (s.improvSessions || 0) + 1;
+      if (session.assignmentId) s.assignmentsDone = (s.assignmentsDone || 0) + 1;
       if (session.trainerBpm) s.maxTrainerBpm = Math.max(s.maxTrainerBpm, session.trainerBpm);
       if (session.challenge && session.score != null) {
         const k = session.challenge;
         s.highScores[k] = Math.max(s.highScores[k] || 0, session.score);
       }
-      s.history.unshift({ date: now.toISOString(), mode: session.mode, instrument: session.instrument, seconds: secs, accuracy: sum.accuracy, score: sum.score || session.score || 0, stars: sum.stars || 0, title: session.title || '' });
+      s.history.unshift({ id: 'h' + now.getTime().toString(36) + Math.random().toString(36).slice(2, 6), date: now.toISOString(), mode: session.mode, assignmentId: session.assignmentId || null, mixPreset: session.mixPreset || null, instrument: session.instrument, seconds: secs, accuracy: sum.accuracy, score: sum.score || session.score || 0, stars: sum.stars || 0, title: session.title || '' });
       s.history = s.history.slice(0, 100);
       const xp = Math.round(secs / 6 + (sum.score || session.score || 0) / 25 + (sum.stars || 0) * 25 + (sum.accuracy || 0) * 40);
       this.progressDaily('minutes', secs / 60);

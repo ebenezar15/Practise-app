@@ -406,7 +406,7 @@
       strum = Rhythm.buildStrumPattern(strums, beats, meter);
     }
 
-    const render = PM.Midi.renderNotes(notes, { instrument, sampleRate: 32000 });
+    const render = opts.waveformFrom ? { data: opts.waveformFrom, sampleRate: 32000 } : PM.Midi.renderNotes(notes, { instrument, sampleRate: 32000 });
     return {
       source: 'midi', instrument, duration,
       tempo: { bpm: Math.round(bpm * 10) / 10, confidence: 1, fromFile: true },

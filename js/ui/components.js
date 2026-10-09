@@ -20,6 +20,15 @@
     back: '<path d="M11 17 6 12l5-5M18 17l-5-5 5-5"/>',
     loop: '<path d="M17 2l4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14M7 22l-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/>',
     guitar: '<path d="m14 10 6-6M18 2l4 4"/><path d="M11.5 9.5a4 4 0 0 0-5.7 0c-.9.9-.6 2.3-1.7 3.4C2.6 14.4 2 16.4 3.8 18.2s3.8 1.2 5.3-.3c1.1-1.1 2.5-.8 3.4-1.7a4 4 0 0 0 0-5.7z"/><circle cx="8.5" cy="15.5" r="1.3"/>',
+    electric: '<path d="m14 10 6-6M18 2l4 4"/><path d="M12 8 8.5 5.5 6 9l1.5 1.5L4 14c-1.5 1.5-1.5 4 0 5.5S8 21 9.5 19.5L13 16l1.5 1.5L18 15l-2.5-3.5z"/><path d="M7 15l2 2"/>',
+    bass: '<path d="m15 9 6-6M19 1l4 4"/><path d="M12.5 8.5a3.5 3.5 0 0 0-5 0c-.8.8-.5 2-1.5 3S3 13 3 16s2 5 5 5 4-2 5-3 2.2-.7 3-1.5a3.5 3.5 0 0 0 0-5z"/><path d="M8 13l3 3"/>',
+    trumpet: '<path d="M2 10h12l6-4v12l-6-4H2z"/><path d="M6 10V7M9 10V7M12 10V7"/><path d="M5 14v2a2 2 0 0 0 2 2h3"/>',
+    layers: '<path d="m12 3 9 5-9 5-9-5z"/><path d="m3 13 9 5 9-5"/>',
+    users: '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><circle cx="17" cy="9" r="2.5"/><path d="M16 14.5a5 5 0 0 1 5.5 5"/>',
+    clipboard: '<rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V3h6v1M9 10h6M9 14h6M9 18h3"/>',
+    cloud: '<path d="M7 18a5 5 0 1 1 1-9.9A6 6 0 0 1 19.5 10 4 4 0 0 1 18 18z"/>',
+    download: '<path d="M12 4v12M7 11l5 5 5-5"/><path d="M4 20h16"/>',
+    improv: '<path d="M3 17c3-6 5 4 8-2s5 4 8-2"/><circle cx="19" cy="11" r="2"/>',
     piano: '<rect x="2" y="4" width="20" height="16" rx="2"/><path d="M7 4v10M12 4v10M17 4v10M7 14v6M12 14v6M17 14v6"/>',
     music: '<path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>',
     key: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/>',
@@ -147,6 +156,16 @@
       container.querySelectorAll('[data-m]').forEach((k) => (this.keys[k.dataset.m] = k));
       this.prev = { expect: new Set(), played: new Set() };
     }
+    /** Improvisation map: chord tones & scale tones across the keyboard. */
+    setMap(chordPcs, scalePcs, played) {
+      const cs = new Set(chordPcs || []), ss = new Set(scalePcs || []);
+      for (const m in this.keys) {
+        const pc = m % 12;
+        this.keys[m].classList.toggle('chordtone', cs.has(pc));
+        this.keys[m].classList.toggle('scaletone', !cs.has(pc) && ss.has(pc));
+      }
+      this.set([], played);
+    }
     set(expected, played) {
       const apply = (cls, set, prev) => {
         for (const m of prev) if (!set.has(m) && this.keys[m]) this.keys[m].classList.remove(cls);
@@ -161,62 +180,110 @@
 
   // ---------- Guitar fretboard ----------
   class Fretboard {
-    constructor(container, frets) {
-      this.frets = frets || 15;
-      const W = 920, H = 170, left = 58, top = 18, sh = (H - top * 2) / 5;
-      this.geo = { W, H, left, top, sh };
+    /** opts: {strings: open-string midis low→high, names, frets} */
+    constructor(container, opts) {
+      if (typeof opts === 'number' || !opts) opts = { frets: opts || 15 };
+      this.tuning = opts.strings || Theory.STANDARD_TUNING;
+      this.names = opts.names || ['E', 'A', 'D', 'G', 'B', 'e'];
+      this.frets = opts.frets || 15;
+      const ns = this.tuning.length;
+      const W = 920, H = ns === 4 ? 140 : 170, left = 58, top = 18, sh = (H - top * 2) / (ns - 1);
+      this.geo = { W, H, left, top, sh, ns };
       const fx = (f) => left + (W - left - 10) * (1 - Math.pow(2, -f / 12)) / (1 - Math.pow(2, -this.frets / 12));
       this.fx = fx;
+      const mid = top + sh * (ns - 1) / 2;
       let svg = `<svg class="fretboard" viewBox="0 0 ${W} ${H}"><defs><linearGradient id="fbWood" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2a1052"/><stop offset="1" stop-color="#1a0838"/></linearGradient></defs>`;
-      svg += `<rect x="${left}" y="${top - 8}" width="${W - left - 10}" height="${sh * 5 + 16}" rx="8" fill="url(#fbWood)"/>`;
-      for (const f of [3, 5, 7, 9, 15]) if (f <= this.frets) svg += `<circle cx="${(fx(f - 1) + fx(f)) / 2}" cy="${top + sh * 2.5}" r="6" fill="rgba(196,181,253,0.25)"/>`;
-      if (this.frets >= 12) { const x = (fx(11) + fx(12)) / 2; svg += `<circle cx="${x}" cy="${top + sh * 1.5}" r="6" fill="rgba(196,181,253,0.25)"/><circle cx="${x}" cy="${top + sh * 3.5}" r="6" fill="rgba(196,181,253,0.25)"/>`; }
-      for (let f = 0; f <= this.frets; f++) svg += `<line x1="${fx(f)}" y1="${top - 8}" x2="${fx(f)}" y2="${top + sh * 5 + 8}" stroke="${f === 0 ? '#ede9fe' : 'rgba(196,181,253,0.45)'}" stroke-width="${f === 0 ? 5 : 2}"/>`;
+      svg += `<rect x="${left}" y="${top - 8}" width="${W - left - 10}" height="${sh * (ns - 1) + 16}" rx="8" fill="url(#fbWood)"/>`;
+      for (const f of [3, 5, 7, 9, 15, 17]) if (f <= this.frets) svg += `<circle cx="${(fx(f - 1) + fx(f)) / 2}" cy="${mid}" r="6" fill="rgba(196,181,253,0.25)"/>`;
+      if (this.frets >= 12) { const x = (fx(11) + fx(12)) / 2; svg += `<circle cx="${x}" cy="${mid - sh}" r="6" fill="rgba(196,181,253,0.25)"/><circle cx="${x}" cy="${mid + sh}" r="6" fill="rgba(196,181,253,0.25)"/>`; }
+      for (let f = 0; f <= this.frets; f++) svg += `<line x1="${fx(f)}" y1="${top - 8}" x2="${fx(f)}" y2="${top + sh * (ns - 1) + 8}" stroke="${f === 0 ? '#ede9fe' : 'rgba(196,181,253,0.45)'}" stroke-width="${f === 0 ? 5 : 2}"/>`;
       for (let f = 1; f <= this.frets; f++) svg += `<text x="${(fx(f - 1) + fx(f)) / 2}" y="${H - 1}" text-anchor="middle" font-size="10" fill="#8a7fa8" font-weight="700">${f}</text>`;
-      const names = ['E', 'A', 'D', 'G', 'B', 'e'];
-      for (let s = 0; s < 6; s++) {
-        const y = top + sh * (5 - s);
-        svg += `<line x1="${left}" y1="${y}" x2="${W - 10}" y2="${y}" stroke="rgba(237,233,254,${0.45 + s * 0.06})" stroke-width="${2.6 - s * 0.32}"/>`;
-        svg += `<text x="${left - 44}" y="${y + 4}" text-anchor="middle" font-size="12" font-weight="800" fill="#a78bfa">${names[s]}</text>`;
+      for (let s = 0; s < ns; s++) {
+        const y = this.yOf(s);
+        const thick = ns === 4 ? 3.4 - s * 0.45 : 2.6 - s * 0.32;
+        svg += `<line x1="${left}" y1="${y}" x2="${W - 10}" y2="${y}" stroke="rgba(237,233,254,${0.45 + s * 0.06})" stroke-width="${thick}"/>`;
+        svg += `<text x="${left - 44}" y="${y + 4}" text-anchor="middle" font-size="12" font-weight="800" fill="#a78bfa">${this.names[s]}</text>`;
       }
       svg += '<g class="dots"></g></svg>';
       container.innerHTML = svg;
       this.dotLayer = container.querySelector('.dots');
       this.key = '';
     }
-    /** shape: {frets[]} expected; livePcs: Set of currently heard pitch classes */
+    yOf(s) { return this.geo.top + this.geo.sh * (this.geo.ns - 1 - s); }
+    xOf(f) { return f === 0 ? this.fx(0) - 14 : (this.fx(f - 1) + this.fx(f)) / 2; }
+    ring(midi) {
+      for (let s = this.geo.ns - 1; s >= 0; s--) {
+        const f = midi - this.tuning[s];
+        if (f >= 0 && f <= this.frets) return `<circle cx="${this.xOf(f)}" cy="${this.yOf(s)}" r="13" fill="none" stroke="#f0abfc" stroke-width="3" style="filter:drop-shadow(0 0 10px #d946ef)"/>`;
+      }
+      return '';
+    }
+    /** shape: {frets[]} expected chord shape; livePcs: Set of heard pitch classes; livePitchMidi: single note */
     set(shape, livePcs, livePitchMidi) {
-      const k = JSON.stringify([shape && shape.frets, [...(livePcs || [])].sort(), livePitchMidi]);
+      const k = JSON.stringify(['shape', shape && shape.frets, [...(livePcs || [])].sort(), livePitchMidi]);
       if (k === this.key) return;
       this.key = k;
-      const { top, sh } = this.geo;
       let html = '';
-      if (shape) {
+      if (shape && shape.frets.length === this.geo.ns) {
         shape.frets.forEach((f, s) => {
-          const y = top + sh * (5 - s);
+          const y = this.yOf(s);
           if (f < 0) { html += `<text x="${this.fx(0) - 14}" y="${y + 4}" text-anchor="middle" font-size="13" fill="#f43f5e" font-weight="800">×</text>`; return; }
-          const midi = Theory.STANDARD_TUNING[s] + f;
+          const midi = this.tuning[s] + f;
           const ok = livePcs && livePcs.has(midi % 12);
-          const x = f === 0 ? this.fx(0) - 14 : (this.fx(f - 1) + this.fx(f)) / 2;
+          const x = this.xOf(f);
           const fill = livePcs && livePcs.size ? (ok ? '#10b981' : '#f43f5e') : '#a855f7';
           html += `<circle cx="${x}" cy="${y}" r="${f === 0 ? 7 : 11}" fill="${f === 0 ? 'none' : fill}" stroke="${fill}" stroke-width="${f === 0 ? 3 : 0}" style="filter:drop-shadow(0 0 8px ${fill})"/>`;
           if (f > 0) html += `<text x="${x}" y="${y + 4}" text-anchor="middle" font-size="10.5" font-weight="800" fill="#fff">${Theory.spell(midi % 12)}</text>`;
         });
       }
-      if (livePitchMidi != null) {
-        // show single detected note at its lowest comfortable position
-        for (let s = 5; s >= 0; s--) {
-          const f = livePitchMidi - Theory.STANDARD_TUNING[s];
-          if (f >= 0 && f <= this.frets) {
-            const y = top + sh * (5 - s);
-            const x = f === 0 ? this.fx(0) - 14 : (this.fx(f - 1) + this.fx(f)) / 2;
-            html += `<circle cx="${x}" cy="${y}" r="13" fill="none" stroke="#f0abfc" stroke-width="3" style="filter:drop-shadow(0 0 10px #d946ef)"/>`;
-            break;
+      if (livePitchMidi != null) html += this.ring(livePitchMidi);
+      this.dotLayer.innerHTML = html;
+    }
+    /** Map of the neck: chord tones (filled), scale tones (outlined), a target note and the live note. */
+    setMap(chordPcs, scalePcs, livePitchMidi, targetMidi) {
+      const k = JSON.stringify(['map', chordPcs, scalePcs, livePitchMidi, targetMidi]);
+      if (k === this.key) return;
+      this.key = k;
+      const cs = new Set(chordPcs || []), ss = new Set(scalePcs || []);
+      let html = '';
+      for (let s = 0; s < this.geo.ns; s++) {
+        for (let f = 0; f <= this.frets; f++) {
+          const m = this.tuning[s] + f, pc = m % 12, x = this.xOf(f), y = this.yOf(s);
+          if (m === targetMidi) {
+            html += `<circle cx="${x}" cy="${y}" r="12" fill="#10b981" style="filter:drop-shadow(0 0 8px #10b981)"/><text x="${x}" y="${y + 4}" text-anchor="middle" font-size="10.5" font-weight="800" fill="#fff">${Theory.spell(pc)}</text>`;
+          } else if (cs.has(pc)) {
+            html += `<circle cx="${x}" cy="${y}" r="10" fill="#a855f7"/><text x="${x}" y="${y + 4}" text-anchor="middle" font-size="9.5" font-weight="800" fill="#fff">${Theory.spell(pc)}</text>`;
+          } else if (ss.has(pc)) {
+            html += `<circle cx="${x}" cy="${y}" r="7" fill="rgba(196,181,253,0.18)" stroke="#c4b5fd" stroke-width="1.5"/>`;
           }
         }
       }
+      if (livePitchMidi != null) html += this.ring(livePitchMidi);
       this.dotLayer.innerHTML = html;
     }
+  }
+
+  /** Trumpet valve indicator: target written note & valves, live note. */
+  function valvesHtml() {
+    return `<div class="valves">
+      <div class="valve-note"><span class="now-label">Target (written)</span><b class="vn-target">—</b><small class="vn-concert"></small></div>
+      <div class="valve-row">${[1, 2, 3].map((v) => `<div class="valve" data-v="${v}"><i></i><span>${v}</span></div>`).join('')}</div>
+      <div class="valve-note"><span class="now-label">You (written)</span><b class="vn-live">—</b><small class="vn-live-c"></small></div>
+    </div>`;
+  }
+  function setValves(rootEl, targetMidi, liveMidi) {
+    const I = PM.Instruments;
+    const t = targetMidi != null ? I.trumpetInfo(targetMidi) : null;
+    const l = liveMidi != null ? I.trumpetInfo(liveMidi) : null;
+    rootEl.querySelector('.vn-target').textContent = t ? DSP.midiName(t.written) : '—';
+    rootEl.querySelector('.vn-concert').textContent = t ? `concert ${DSP.midiName(targetMidi)} · ${t.valves ? (t.valves === '0' ? 'open' : 'valves ' + t.valves) : 'out of range'}` : '';
+    rootEl.querySelector('.vn-live').textContent = l ? DSP.midiName(l.written) : '—';
+    rootEl.querySelector('.vn-live-c').textContent = l ? `concert ${DSP.midiName(liveMidi)}${l.valves ? ' · ' + (l.valves === '0' ? 'open' : l.valves) : ''}` : '';
+    const down = t && t.valves && t.valves !== '0' ? t.valves.split(' ').map(Number) : [];
+    rootEl.querySelectorAll('.valve').forEach((v) => {
+      v.classList.toggle('down', down.includes(+v.dataset.v));
+      v.classList.toggle('ok', !!(t && l && t.written === l.written));
+    });
   }
 
   function chordDiagram(name) {
@@ -436,5 +503,5 @@
     }
   }
 
-  PM.UI = { icon, el, $, $$, esc, fmtTime, toast, modal, confetti, ringSvg, setupCanvas, PianoKeyboard, Fretboard, chordDiagram, Timeline, ChromaRing, gaugeHtml, setGauge, strumLaneHtml, barChart, dynamicsChart, roundRect };
+  PM.UI = { icon, el, $, $$, esc, fmtTime, toast, modal, confetti, ringSvg, setupCanvas, PianoKeyboard, Fretboard, valvesHtml, setValves, chordDiagram, Timeline, ChromaRing, gaugeHtml, setGauge, strumLaneHtml, barChart, dynamicsChart, roundRect };
 })(typeof self !== 'undefined' ? self : globalThis);
