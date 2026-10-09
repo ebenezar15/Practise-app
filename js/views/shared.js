@@ -152,6 +152,16 @@
     };
   }
 
+  /** Per-stem gains for a named practice-mix preset (null if not possible for this track). */
+  function presetGains(t, pid) {
+    const stems = t.sep ? t.sep.stems : [], part = t.partStem;
+    if (pid === 'full') return {};
+    if (pid === 'backing') return part ? { [part]: 0 } : null;
+    if (pid === 'part') return part ? Object.fromEntries(stems.map((s) => [s.id, s.id === part ? 1 : 0])) : null;
+    if (pid === 'rhythm') return Object.fromEntries(stems.map((s) => [s.id, ['drums', 'bass'].includes(s.id) ? 1 : 0]));
+    return {};
+  }
+
   /** Stem mixer: separate (audio) or list (MIDI) instruments, presets, mute/solo/volume. */
   function mixer(container, App) {
     const t = App.track, I = PM.Instruments.get(App.instrument);
@@ -176,12 +186,7 @@
     }
     const stems = t.sep.stems, part = t.partStem;
     const gains = Object.assign({}, t.gains || {});
-    const presets = [
-      { id: 'full', label: 'Full song', g: {} },
-      { id: 'backing', label: `Backing track (no ${I.short.toLowerCase()})`, g: part ? { [part]: 0 } : null },
-      { id: 'part', label: `My ${I.short.toLowerCase()} part only`, g: part ? Object.fromEntries(stems.map((s) => [s.id, s.id === part ? 1 : 0])) : null },
-      { id: 'rhythm', label: 'Drums & bass only', g: Object.fromEntries(stems.map((s) => [s.id, ['drums', 'bass'].includes(s.id) ? 1 : 0])) },
-    ];
+    const presets = ['full', 'backing', 'part', 'rhythm'].map((pid) => ({ id: pid, label: { full: 'Full song', backing: `Backing track (no ${I.short.toLowerCase()})`, part: `My ${I.short.toLowerCase()} part only`, rhythm: 'Drums & bass only' }[pid], g: presetGains(t, pid) }));
     container.innerHTML = `${head}
       <div class="presets">${presets.map((p) => `<button class="btn sm ${t.mixPreset === p.id ? 'primary' : 'ghost'}" data-p="${p.id}" ${p.g ? '' : 'disabled title="Your instrument is not in this song"'}>${esc(p.label)}</button>`).join('')}</div>
       ${part ? '' : `<p class="small" style="margin-top:8px">No separate ${esc(I.short.toLowerCase())} part was found in this track — use the full song or improvise over it.</p>`}
@@ -206,5 +211,5 @@
     });
   }
 
-  PM.Shared = { uploader, trackChips, stars, sessionSummary, calibrateLatency, backingForm, mixer };
+  PM.Shared = { uploader, trackChips, stars, sessionSummary, calibrateLatency, backingForm, mixer, presetGains };
 })(typeof self !== 'undefined' ? self : globalThis);

@@ -272,7 +272,7 @@
         if (cs) { cs.textContent = 'idle'; cs.className = 'tag'; }
         const summary = coach.summary();
         const wall = (performance.now() - sessionStart) / 1000;
-        const meta = { mode: improv ? 'improv' : 'studio', instrument: inst, seconds: Math.min(wall, summary.activeTime + 20), title: (improv ? 'Improv · ' : '') + (a ? track.name : 'Free play'), assignmentId: track && track.assignmentId, mixPreset: track && track.mixPreset };
+        const meta = { mode: improv ? 'improv' : 'studio', instrument: inst, seconds: Math.min(wall, summary.activeTime + 20), title: (improv ? 'Improv · ' : '') + (a ? track.name : 'Free play'), assignmentId: (track && track.assignmentId) || (App.activeAssignment && App.activeAssignment.id) || null, mixPreset: track && track.mixPreset };
         if (summary.activeTime > 8) {
           if (showSummary) PM.Shared.sessionSummary(summary, meta);
           else App.game.recordSession(Object.assign({ summary }, meta));

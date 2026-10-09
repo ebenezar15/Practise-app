@@ -65,6 +65,14 @@
   }
 
   class Game {
+    /** Replace state wholesale (used by cloud sync after a merge). */
+    replaceState(state) {
+      this.state = Object.assign(fresh(), state);
+      this.ensureDaily();
+      try { this.storage && this.storage.setItem(KEY, JSON.stringify(this.state)); } catch (e) { /* ignore */ }
+      this.emit({ type: 'synced' });
+    }
+
     constructor(storage) {
       this.storage = storage || (typeof localStorage !== 'undefined' ? localStorage : null);
       this.listeners = new Set();
@@ -142,6 +150,7 @@
       if (sum.maxCombo) this.progressDaily('combo', sum.maxCombo, true);
       const leveled = this.addXp(xp, 'session');
       const badges = this.checkBadges(Object.assign({ hour: now.getHours() }, sum));
+      this.emit({ type: 'session', session, summary: sum, xp, id: s.history[0].id, date: now.toISOString() });
       return { xp, leveled, badges };
     }
 

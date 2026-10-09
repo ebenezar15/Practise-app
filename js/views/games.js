@@ -60,6 +60,10 @@
         const diff = $('#diff', host).value;
         current = startGame(b.dataset.g, stage, App, diff, () => { current = null; });
       }));
+      if (App.pendingAssignment && App.pendingAssignment.mode === 'challenge') {
+        const btn = $(`[data-g="${App.pendingAssignment.challenge}"]`, host);
+        if (btn) setTimeout(() => btn.click(), 50);
+      }
       return () => current && current.stop(false);
     },
   });
@@ -111,7 +115,9 @@
       if (id === 'rhythm-hero') { summary.timingAccuracy = acc; summary.onsets = round; App.game.progressDaily('rhythmHits', correct); }
       if (id === 'note-hunter' || id === 'long-tones') App.game.progressDaily('notes', correct);
       if (id === 'chord-quest') App.game.progressDaily('chords', correct);
-      const meta = { mode: 'challenge', challenge: id, score, instrument: inst, seconds: (performance.now() - startedAt) / 1000, title: game.name + ' (' + diff + ')' };
+      const asg = App.pendingAssignment && App.pendingAssignment.challenge === id ? App.pendingAssignment : null;
+      if (asg) App.pendingAssignment = null;
+      const meta = { mode: 'challenge', challenge: id, assignmentId: asg ? asg.id : null, score, instrument: inst, seconds: (performance.now() - startedAt) / 1000, title: game.name + ' (' + diff + ')' };
       if (showSummary && round > 0) PM.Shared.sessionSummary(summary, meta);
       stage.classList.add('hidden');
       onEnd();

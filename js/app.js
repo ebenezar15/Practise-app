@@ -271,6 +271,7 @@
           </div>
           <div class="mini-level"></div>
           <div class="offline-pill"><i></i> Works offline · on-device AI</div>
+          <a class="sync-pill" id="syncSide" href="#/classroom" style="text-decoration:none"><i></i><span>Classroom: not connected</span></a>
         </div>
       </aside>
       <main id="view"></main>`;
@@ -285,6 +286,16 @@
     App.live.instrument = App.instrument;
     App.live.latency = App.settings.latency;
     buildShell();
+    const pill = () => {
+      const el = $('#syncSide');
+      if (!el) return;
+      const S = PM.Sync;
+      el.className = 'sync-pill ' + (S.status === 'online' ? 'on' : S.status === 'pending' || S.status === 'offline' ? 'pending' : '');
+      el.querySelector('span').textContent = S.connected ? `${S.account.user.name} · ${{ online: 'synced', offline: 'offline', pending: 'sync pending', error: 'sync issue', local: '' }[S.status]}` : 'Classroom: not connected';
+    };
+    PM.Sync.on(pill);
+    PM.Sync.start();
+    pill();
     addEventListener('hashchange', () => App.route());
     App.route();
     if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
