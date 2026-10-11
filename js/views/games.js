@@ -38,7 +38,7 @@
   }
 
   PM.App.register({
-    id: 'games', title: 'Challenges', icon: 'games',
+    id: 'games', title: 'Challenges', icon: 'games', hidden: true, // opened from Learn
     render(host, App) {
       const hs = App.game.state.highScores;
       host.innerHTML = `

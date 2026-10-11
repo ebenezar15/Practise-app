@@ -10,7 +10,7 @@ const version = require(path.join(root, 'package.json')).version;
 const stage = path.join(root, 'dist', 'Cadenza');
 fs.rmSync(stage, { recursive: true, force: true });
 fs.mkdirSync(stage, { recursive: true });
-for (const item of ['index.html', 'manifest.webmanifest', 'sw.js', 'css', 'js', 'icons', 'server', 'serve.js', 'package.json', 'README.md']) {
+for (const item of ['index.html', 'manifest.webmanifest', 'sw.js', 'css', 'js', 'vendor', 'icons', 'server', 'serve.js', 'package.json', 'README.md']) {
   fs.cpSync(path.join(root, item), path.join(stage, item), { recursive: true });
 }
 fs.writeFileSync(path.join(stage, 'Start Cadenza (Windows).bat'), '@echo off\r\ncd /d "%~dp0"\r\nwhere node >nul 2>nul && (start "" http://localhost:5173 & node serve.js) || start "" "%~dp0index.html"\r\n');

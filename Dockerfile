@@ -5,6 +5,7 @@ WORKDIR /app
 COPY index.html manifest.webmanifest sw.js ./
 COPY css ./css
 COPY js ./js
+COPY vendor ./vendor
 COPY icons ./icons
 COPY server ./server
 ENV NODE_ENV=production PORT=8787 HOST=0.0.0.0 DATA_DIR=/data TRUST_PROXY=1

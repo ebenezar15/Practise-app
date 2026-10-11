@@ -39,7 +39,14 @@
       if (deviceId) constraints.audio.deviceId = { exact: deviceId };
       PM.Audio.setSessionType('play-and-record');
       try { this.stream = await navigator.mediaDevices.getUserMedia(constraints); }
-      catch (e) { PM.Audio.setSessionType('playback'); throw e; }
+      catch (e) {
+        // a remembered input that's no longer plugged in: fall back to the default input
+        if (deviceId && (e.name === 'OverconstrainedError' || e.name === 'NotFoundError')) {
+          delete constraints.audio.deviceId;
+          try { this.stream = await navigator.mediaDevices.getUserMedia(constraints); }
+          catch (e2) { PM.Audio.setSessionType('playback'); throw e2; }
+        } else { PM.Audio.setSessionType('playback'); throw e; }
+      }
       this.src = ctx.createMediaStreamSource(this.stream);
       this.gain = ctx.createGain();
       this.gain.gain.value = this.inputGain;

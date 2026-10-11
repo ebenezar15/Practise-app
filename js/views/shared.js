@@ -211,5 +211,16 @@
     });
   }
 
-  PM.Shared = { uploader, trackChips, stars, sessionSummary, calibrateLatency, backingForm, mixer, presetGains };
+  /** "Listen" buttons on submission cards: fetch the recording (signed in) and play it inline. */
+  function wireRecordingPlayers(container, subs) {
+    container.querySelectorAll('[data-listen]').forEach((b) => (b.onclick = async () => {
+      const s = subs.find((x) => x.id === b.dataset.listen);
+      if (!s || !s.recording) return;
+      const box = b.closest('.rec-player') || b.parentElement;
+      const a = await PM.DocView.audioPlayer(box, s.recording);
+      if (a) a.play().catch(() => {});
+    }));
+  }
+
+  PM.Shared = { uploader, trackChips, stars, sessionSummary, calibrateLatency, backingForm, mixer, presetGains, wireRecordingPlayers };
 })(typeof self !== 'undefined' ? self : globalThis);

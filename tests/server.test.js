@@ -114,3 +114,55 @@ test('progress merge is commutative and idempotent', () => {
   assert.deepStrictEqual([ba.level, ba.sessions, ba.streak, ba.days.d], [3, 7, 1, 5]);
   assert.deepStrictEqual(mergeProgress(ab, ab).history, ab.history);
 });
+
+test('recordings, custom assignments with PDFs, song library and teacher review', async () => {
+  const { server, base, call } = await start();
+  try {
+    const admin = (await call('POST', '/setup', { username: 'maestro', password: 'supersecret', name: 'Teacher' })).data.token;
+    const add = await call('POST', '/users', { username: 'ana', name: 'Ana', instrument: 'piano', password: 'anapass1' }, admin);
+    const ana = (await call('POST', '/login', { username: 'ana', password: 'anapass1' })).data.token;
+    await call('POST', '/users', { username: 'ben', name: 'Ben', password: 'benpass1' }, admin);
+    const ben = (await call('POST', '/login', { username: 'ben', password: 'benpass1' })).data.token;
+
+    // teacher uploads a chord PDF and creates a song + a custom assignment that needs a recording
+    const pdf = await call('POST', '/files', new Uint8Array([37, 80, 68, 70]), admin, { 'Content-Type': 'application/pdf', 'X-File-Name': encodeURIComponent('Amazing Grace chords.pdf') });
+    const song = await call('POST', '/songs', { title: 'Amazing Grace', language: 'English', key: 'G', bpm: 80, chart: '[G]Amazing [C]grace', bars: 'G | G | C | G', attachments: [pdf.data.file] }, admin);
+    assert.strictEqual(song.status, 200);
+    const tamil = await call('POST', '/songs', { title: 'என் இயேசு', language: 'Tamil', chart: '[G]இயேசு' }, admin);
+    assert.strictEqual(tamil.data.song.title, 'என் இயேசு');
+    assert.strictEqual((await call('POST', '/songs', { title: 'x' }, ana)).status, 403);
+    assert.strictEqual((await call('GET', '/songs', null, ana)).data.songs.length, 2);
+    const pdfRes = await fetch(base + '/api/files/' + pdf.data.file.id, { headers: { Authorization: 'Bearer ' + ana } });
+    assert.strictEqual(pdfRes.status, 200);
+
+    const asg = (await call('POST', '/assignments', { title: 'Record Amazing Grace', mode: 'song', songId: song.data.song.id, requireRecording: true, attachments: [pdf.data.file], assignees: [add.data.user.id] }, admin)).data.assignment;
+    assert.strictEqual(asg.requireRecording, true);
+    assert.strictEqual(asg.attachments.length, 1);
+
+    // student uploads a recording and submits; Ben cannot fetch it
+    const rec = await call('POST', '/files', new Uint8Array(2000).fill(7), ana, { 'Content-Type': 'audio/webm', 'X-File-Name': 'take1.webm' });
+    assert.strictEqual(rec.status, 200);
+    const noRec = await call('POST', '/submissions', { assignmentId: asg.id, clientId: 'r0', seconds: 120 }, ana);
+    assert.strictEqual(noRec.data.submission.meetsTarget, false);
+    const sub = await call('POST', '/submissions', { assignmentId: asg.id, clientId: 'r1', seconds: 120, recording: rec.data.file, note: 'Verse 2 was hard' }, ana);
+    assert.strictEqual(sub.data.submission.meetsTarget, true);
+    assert.strictEqual((await call('POST', '/submissions', { assignmentId: asg.id, clientId: 'r2', recording: { id: pdf.data.file.id } }, ben)).status, 404);
+    assert.strictEqual((await fetch(base + '/api/files/' + rec.data.file.id, { headers: { Authorization: 'Bearer ' + ben } })).status, 404);
+    // teacher streams it with a byte range (iPad/Safari playback)
+    const part = await fetch(base + '/api/files/' + rec.data.file.id, { headers: { Authorization: 'Bearer ' + admin, Range: 'bytes=0-99' } });
+    assert.strictEqual(part.status, 206);
+    assert.strictEqual((await part.arrayBuffer()).byteLength, 100);
+
+    // free review request for a song (no assignment)
+    const free = await call('POST', '/submissions', { songId: tamil.data.song.id, clientId: 'r3', recording: rec.data.file, title: 'என் இயேசு — please check' }, ana);
+    assert.strictEqual(free.status, 200);
+    assert.strictEqual(free.data.submission.assignmentId, null);
+
+    // review: rating + rubric + "try again"
+    const rv = await call('PATCH', '/submissions/' + sub.data.submission.id, { teacherComment: 'Lovely tone. Slow down in bar 9.', rating: 4, rubric: { pitch: 4, timing: 3, tone: 5, expression: 4 }, status: 'redo' }, admin);
+    assert.strictEqual(rv.data.submission.status, 'redo');
+    const mine = (await call('GET', '/assignments', null, ana)).data.assignments[0];
+    assert.strictEqual(mine.redo, true);
+    assert.strictEqual(mine.feedback.find((f) => f.rating === 4).rubric.tone, 5);
+  } finally { server.close(); }
+});

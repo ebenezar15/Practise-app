@@ -3,7 +3,10 @@
 Cadenza **listens while you play** and coaches you in real time: chords, notes, timing, strumming,
 intonation, bends, tone steadiness and dynamics. Load a song (audio or MIDI), **separate the
 instruments**, and play along with the full mix, a **backing track without your instrument**, or
-your part on its own — or **improvise** over any track or a generated backing band.
+your part on its own — or **improvise** over any track or a generated backing band. Learn with
+**scales, arpeggios, technique, sight-reading, chord and ear-training modes**, play from a
+**gospel & hymn library** (English, Tamil and any language) with chord charts and chord PDFs, and
+**record yourself and send it to your teacher**, who reviews it by listening.
 All listening and analysis run **on your device, offline**. An optional **classroom server** adds
 teacher/student accounts, assignments and sync.
 
@@ -51,9 +54,12 @@ Local builds: `cd desktop && npm install && npm run dist:mac` (or `dist:win`, `d
 | **Electric guitar** | Power chords, bend measurement (half/whole-step accuracy in cents), muting tips. |
 | **Trumpet** | Written-pitch display with valves, transposed instructions, tone-steadiness (wobble) detection, Long Tones challenge. |
 | **Metronome & tuner** | Accents, subdivisions, odd meters, speed & gap trainers, timing check; chromatic tuner with per-instrument strings and B♭ transposition. |
+| **Learn** | Scales (major, minors, pentatonics, blues, modes; 1–2 octaves, any key), arpeggios, instrument-specific technique (five-finger & Hanon-style, chromatic 1-2-3-4, root–fifth, lip slurs…), sight-reading on the staff, note-names quiz, chord library + one-minute changes, interval ear training, call & response (echo & improvised answers), progression builder → jam with a band. The coach listens and moves on with you; slips are reported. |
+| **Songs** | Public-domain hymns & spirituals built in; teachers add songs in **English, Tamil or any language** (ChordPro or chords-over-lyrics) with **chord PDFs**, images and audio. Transpose, capo, text size, auto-scroll, chord diagrams for your instrument (B♭ chords for trumpet), a generated **backing band in the song's meter** whose lyrics highlight as it plays, and **record & send for review**. |
+| **Recordings & review** | Record with or without the backing track, listen back, add a note, send (queued offline, uploads later). Teachers listen in **Results**, give 1–5 stars, a pitch/timing/tone/expression rubric and comments, or **ask to try again**. |
 | **Challenges** | Chord Quest, Rhythm Hero, Note Hunter (per-instrument ranges), Long Tones, Ear Trainer. |
 | **Gamification** | XP, levels, streaks, daily challenges, 21 badges (incl. Improviser & Homework Hero), stars, history. |
-| **Classroom** | Master teacher, teachers & students; invite codes; assignments with songs or backing tracks, practice mode, mix preset, speed, targets and due dates; results with coach insights; teacher feedback; synced progress. |
+| **Classroom** | Master teacher, teachers & students; invite codes; **custom assignments** (instructions + PDFs/audio + required recording), song-library and Learn assignments, play-along/improvise/challenge assignments with mix, speed, targets and due dates; results with coach insights; listening review; synced progress. |
 
 ## Classroom: users, assignments and sync
 
@@ -63,7 +69,8 @@ Pick one:
 
 * **Desktop app** — *Classroom → Host classroom on this computer → Start*. It shows the address students use, e.g. `http://192.168.1.20:8787`.
 * **Any computer with Node.js 18+** — `node server/server.js` (or `Start Classroom Server` in the web zip). Data is stored in `server-data/` (`DATA_DIR` to change, `PORT` to change the port).
-* **Online (students at home)** — deploy `server/server.js` to any Node host with a persistent disk (a small VPS, Render, Railway, Fly.io…) and put it behind HTTPS (e.g. Caddy: `music.example.com { reverse_proxy localhost:8787 }`, or set `TLS_CERT`/`TLS_KEY`). Students then use `https://music.example.com`.
+* **Online for free (students at home & iPads)** — in the desktop app, after *Start*, click **Put online** under *Students at home*: Cadenza opens a Cloudflare Tunnel and shows an `https://` address to share (see [docs/HOSTING.md](docs/HOSTING.md), option C).
+* **Online on a server** — deploy `server/server.js` to any Node host with a persistent disk (a small VPS, Render, Railway, Fly.io…) and put it behind HTTPS (e.g. Caddy: `music.example.com { reverse_proxy localhost:8787 }`, or set `TLS_CERT`/`TLS_KEY`). Students then use `https://music.example.com`.
 
 ### 2. Become the master teacher
 
@@ -84,14 +91,16 @@ streak, practice history and assignment results.
 ### 4. Set assignments
 
 *Assignments → New assignment*: title, instructions, instrument (or any), practice mode
-(*play the part · improvise · challenge game · free practice*), mix (*full song · backing track ·
+(*custom task · song from the library · Learn activity · play the part · improvise · challenge game · free practice*), attachments (chord PDFs, sheet music, audio), *student must send a recording*, mix (*full song · backing track ·
 own part only · drums & bass*), speed, targets (accuracy %, minutes, stars), due date, and who it's
 for (everyone or chosen students). Attach a **song file**, the **current Studio track**, or a
 **generated backing track** (each student gets it without their own instrument).
 
 Students see assignments in **Classroom**, press **Start**, and Cadenza opens the Studio (or the
 challenge) with everything set up. When they finish a session the result — accuracy, minutes,
-stars and the coach's insights — is sent to the teacher, who can reply with feedback.
+stars and the coach's insights — is sent to the teacher. Recordings appear in **Results** with a
+*Listen* button; the teacher gives stars, rubric scores and comments, or sends it back to try
+again. Students see the review under **My recordings & reviews**.
 
 ### 5. Install on students' computers and stay in sync
 
@@ -133,13 +142,14 @@ real-world mixes (MIDI is exact), and all results are best treated as a practice
 
 ```
 index.html, css/, icons/, sw.js, manifest.webmanifest, serve.js
-js/core/     dsp · theory · instruments · rhythm · midi · analyzer · separation · improv · backing · coach · game · syncmerge
-js/audio/    AudioContext + player + IndexedDB library · live mic/MIDI engines · metronome
+js/core/     dsp · theory · instruments · rhythm · midi · analyzer · separation · improv · backing · coach · game · syncmerge · songs · learn
+js/audio/    AudioContext + player + IndexedDB library · live mic/MIDI engines · metronome · recorder
 js/sync/     classroom account, outbox & progress sync client
-js/ui/       components (keyboard, fretboard, valves, chord diagrams, timeline, radar, charts)
-js/views/    home · studio · insights · games · metronome · tuner · progress · classroom
+js/ui/       components (keyboard, fretboard, valves, chord diagrams, timeline, radar, charts) · PDF/attachment viewer · record panel
+js/views/    home · studio · songs · learn · insights · games · metronome · tuner · progress · classroom
+vendor/      pdf.js (Apache-2.0) for chord-sheet PDFs, offline
 server/      zero-dependency classroom server (accounts, invites, assignments, files, results, sync)
-desktop/     Electron shell (offline app + "Host classroom"), electron-builder config
+desktop/     Electron shell (offline app + "Host classroom" + Cloudflare Tunnel), electron-builder config
 scripts/     packaging helpers
 tests/       node --test suites (synthetic songs, separation, coaching, server)
 ```

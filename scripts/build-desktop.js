@@ -6,7 +6,7 @@ const path = require('path');
 const root = path.join(__dirname, '..');
 const out = path.join(root, 'desktop', 'app');
 fs.rmSync(out, { recursive: true, force: true });
-for (const item of ['index.html', 'manifest.webmanifest', 'sw.js', 'css', 'js', 'icons', 'server']) {
+for (const item of ['index.html', 'manifest.webmanifest', 'sw.js', 'css', 'js', 'vendor', 'icons', 'server']) {
   fs.cpSync(path.join(root, item), path.join(out, item), { recursive: true });
 }
 const icon = path.join(root, 'icons', 'icon.png');

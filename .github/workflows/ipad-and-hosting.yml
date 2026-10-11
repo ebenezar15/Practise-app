@@ -5,11 +5,13 @@ name: iPad (Safari engine) & hosting checks
 #    service worker and offline reload. Screenshots are uploaded as an artifact.
 # 2. Builds the Docker image and runs the Caddy HTTPS stack from deploy/, then checks the app,
 #    the API and the http→https redirect through the proxy.
+# 3. Free hosting (option C): downloads cloudflared the way the desktop app does on Windows,
+#    macOS and Linux, opens a quick Cloudflare Tunnel and uses the classroom over https.
 on:
   workflow_dispatch:
   push:
     branches: ['claude/**', 'main']
-    paths: ['js/**', 'css/**', 'index.html', 'sw.js', 'server/**', 'deploy/**', 'Dockerfile', 'scripts/ipad-smoke.js', '.github/workflows/ipad-and-hosting.yml']
+    paths: ['js/**', 'css/**', 'vendor/**', 'index.html', 'sw.js', 'server/**', 'deploy/**', 'Dockerfile', 'desktop/tunnel.js', 'scripts/ipad-smoke.js', 'scripts/tunnel-check.js', '.github/workflows/ipad-and-hosting.yml']
 
 jobs:
   ipad-webkit:
@@ -53,3 +55,16 @@ jobs:
       - if: always()
         run: docker compose -f deploy/docker-compose.yml logs --tail 50
         env: { DOMAIN: localhost }
+
+  cloudflare-tunnel:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - name: Quick tunnel to a classroom server
+        run: node scripts/tunnel-check.js

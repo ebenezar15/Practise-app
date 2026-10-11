@@ -159,6 +159,13 @@ jobs:
           name: Cadenza ${{ steps.tag.outputs.name }}
           make_latest: true
           body: |
+            ## What's new in 2.1
+            * **Custom assignments** with chord PDFs / sheet music / audio attachments and *student must send a recording*.
+            * **Record & send for review** (with or without the backing track, works offline); teachers **listen**, give stars, a pitch/timing/tone/expression rubric and comments, or **ask to try again**.
+            * **Songs**: gospel & hymn library — English, Tamil or any language — chord charts with transpose/capo/auto-scroll, chord PDFs, a backing band in the song's meter, song assignments.
+            * **Learn**: scales, arpeggios, technique exercises, sight-reading, note names, chord library & one-minute changes, interval ear training, call & response, progression builder.
+            * **Free online classroom**: *Classroom → Host classroom → Put online* opens a Cloudflare Tunnel with an `https://` address for students at home and iPads.
+
             ## Download Cadenza
 
             | Your computer | File |

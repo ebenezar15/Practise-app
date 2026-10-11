@@ -12,6 +12,17 @@ const pw = require('playwright');
 const { createServer } = require('../server/server.js');
 
 const engine = process.argv[2] || 'webkit';
+
+/** A one-page PDF chord sheet for the upload test. */
+function tinyPdf() {
+  const content = 'BT /F1 18 Tf 50 750 Td (D        G        D) Tj 0 -26 Td (Chord sheet test) Tj ET';
+  const objs = ['<< /Type /Catalog /Pages 2 0 R >>', '<< /Type /Pages /Kids [3 0 R] /Count 1 >>', '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>', `<< /Length ${content.length} >>\nstream\n${content}\nendstream`, '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>'];
+  let out = '%PDF-1.4\n'; const offs = [];
+  objs.forEach((o, i) => { offs.push(out.length); out += `${i + 1} 0 obj\n${o}\nendobj\n`; });
+  const x = out.length;
+  out += `xref\n0 ${objs.length + 1}\n0000000000 65535 f \n` + offs.map((o) => String(o).padStart(10, '0') + ' 00000 n \n').join('') + `trailer\n<< /Size ${objs.length + 1} /Root 1 0 R >>\nstartxref\n${x}\n%%EOF\n`;
+  return out;
+}
 const outDir = process.argv[3] || path.join(os.tmpdir(), 'cadenza-ipad');
 fs.mkdirSync(outDir, { recursive: true });
 
@@ -35,7 +46,7 @@ fs.mkdirSync(outDir, { recursive: true });
     const page = await ctx.newPage();
     const tag = deviceName.replace(/\s+/g, '-');
     page.on('pageerror', (e) => errors.push(`[${deviceName}] ${e.message}`));
-    page.on('console', (m) => { if (m.type() === 'error' && !/Failed to load resource|getUserMedia|NotAllowed|NotFound|NotSupported/i.test(m.text())) errors.push(`[${deviceName}] console: ${m.text()}`); });
+    page.on('console', (m) => { if (m.type() === 'error' && !/Failed to load resource|getUserMedia|NotAllowed|NotFound|NotSupported|Overconstrained/i.test(m.text())) errors.push(`[${deviceName}] console: ${m.text()}`); });
     const shot = (n) => page.screenshot({ path: path.join(outDir, `${tag}-${n}.png`), fullPage: true });
     const tap = (sel) => page.locator(sel).first().tap({ timeout: 10000 });
     const closeModals = () => page.evaluate(() => document.querySelectorAll('.modal-back').forEach((m) => m.remove()));
@@ -57,12 +68,12 @@ fs.mkdirSync(outDir, { recursive: true });
       await closeModals();
     });
     await step(`${deviceName}: no horizontal scrolling`, async () => {
-      for (const v of ['home', 'studio', 'insights', 'games', 'metronome', 'tuner', 'progress', 'classroom']) {
+      for (const v of ['home', 'studio', 'songs', 'songs?id=pd-amazing-grace', 'learn', 'insights', 'games', 'metronome', 'tuner', 'progress', 'classroom']) {
         await page.goto(base + '/#/' + v);
         await page.waitForTimeout(250);
         const over = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
         if (over > 2) throw new Error(`${v} overflows by ${over}px`);
-        await shot(v);
+        await shot(v.replace(/\W+/g, '-'));
       }
     });
     if (deviceName !== 'iPad Pro 11') { await ctx.close(); continue; }
@@ -110,6 +121,46 @@ fs.mkdirSync(outDir, { recursive: true });
       await shot('improv');
       await tap('#modeSeg [data-mode="part"]');
     });
+    await step('songs: hymn chart, transpose, backing band follows the words', async () => {
+      await page.goto(base + '/#/songs?id=pd-amazing-grace');
+      await page.waitForSelector('.cp-line', { timeout: 10000 });
+      await tap('[data-t="1"]');
+      const key = await page.textContent('#kChip');
+      await tap('#bandBtn');
+      await page.waitForSelector('#bPlay', { timeout: 30000 });
+      await tap('#bPlay');
+      await page.waitForTimeout(4500);
+      const t = await page.evaluate(() => PM.App.player.time);
+      const now = await page.$('.cp-line.now');
+      await shot('song-playing');
+      await tap('#bPlay');
+      if (!(t > 0.5)) throw new Error('band did not play: ' + t);
+      if (!now) throw new Error('lyrics did not follow the band');
+      return key + `, t=${t.toFixed(1)}s`;
+    });
+    await step('record panel without a mic fails gracefully', async () => {
+      await tap('#recBtn');
+      await page.waitForSelector('#rBtn', { timeout: 5000 });
+      await tap('#rBtn');
+      await page.waitForTimeout(1500);
+      const msg = await page.textContent('#rMsg');
+      await shot('recorder');
+      await closeModals();
+      return msg || 'recording started';
+    });
+    await step('learn: note-names quiz and scale trainer', async () => {
+      await page.goto(base + '/#/learn');
+      await tap('[data-a="notes"]');
+      for (let i = 0; i < 3; i++) { await tap('[data-l="E"]'); await page.waitForTimeout(1200); }
+      const r = await page.textContent('#nR');
+      await tap('[data-a="scales"]');
+      await page.waitForSelector('.sq', { timeout: 5000 });
+      await shot('learn-scales');
+      await tap('[data-a="sight"]');
+      await page.waitForSelector('.staff', { timeout: 5000 });
+      await shot('learn-sight');
+      return 'round ' + r;
+    });
     await step('insights render', async () => {
       await page.goto(base + '/#/insights');
       await page.waitForSelector('#dyn', { timeout: 10000 });
@@ -141,6 +192,22 @@ fs.mkdirSync(outDir, { recursive: true });
       await page.waitForSelector('#tTabs', { timeout: 10000 });
       await shot('classroom');
       return 'still signed in after reload';
+    });
+    await step('teacher adds a song with a chord PDF; PDF renders (pdf.js on Safari)', async () => {
+      const pdf = path.join(outDir, 'chords.pdf');
+      fs.writeFileSync(pdf, tinyPdf());
+      await page.goto(base + '/#/songs');
+      await tap('#sgAdd');
+      await page.fill('#eTitle', 'இயேசு நல்லவர்');
+      await page.selectOption('#eLang', 'Tamil');
+      await page.fill('#eChart', '[D]இயேசு நல்லவர் [G]இயேசு [D]வல்லவர்');
+      await page.setInputFiles('#eFiles', pdf);
+      await tap('#eSave');
+      await page.waitForSelector('#atts [data-att]', { timeout: 15000 });
+      await tap('#atts [data-att]');
+      await page.waitForSelector('canvas.pdf-page', { timeout: 20000 });
+      await shot('pdf-viewer');
+      await closeModals();
     });
     await step('service worker installed', async () => {
       const ok = await page.evaluate(() => Promise.race([navigator.serviceWorker.ready.then(() => true), new Promise((r) => setTimeout(() => r(false), 15000))]));

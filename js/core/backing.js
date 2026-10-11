@@ -103,6 +103,73 @@
     return { notes, bpm, key: { sf, minor }, name: `${prog.name} in ${keyName} · ${STYLES[style]} · ${bpm} BPM` };
   }
 
-  PM.Backing = { generate, PROGRESSIONS, STYLES };
+  /**
+   * Backing track for a song chart (any meter, chords can change inside a bar).
+   * opts: {bars: [[{root, type, beats}...]...], beatsPerBar, style, bpm, repeats, exclude, title}
+   * Returns {notes, bpm, key, name} like generate().
+   */
+  function generateChart(opts) {
+    const bpb = Math.max(2, Math.min(12, opts.beatsPerBar || 4));
+    const style = opts.style || (bpb === 3 ? 'ballad' : 'rock');
+    const bpm = opts.bpm || 90;
+    const beat = 60 / bpm;
+    const exclude = opts.exclude || '';
+    const repeats = Math.max(1, opts.repeats || 1);
+    const notes = [];
+    const add = (n) => notes.push(n);
+    const lead = bpb * beat;
+    for (let i = 0; i < bpb; i++) add({ midi: 42, start: i * beat, end: i * beat + 0.05, velocity: i ? 0.55 : 0.75, channel: 9, voice: 'drums' });
+    const bars = [];
+    for (let r = 0; r < repeats; r++) for (const b of opts.bars) bars.push(b);
+    const compVoice = exclude === 'piano' ? 'guitar' : 'piano';
+    const playBass = exclude !== 'bass';
+    bars.forEach((bar, bi) => {
+      const t0 = lead + bi * bpb * beat;
+      // drums: waltz (3/4, 6/8 feel) or backbeat
+      for (let k = 0; k < bpb; k++) {
+        const t = t0 + k * beat;
+        if (style !== 'none') add({ midi: 42, start: t, end: t + 0.05, velocity: k ? 0.35 : 0.5, channel: 9, voice: 'drums' });
+        if (bpb % 3 === 0) { if (k % 3 === 0) add({ midi: 36, start: t, end: t + 0.1, velocity: k ? 0.6 : 0.8, channel: 9, voice: 'drums' }); else if (style !== 'ballad') add({ midi: 37, start: t, end: t + 0.08, velocity: 0.3, channel: 9, voice: 'drums' }); }
+        else if (k % 2 === 0) add({ midi: 36, start: t, end: t + 0.1, velocity: 0.8, channel: 9, voice: 'drums' });
+        else add({ midi: style === 'ballad' ? 37 : 38, start: t, end: t + 0.1, velocity: style === 'ballad' ? 0.35 : 0.7, channel: 9, voice: 'drums' });
+      }
+      if (bi % 4 === 0) add({ midi: 49, start: t0, end: t0 + 1, velocity: 0.4, channel: 9, voice: 'drums' });
+      // harmony: each chord fills its beats (a bar with no chord list repeats the previous chord)
+      let beatPos = 0;
+      const chords = bar.length ? bar : [{ root: 0, type: '', beats: bpb, rest: true }];
+      const each = bpb / chords.length;
+      chords.forEach((c) => {
+        const beats = c.beats || each;
+        const cs = t0 + beatPos * beat;
+        beatPos += beats;
+        if (c.rest || !Theory.TYPE_BY_ID[c.type]) return;
+        const root = mod12(c.root);
+        const bassRoot = 36 + root - (root > 7 ? 12 : 0);
+        if (playBass) {
+          for (let k = 0; k < beats; k++) {
+            const m = bpb % 3 === 0 ? (k % 3 === 0 ? bassRoot : null) : (k === 0 ? bassRoot : k === 2 ? bassRoot + 7 : null);
+            if (m != null) add({ midi: m, start: cs + k * beat, end: cs + (k + (bpb % 3 === 0 ? 2.8 : 1.8)) * beat, velocity: 0.8, channel: 1, voice: 'bass' });
+          }
+          if (beats < 2) add({ midi: bassRoot, start: cs, end: cs + beats * beat * 0.95, velocity: 0.8, channel: 1, voice: 'bass' });
+        }
+        let r = 60 + root;
+        if (r > 66) r -= 12;
+        const voicing = Theory.TYPE_BY_ID[c.type].iv.map((iv) => r + iv);
+        for (let k = 0; k < beats; k++) {
+          const t = cs + k * beat;
+          const strong = (beatPos - beats + k) % bpb === 0;
+          if (compVoice === 'guitar') voicing.forEach((m, i) => add({ midi: m - 12, start: t + i * 0.012, end: t + 0.95 * beat, velocity: strong ? 0.7 : 0.5, channel: 2, voice: 'guitar' }));
+          else if (bpb % 3 === 0 && k % 3 === 0) add({ midi: voicing[0] - 12, start: t, end: t + 0.95 * beat, velocity: 0.5, channel: 0, voice: 'piano' });
+          else voicing.forEach((m) => add({ midi: m, start: t, end: t + 0.9 * beat, velocity: strong ? 0.5 : 0.4, channel: 0, voice: 'piano' }));
+        }
+      });
+    });
+    notes.sort((a, b) => a.start - b.start);
+    const tonic = mod12(opts.tonic || 0), minor = !!opts.minor;
+    const sf = ((([0, 7, 2, 9, 4, 11, 6, 1, 8, 3, 10, 5].indexOf(minor ? mod12(tonic + 3) : tonic)) + 6) % 12) - 6;
+    return { notes, bpm, key: { sf, minor }, beatsPerBar: bpb, name: `${opts.title || 'Song'} · ${bpm} BPM` };
+  }
+
+  PM.Backing = { generate, generateChart, PROGRESSIONS, STYLES };
   if (typeof module !== 'undefined' && module.exports) module.exports = PM.Backing;
 })(typeof self !== 'undefined' ? self : globalThis);

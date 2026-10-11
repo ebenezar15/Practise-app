@@ -47,6 +47,7 @@
             <div class="spacer"></div>
             <span class="muted small" id="devLabel" style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
             <button class="btn primary" id="listenBtn">${icon('mic')} Start listening</button>
+            <button class="btn" id="recSend" title="Record yourself (with the track) and send it to your teacher">${icon('mic')} Record</button>
           </div>
         </section>
 
@@ -237,6 +238,10 @@
         while (feed.children.length > 40) feed.lastChild.remove();
       };
       const listenBtn = $('#listenBtn', host);
+      $('#recSend', host).onclick = () => {
+        const t = App.track, a = t && t.assignmentId ? PM.Sync.assignments.find((x) => x.id === t.assignmentId) : null;
+        PM.RecordPanel.open({ title: a ? a.title : t ? t.name : 'My playing', assignmentId: a ? a.id : null, songId: t && t.songId, mode: App.settings.studioMode || 'part' });
+      };
 
       async function startListening() {
         const engine = App.settings.source === 'midi' ? App.midiIn : App.live;

@@ -13,7 +13,7 @@ Pick **one** of the three options below.
 |---|---|---|---|---|
 | **A** | **Render.com** (cloud, a few clicks) | about US$7–8 / month | none | Most teachers |
 | **B** | **Your own small cloud server** with Docker | about US$5 / month + optional domain | copy-paste commands | Lowest cost, full control |
-| **C** | **Your own computer + Cloudflare Tunnel** | free (domain optional) | a little | Trying it out; small studios |
+| **C** | **Your own computer + Cloudflare Tunnel** (built into the desktop app) | free (domain optional) | none — two clicks | Small studios; trying it out |
 
 ---
 
@@ -72,33 +72,54 @@ Restore by extracting that file back into the volume while the app is stopped.
 
 ---
 
-## Option C — your own computer + Cloudflare Tunnel (free)
+## Option C — your own computer + Cloudflare Tunnel (free) ⭐ built into the desktop app
 
-Keeps everything on your computer and gives it a public `https://` address. The computer must be
-on and awake while students use Cadenza.
+Everything stays on your computer (accounts, recordings, chord PDFs) and Cloudflare gives it a
+free public `https://` address, so students at home and iPads can use it. Your computer must be
+**on and awake** while students use Cadenza.
 
-1. Start the classroom server: in the **Cadenza desktop app** go to **Classroom → Host classroom on
-   this computer → Start** (or run `node server/server.js` in the project folder).
-2. Install **cloudflared**: https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/downloads/
-3. **Quick test (no account):**
-   ```bash
-   cloudflared tunnel --url http://localhost:8787
-   ```
-   It prints an address like `https://random-words.trycloudflare.com` — share it with students.
-   ⚠️ This address **changes every time** you restart it, so students would have to re-add the app.
-4. **Permanent address (recommended):** add your domain to a free Cloudflare account, then:
-   ```bash
-   cloudflared tunnel login
-   cloudflared tunnel create cadenza
-   cloudflared tunnel route dns cadenza music.yourschool.com
-   cloudflared tunnel run --url http://localhost:8787 cadenza
-   ```
-   To start it automatically with your computer: `cloudflared service install` (see Cloudflare's docs).
-5. If you started the server from the command line, use `TRUST_PROXY=1 node server/server.js`
-   so login protection sees each student's real address (the desktop app does this already).
+### C1. Quick address — no account, two clicks
+1. Install the **Cadenza desktop app** on the computer that will be the server.
+2. Open **Classroom → Host classroom on this computer → Start classroom server**.
+3. In the same box, under **🌍 Students at home (free)**, choose **Quick address → Put online**.
+   The first time, Cadenza downloads Cloudflare's small `cloudflared` program (20–40 MB).
+4. After a few seconds an address like **`https://happy-river-tone-music.trycloudflare.com`**
+   appears. Click **Copy** and send it to your students (iPads: open it in Safari →
+   Share → *Add to Home Screen*).
+5. Sign in yourself (or set up the master teacher) using that address or `http://localhost:8787`.
 
-Data lives in `server-data/` (command line) or in the desktop app's settings folder
-(`Classroom → Host classroom` shows the path). Copy that folder to back up.
+⚠️ The quick address **changes every time** you put it online again, and Cloudflare offers no
+uptime guarantee for quick tunnels. It is perfect for trying things out and for lessons today;
+for a class that uses it every week, set up C2 once.
+
+### C2. Your own permanent address (free Cloudflare account + a domain)
+1. Add your domain (e.g. `yourschool.com`, about US$10/year from any registrar) to a free
+   **Cloudflare** account.
+2. In Cloudflare go to **Zero Trust → Networks → Tunnels → Create a tunnel → Cloudflared**,
+   give it a name (e.g. *cadenza*), and **copy the token** it shows (the long text after
+   `--token`). You don't need to run the install command it shows.
+3. Still in the tunnel, add a **Public hostname**: subdomain `music`, your domain, service
+   **HTTP** → `localhost:8787` (use the port you start the classroom server on).
+4. In Cadenza: **Classroom → Host classroom → Start**, then **My own address**, enter
+   `music.yourschool.com`, paste the token and click **Put online**. Cadenza remembers the token —
+   next time just click **Put online**.
+5. Students always use **`https://music.yourschool.com`**.
+
+### Without the desktop app (command line)
+```bash
+TRUST_PROXY=1 node server/server.js          # the classroom server on port 8787
+cloudflared tunnel --url http://localhost:8787   # quick address, or:
+cloudflared tunnel run --token <YOUR_TOKEN>      # your own address (C2 steps 1–3)
+```
+Install `cloudflared` from https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/downloads/
+(`cloudflared service install <TOKEN>` starts it automatically with the computer).
+
+**Back up:** data lives in the desktop app's data folder (shown in *Host classroom*) or in
+`server-data/` for the command line — copy that folder. Recordings and PDFs are in its `files/`
+folder.
+
+**Keep it running:** set the computer not to sleep while lessons happen (Windows: *Settings →
+System → Power*; Mac: *System Settings → Battery/Energy → Prevent automatic sleeping*).
 
 ---
 
@@ -107,7 +128,11 @@ Data lives in `server-data/` (command line) or in the desktop app's settings fol
 ### First steps for you (the master teacher)
 1. Open your `https://` address → **Classroom** → **Set up as master teacher**.
 2. **Students → Add a student** (gives a temporary password) or **Invite codes → Generate**.
-3. **Assignments → New assignment** to set work.
+3. **Assignments → New assignment** to set work: a custom task with PDFs, a song from the library,
+   a Learn activity, a play-along, an improvisation or a challenge. Tick *Student must send a
+   recording* to review their playing by listening in **Results**.
+4. **Songs → Add a song** to add hymns and gospel songs (English, Tamil or any language) with
+   their chord charts and chord PDFs.
 
 ### What to send your students
 > Open **https://music.yourschool.com** on your iPad in **Safari** → tap **Share** → **Add to Home Screen** → **Add**.
@@ -139,5 +164,7 @@ address in **Classroom**.
 | iPad: progress missing / signed out | Open Cadenza from the **Home Screen icon**, not a Safari tab, and sign in there once. |
 | iPad: no sound from the speaker | Turn the volume up; with the mic on, iPhones play quietly — use headphones. |
 | iPad: MIDI keyboard not detected | Safari on iPad doesn't support MIDI. Use the microphone, or the desktop app on a computer. |
-| Students can't reach the server | Check the address in a normal browser; on Option C make sure your computer and the tunnel are running. |
+| Students can't reach the server | Check the address in a normal browser; on Option C make sure your computer is awake and *Students at home* says **online**. |
+| Quick address stopped working | Quick addresses change each time — send students the new one, or set up C2 for a permanent address. |
+| "Put online" fails | The computer needs internet access to github.com (first download) and Cloudflare; some school firewalls block it — try another network. |
 | Too many login attempts | Wait one minute. Behind a proxy make sure `TRUST_PROXY=1` is set (already set in the Docker and Render setups). |

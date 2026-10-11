@@ -16,14 +16,14 @@ const path = require('path');
 const crypto = require('crypto');
 const { mergeProgress } = require('../js/core/syncmerge.js');
 
-const VERSION = '2.0.0';
+const VERSION = '2.1.0';
 const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.svg': 'image/svg+xml', '.json': 'application/json', '.webmanifest': 'application/manifest+json', '.png': 'image/png', '.wav': 'audio/wav', '.mid': 'audio/midi', '.mp3': 'audio/mpeg' };
 
 // ---------------- storage ----------------
 function createStore(dir) {
   fs.mkdirSync(path.join(dir, 'files'), { recursive: true });
   const file = path.join(dir, 'db.json');
-  let db = { users: [], tokens: [], invites: [], assignments: [], submissions: [], progress: {}, settings: { schoolName: 'Cadenza Studio' } };
+  let db = { users: [], tokens: [], invites: [], assignments: [], submissions: [], songs: [], files: [], progress: {}, settings: { schoolName: 'Cadenza Studio' } };
   if (fs.existsSync(file)) db = Object.assign(db, JSON.parse(fs.readFileSync(file, 'utf8')));
   let timer = null;
   const flush = () => {
@@ -131,10 +131,25 @@ function createServer(opts) {
   }
   function meetsTarget(a, s) {
     const t = a.targets || {};
+    // recorded work is judged by the teacher: sending a recording completes it (unless sent back to redo)
+    if (a.requireRecording) return !!s.recording && s.status !== 'redo';
     if (t.accuracy && (s.accuracy == null || s.accuracy * 100 < t.accuracy)) return false;
     if (t.minutes && (s.seconds || 0) < t.minutes * 60) return false;
     if (t.stars && (s.stars || 0) < t.stars) return false;
     return true;
+  }
+  const cleanFile = (f) => (f && typeof f === 'object' && typeof f.id === 'string' ? { id: f.id.replace(/[^a-z0-9]/gi, ''), name: String(f.name || 'file').slice(0, 160), type: String(f.type || 'application/octet-stream').slice(0, 100), size: +f.size || 0 } : null);
+  const cleanFiles = (arr) => (Array.isArray(arr) ? arr.map(cleanFile).filter(Boolean).slice(0, 20) : []);
+  /** May this user download file `fid`? Staff: always. Others: own uploads, files on visible assignments, songs, own submissions. */
+  function canRead(u, fid) {
+    if (isStaff(u)) return true;
+    const meta = db.files.find((f) => f.id === fid);
+    if (meta && meta.ownerId === u.id) return true;
+    const inFiles = (list) => (list || []).some((f) => f && f.id === fid);
+    if (visibleAssignments(u).some((a) => (a.file && a.file.id === fid) || inFiles(a.attachments))) return true;
+    if (db.songs.some((sg) => inFiles(sg.attachments) || (sg.audio && sg.audio.id === fid))) return true;
+    if (db.submissions.some((sb) => sb.userId === u.id && sb.recording && sb.recording.id === fid)) return true;
+    return false;
   }
 
   async function api(req, res, url) {
@@ -297,23 +312,68 @@ function createServer(opts) {
     // ---- files
     if (r0 === 'files') {
       if (!r1 && method === 'POST') {
-        requireStaff();
-        const buf = await readBody(req, 80 * 1024 * 1024);
+        // teachers upload songs, PDFs and attachments; students upload their recordings
+        const limit = isStaff(me) ? 120 * 1024 * 1024 : 60 * 1024 * 1024;
+        const buf = await readBody(req, limit);
         need(buf.length > 0, 400, 'Empty file');
         const fid = id('f');
         fs.writeFileSync(store.filePath(fid), buf);
-        const name = decodeURIComponent(req.headers['x-file-name'] || 'song');
-        return { file: { id: fid, name: name.slice(0, 160), type: req.headers['content-type'] || 'application/octet-stream', size: buf.length } };
+        const name = decodeURIComponent(req.headers['x-file-name'] || 'file').slice(0, 160);
+        const type = String(req.headers['content-type'] || 'application/octet-stream').slice(0, 100);
+        db.files.push({ id: fid, name, type, size: buf.length, ownerId: me.id, createdAt: Date.now() });
+        store.save();
+        return { file: { id: fid, name, type, size: buf.length } };
       }
       if (r1 && method === 'GET') {
-        const a = visibleAssignments(me).find((x) => x.file && x.file.id === r1);
-        need(a, 404, 'File not found');
-        const p = store.filePath(r1);
+        const fid = r1.replace(/[^a-z0-9]/gi, '');
+        need(canRead(me, fid), 404, 'File not found');
+        const p = store.filePath(fid);
         need(fs.existsSync(p), 404, 'File missing on server');
-        res.writeHead(200, { 'Content-Type': a.file.type, 'Content-Length': fs.statSync(p).size, 'Access-Control-Allow-Origin': '*' });
-        fs.createReadStream(p).pipe(res);
+        const meta = db.files.find((f) => f.id === fid) || db.assignments.map((x) => x.file).find((f) => f && f.id === fid) || {};
+        const size = fs.statSync(p).size;
+        const headers = { 'Content-Type': meta.type || 'application/octet-stream', 'Accept-Ranges': 'bytes', 'Access-Control-Allow-Origin': '*', 'Cache-Control': 'private, max-age=31536000, immutable' };
+        // byte ranges let Safari/iPad stream recordings & audio
+        const m = /^bytes=(\d*)-(\d*)$/.exec(req.headers.range || '');
+        if (m) {
+          const start = m[1] ? +m[1] : Math.max(0, size - +m[2]);
+          const end = m[1] && m[2] ? Math.min(+m[2], size - 1) : size - 1;
+          res.writeHead(206, Object.assign(headers, { 'Content-Range': `bytes ${start}-${end}/${size}`, 'Content-Length': end - start + 1 }));
+          fs.createReadStream(p, { start, end }).pipe(res);
+        } else {
+          res.writeHead(200, Object.assign(headers, { 'Content-Length': size }));
+          fs.createReadStream(p).pipe(res);
+        }
         return undefined;
       }
+    }
+
+    // ---- song library (everyone reads; teachers write)
+    if (r0 === 'songs') {
+      if (!r1 && method === 'GET') return { songs: db.songs.slice().sort((x, y) => x.title.localeCompare(y.title)) };
+      requireStaff();
+      const fields = (b, sg) => {
+        for (const k of ['title', 'author', 'language', 'key', 'timeSig', 'notes']) if (b[k] !== undefined) sg[k] = String(b[k] || '').slice(0, k === 'notes' ? 4000 : 120);
+        if (b.chart !== undefined) sg.chart = String(b.chart || '').slice(0, 30000);
+        if (b.bars !== undefined) sg.bars = String(b.bars || '').slice(0, 8000);
+        if (b.bpm !== undefined) sg.bpm = Math.max(30, Math.min(260, +b.bpm || 90));
+        if (b.tags !== undefined) sg.tags = (Array.isArray(b.tags) ? b.tags : String(b.tags).split(',')).map((t) => String(t).trim()).filter(Boolean).slice(0, 12);
+        if (b.attachments !== undefined) sg.attachments = cleanFiles(b.attachments);
+        if (b.audio !== undefined) sg.audio = cleanFile(b.audio);
+        sg.updatedAt = Date.now();
+      };
+      if (!r1 && method === 'POST') {
+        const b = await json();
+        need(b.title && String(b.title).trim(), 400, 'Give the song a title');
+        const sg = { id: id('g'), createdBy: me.id, createdByName: me.name, createdAt: Date.now(), language: 'English', bpm: 90, timeSig: '4/4', tags: [], attachments: [] };
+        fields(b, sg);
+        db.songs.push(sg);
+        store.save();
+        return { song: sg };
+      }
+      const sg = db.songs.find((x) => x.id === r1);
+      need(sg, 404, 'Song not found');
+      if (method === 'PATCH') { fields(await json(), sg); store.save(); return { song: sg }; }
+      if (method === 'DELETE') { db.songs = db.songs.filter((x) => x.id !== sg.id); store.save(); return { ok: true }; }
     }
 
     // ---- assignments
@@ -327,7 +387,8 @@ function createServer(opts) {
             completedBy: isStaff(me) ? [...new Set(subs.filter((s) => meetsTarget(a, s)).map((s) => s.userId))].length : undefined,
             myBest: mine.length ? mine.reduce((b, s) => ((s.accuracy || 0) > (b.accuracy || 0) ? s : b)) : null,
             myDone: mine.some((s) => meetsTarget(a, s)),
-            feedback: mine.filter((s) => s.teacherComment).map((s) => ({ comment: s.teacherComment, date: s.reviewedAt })),
+            feedback: mine.filter((s) => s.teacherComment || s.rating || s.status === 'redo').map((s) => ({ comment: s.teacherComment || '', date: s.reviewedAt, rating: s.rating || 0, rubric: s.rubric || null, status: s.status, submissionId: s.id })),
+            redo: mine.length ? mine.slice().sort((x, y) => y.createdAt - x.createdAt)[0].status === 'redo' : false,
           });
         });
         return { assignments: list.sort((x, y) => (y.createdAt || 0) - (x.createdAt || 0)) };
@@ -338,7 +399,9 @@ function createServer(opts) {
         need(b.title && String(b.title).trim(), 400, 'Give the assignment a title');
         const a = {
           id: id('a'), title: String(b.title).slice(0, 120), instructions: String(b.instructions || '').slice(0, 4000),
-          instrument: b.instrument || 'any', mode: ['part', 'improv', 'challenge', 'free'].includes(b.mode) ? b.mode : 'part',
+          instrument: b.instrument || 'any', mode: ['part', 'improv', 'challenge', 'free', 'custom', 'song', 'learn'].includes(b.mode) ? b.mode : 'part',
+          attachments: cleanFiles(b.attachments), requireRecording: !!b.requireRecording, songId: b.songId ? String(b.songId).slice(0, 60) : null,
+          learn: b.learn && typeof b.learn === 'object' ? JSON.parse(JSON.stringify(b.learn)) : null,
           mixPreset: ['full', 'backing', 'part', 'rhythm'].includes(b.mixPreset) ? b.mixPreset : 'full',
           challenge: b.challenge || null, speed: Math.max(0.5, Math.min(1.25, +b.speed || 1)),
           targets: { accuracy: +b.targets?.accuracy || 0, minutes: +b.targets?.minutes || 0, stars: +b.targets?.stars || 0 },
@@ -353,7 +416,8 @@ function createServer(opts) {
       need(a, 404, 'Assignment not found');
       if (method === 'PATCH') {
         const b = await json();
-        for (const k of ['title', 'instructions', 'instrument', 'mode', 'mixPreset', 'challenge', 'speed', 'targets', 'dueDate', 'assignees']) if (b[k] !== undefined) a[k] = b[k];
+        for (const k of ['title', 'instructions', 'instrument', 'mode', 'mixPreset', 'challenge', 'speed', 'targets', 'dueDate', 'assignees', 'requireRecording', 'songId', 'learn']) if (b[k] !== undefined) a[k] = b[k];
+        if (b.attachments !== undefined) a.attachments = cleanFiles(b.attachments);
         store.save();
         return { assignment: a };
       }
@@ -369,18 +433,23 @@ function createServer(opts) {
     if (r0 === 'submissions') {
       if (!r1 && method === 'POST') {
         const b = await json();
-        const a = visibleAssignments(me).find((x) => x.id === b.assignmentId);
-        need(a, 404, 'Assignment not found');
+        // an assignment result, or a free "please review my playing" request (e.g. a song)
+        const a = b.assignmentId ? visibleAssignments(me).find((x) => x.id === b.assignmentId) : null;
+        need(a || (!b.assignmentId && (b.songId || b.recording)), 404, 'Assignment not found');
         const clientId = String(b.clientId || '');
         const existing = clientId && db.submissions.find((s) => s.clientId === clientId && s.userId === me.id);
         if (existing) return { submission: existing, duplicate: true };
+        const recording = cleanFile(b.recording);
+        if (recording) need(db.files.some((f) => f.id === recording.id && f.ownerId === me.id), 400, 'Recording not found');
         const s = {
-          id: id('s'), clientId, assignmentId: a.id, userId: me.id, userName: me.name, date: b.date || new Date().toISOString(), createdAt: Date.now(),
+          id: id('s'), clientId, assignmentId: a ? a.id : null, songId: b.songId ? String(b.songId).slice(0, 60) : null, title: String(b.title || (a ? a.title : 'Review request')).slice(0, 160),
+          userId: me.id, userName: me.name, date: b.date || new Date().toISOString(), createdAt: Date.now(),
           seconds: Math.max(0, +b.seconds || 0), accuracy: b.accuracy == null ? null : Math.max(0, Math.min(1, +b.accuracy)), score: +b.score || 0,
           stars: Math.max(0, Math.min(3, +b.stars || 0)), maxCombo: +b.maxCombo || 0, mode: String(b.mode || ''), instrument: String(b.instrument || ''),
-          insights: Array.isArray(b.insights) ? b.insights.slice(0, 10).map(String) : [], focus: String(b.focus || '').slice(0, 300), status: 'submitted',
+          insights: Array.isArray(b.insights) ? b.insights.slice(0, 10).map(String) : [], focus: String(b.focus || '').slice(0, 300),
+          note: String(b.note || '').slice(0, 2000), recording, status: 'submitted',
         };
-        s.meetsTarget = meetsTarget(a, s);
+        s.meetsTarget = a ? meetsTarget(a, s) : null;
         db.submissions.push(s);
         store.save();
         return { submission: s };
@@ -390,6 +459,8 @@ function createServer(opts) {
         const q = url.searchParams;
         if (q.get('assignmentId')) list = list.filter((s) => s.assignmentId === q.get('assignmentId'));
         if (q.get('userId')) list = list.filter((s) => s.userId === q.get('userId'));
+        if (q.get('songId')) list = list.filter((s) => s.songId === q.get('songId'));
+        if (q.get('status')) list = list.filter((s) => s.status === q.get('status'));
         return { submissions: list.sort((x, y) => y.createdAt - x.createdAt).slice(0, 1000) };
       }
       if (r1 && method === 'PATCH') {
@@ -398,7 +469,9 @@ function createServer(opts) {
         need(s, 404, 'Submission not found');
         const b = await json();
         if (b.teacherComment !== undefined) s.teacherComment = String(b.teacherComment).slice(0, 2000);
-        s.status = 'reviewed'; s.reviewedAt = Date.now(); s.reviewedBy = me.name;
+        if (b.rating !== undefined) s.rating = Math.max(0, Math.min(5, +b.rating || 0));
+        if (b.rubric && typeof b.rubric === 'object') s.rubric = Object.fromEntries(['pitch', 'timing', 'tone', 'expression'].map((k) => [k, Math.max(0, Math.min(5, +b.rubric[k] || 0))]));
+        s.status = b.status === 'redo' ? 'redo' : 'reviewed'; s.reviewedAt = Date.now(); s.reviewedBy = me.name;
         store.save();
         return { submission: s };
       }

@@ -7,4 +7,8 @@ contextBridge.exposeInMainWorld('cadenzaDesktop', {
   startServer: (opts) => ipcRenderer.invoke('classroom:start', opts),
   stopServer: () => ipcRenderer.invoke('classroom:stop'),
   serverStatus: () => ipcRenderer.invoke('classroom:status'),
+  startTunnel: (opts) => ipcRenderer.invoke('tunnel:start', opts),
+  stopTunnel: () => ipcRenderer.invoke('tunnel:stop'),
+  tunnelStatus: () => ipcRenderer.invoke('tunnel:status'),
+  onTunnel: (cb) => { const h = (_e, st) => cb(st); ipcRenderer.on('tunnel:update', h); return () => ipcRenderer.removeListener('tunnel:update', h); },
 });
