@@ -7,7 +7,33 @@
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
+const https = require('https');
+const dns = require('dns');
 const { startTunnel } = require('../desktop/tunnel.js');
+
+// Brand-new tunnel hostnames take a few seconds to exist; asking the runner's DNS too early
+// caches "not found" (seen on macOS), so resolve through public resolvers instead.
+const resolver = new dns.Resolver();
+resolver.setServers(['1.1.1.1', '8.8.8.8']);
+const lookup = (host, opts, cb) => resolver.resolve4(host, (err, addrs) => (err ? cb(err) : opts && opts.all ? cb(null, addrs.map((a) => ({ address: a, family: 4 }))) : cb(null, addrs[0], 4)));
+const agent = new https.Agent({ lookup, keepAlive: false });
+function fetch(url, init) {
+  init = init || {};
+  return new Promise((resolve, reject) => {
+    const req = https.request(url, { method: init.method || 'GET', headers: init.headers || {}, agent }, (res) => {
+      const chunks = [];
+      res.on('data', (c) => chunks.push(c));
+      res.on('end', () => {
+        const buf = Buffer.concat(chunks);
+        resolve({ ok: res.statusCode >= 200 && res.statusCode < 300, status: res.statusCode, text: async () => buf.toString(), json: async () => JSON.parse(buf.toString()), arrayBuffer: async () => buf });
+      });
+    });
+    req.setTimeout(30000, () => req.destroy(new Error('timeout')));
+    req.on('error', reject);
+    if (init.body) req.write(init.body);
+    req.end();
+  });
+}
 const { createServer } = require('../server/server.js');
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -22,6 +48,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
     while (Date.now() < until && !(t.status.url && t.status.state === 'online') && t.status.state !== 'error') await sleep(1000);
     if (!t.status.url || t.status.state !== 'online') { console.log('tunnel did not come up:', t.log().slice(-800)); t.stop(); continue; }
     const base = t.status.url;
+    await sleep(5000);
     for (let i = 0; i < 40; i++) { // DNS for the new address can take a little while
       try { const r = await fetch(base + '/api/health'); if (r.ok) { console.log('health via tunnel:', await r.text()); ok = true; break; } } catch (e) { /* not resolvable yet */ }
       await sleep(3000);
