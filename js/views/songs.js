@@ -51,8 +51,8 @@
         <p>Chord charts you can transpose, play with a backing band and record for your teacher. ${Sync.connected ? 'Songs and chord PDFs your teacher adds appear here automatically.' : 'Sign in to a classroom to get your teacher\'s songs and chord PDFs.'}</p></div>
         <div class="row">${canAdd ? `<button class="btn primary" id="sgAdd">${icon('plus')} Add a song</button>` : ''}</div></div>
       <section class="card" style="margin-bottom:18px"><div class="row" style="gap:12px">
-        <input type="search" id="sgQ" placeholder="Search title, author, words or tag…" value="${esc(st.q)}" style="flex:1;min-width:200px">
-        <div class="seg" id="sgLang">${langs.map((l) => `<button data-l="${esc(l)}" class="${st.lang === l ? 'on' : ''}">${l === 'all' ? 'All' : l === 'Tamil' ? 'Tamil · தமிழ்' : esc(l)}</button>`).join('')}</div></div></section>
+        <input type="search" id="sgQ" placeholder="Search title, author, words or tag…" value="${esc(st.q)}" style="flex:1 1 200px;min-width:0;max-width:100%">
+        <div class="seg seg-wrap" id="sgLang">${langs.map((l) => `<button data-l="${esc(l)}" class="${st.lang === l ? 'on' : ''}">${l === 'all' ? 'All' : l === 'Tamil' ? 'Tamil · தமிழ்' : esc(l)}</button>`).join('')}</div></div></section>
       <div id="sgList"></div>`;
     const draw = () => {
       const q = st.q.trim().toLowerCase();
@@ -210,7 +210,19 @@
         <button class="btn sm ghost" id="bStudio" style="margin-top:8px">${icon('studio')} Open in Studio (live coach)</button>`;
       const playBtn = $('#bPlay', box);
       const sync = () => { playBtn.innerHTML = `${icon(App.player.playing ? 'pause' : 'play')} ${App.player.playing ? 'Pause' : 'Play'}`; };
-      playBtn.onclick = async () => { if (App.player.playing) App.player.pause(); else await App.player.play(); sync(); };
+      playBtn.onclick = async () => {
+        const pl = App.player;
+        if (pl.playing) { pl.pause(); sync(); return; }
+        pl.connect();
+        PM.Audio.getCtx();
+        // start inside the tap (iOS); if the audio isn't decoded yet, start as soon as it is
+        const p = pl.el.play();
+        if (p && p.catch) p.catch((e) => {
+          if (e && e.name === 'NotAllowedError') { UI.toast('Tap Play again to start the band', { icon: '🔈' }); return; }
+          pl.el.addEventListener('canplay', () => pl.el.play().catch(() => {}), { once: true });
+        });
+        sync();
+      };
       $('#bStop', box).onclick = () => { App.player.pause(); App.player.time = 0; sync(); highlight(-1); };
       $('#bRate', box).onchange = (e) => { App.player.rate = +e.target.value; };
       $('#bStudio', box).onclick = () => { App.player.pause(); App.go('studio'); };

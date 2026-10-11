@@ -667,3 +667,7 @@ textarea { border: 1px solid var(--line); border-radius: 12px; padding: 10px 12p
 .mini-btn svg, .song-tools svg, .pdf-bar svg, .review svg { width: 14px; height: 14px; vertical-align: -2px; flex: none; }
 .mini-btn { display: inline-flex; align-items: center; gap: 4px; }
 @media (max-width: 760px) { .learn-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; } .learn-tile .small { display: none; } .learn-tile { padding: 14px; } }
+.seg.seg-wrap { flex-wrap: wrap; max-width: 100%; }
+.song-card { min-width: 0; }
+@media (max-width: 760px) { .song-grid { grid-template-columns: minmax(0, 1fr); } .song-tools .tool input[type=range] { width: 70px; } }
+@media (max-width: 760px) { .seg { flex-wrap: wrap; max-width: 100%; } }

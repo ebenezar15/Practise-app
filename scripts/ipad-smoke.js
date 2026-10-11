@@ -134,7 +134,7 @@ fs.mkdirSync(outDir, { recursive: true });
       const now = await page.$('.cp-line.now');
       await shot('song-playing');
       await tap('#bPlay');
-      if (!(t > 0.5)) throw new Error('band did not play: ' + t);
+      if (!(t > 0.5)) throw new Error('band did not play: ' + t + ' ' + JSON.stringify(await page.evaluate(() => { const e = PM.App.player.el; return { rs: e.readyState, paused: e.paused, err: e.error && e.error.code, dur: e.duration, ns: e.networkState }; })));
       if (!now) throw new Error('lyrics did not follow the band');
       return key + `, t=${t.toFixed(1)}s`;
     });
