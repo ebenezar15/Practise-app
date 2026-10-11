@@ -9,16 +9,27 @@ teacher/student accounts, assignments and sync.
 
 ## Downloads
 
-| What | How to get it |
-| --- | --- |
-| **Windows** | `Cadenza-<version>-win-x64.zip` (unzip → run `Cadenza.exe`), or the `.exe` installer from the *Build desktop apps* GitHub Action |
-| **macOS** | `.dmg` from the *Build desktop apps* GitHub Action (unsigned: right-click → Open the first time) |
-| **Linux** | `Cadenza-<version>-linux-x86_64.AppImage` (`chmod +x`, then run) or `.deb` from the Action |
-| **No install** | `Cadenza-web-<version>.zip` — open `index.html` in Chrome/Edge, or run the start script and click *Install app* |
+Get the latest version from the repository's **Releases** page:
 
-To build installers for every OS, open the repository's **Actions** tab → *Build desktop apps* →
-*Run workflow*. Pushing a tag such as `v2.0.0` also publishes them as a GitHub Release.
-Local builds: `cd desktop && npm install && npm run dist` (Windows `.exe` installers need Windows or Wine).
+| Your computer | File |
+| --- | --- |
+| **Windows** | `Cadenza-<version>-windows-setup.exe` (installer) or `Cadenza-<version>-windows-portable.exe` (no install) |
+| **Mac** (Apple Silicon M1–M4 *and* Intel) | `Cadenza-<version>-mac-universal.dmg` |
+| **Linux** | `Cadenza-<version>-linux-x86_64.AppImage` (`chmod +x`, run) or `.deb` |
+| **Any computer, no install** | `Cadenza-web-<version>.zip` — open `index.html` in Chrome/Edge |
+
+**First launch on a Mac:** drag Cadenza into Applications and open it. Because Cadenza isn't registered with
+Apple yet, macOS says it can't verify the developer — click *Done*, then go to **System Settings → Privacy &
+Security** and click **Open Anyway** (only needed once; on older macOS: right-click → Open). If macOS ever says
+the app is "damaged", run `xattr -dr com.apple.quarantine /Applications/Cadenza.app` in Terminal. To remove the
+prompt entirely, add an Apple Developer ID certificate as repository secrets (see `.github/workflows/desktop.yml`)
+and the build signs and notarizes automatically.
+
+**First launch on Windows:** if SmartScreen appears, click **More info → Run anyway**.
+
+Builds come from the *Build desktop apps* GitHub Action, which launches every packaged app on its own OS before
+publishing. Push a tag like `v2.0.1` to publish a release, or run the workflow manually from the Actions tab.
+Local builds: `cd desktop && npm install && npm run dist:mac` (or `dist:win`, `dist:linux`).
 
 ## Features
 

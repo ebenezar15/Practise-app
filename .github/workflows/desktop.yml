@@ -1,7 +1,12 @@
 name: Build desktop apps
 
-# Builds installers for Windows (.exe installer + portable), macOS (.dmg) and Linux (.AppImage/.deb).
-# Run it from the Actions tab ("Run workflow"), or push a tag like v2.0.0 to also publish a GitHub Release.
+# Builds Cadenza for Windows (installer + portable .exe), macOS (universal .dmg/.zip for Apple
+# Silicon and Intel) and Linux (.AppImage/.deb). Every build is launched on its own OS before it
+# is uploaded. Run from the Actions tab ("Run workflow"), or push a tag like v2.0.1 to publish a
+# GitHub Release with direct download links.
+#
+# Optional Apple signing/notarization (removes the "unverified developer" prompt): add repository
+# secrets MAC_CERT_P12_BASE64, MAC_CERT_PASSWORD, APPLE_ID, APPLE_APP_SPECIFIC_PASSWORD, APPLE_TEAM_ID.
 on:
   workflow_dispatch:
   push:
@@ -26,6 +31,9 @@ jobs:
       matrix:
         os: [windows-latest, macos-latest, ubuntu-latest]
     runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -33,21 +41,86 @@ jobs:
       - name: Install Electron tooling
         working-directory: desktop
         run: npm install --no-audit --no-fund
-      - name: Build installers
+
+      - name: Build (Windows)
+        if: runner.os == 'Windows'
+        working-directory: desktop
+        run: npm run dist:win
+
+      - name: Build (Linux)
+        if: runner.os == 'Linux'
+        working-directory: desktop
+        run: npm run dist:linux
+
+      - name: Build (macOS)
+        if: runner.os == 'macOS'
         working-directory: desktop
         env:
-          CSC_IDENTITY_AUTO_DISCOVERY: 'false' # unsigned builds; add signing secrets to sign
-        run: npm run dist
+          MAC_CERT: ${{ secrets.MAC_CERT_P12_BASE64 }}
+          MAC_CERT_PASSWORD: ${{ secrets.MAC_CERT_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          if [ -n "$MAC_CERT" ]; then
+            echo "Signing with Developer ID and notarizing"
+            export CSC_LINK="$MAC_CERT" CSC_KEY_PASSWORD="$MAC_CERT_PASSWORD"
+            npm run prepare-app
+            npx electron-builder --mac --publish never -c.mac.hardenedRuntime=true \
+              -c.mac.entitlements=build/entitlements.mac.plist -c.mac.entitlementsInherit=build/entitlements.mac.plist -c.mac.notarize=true
+          else
+            echo "No Apple certificate configured: ad-hoc signing (build/after-pack.js)"
+            CSC_IDENTITY_AUTO_DISCOVERY=false npm run dist:mac
+          fi
+
+      - name: Verify macOS app (signature, architectures, DMG)
+        if: runner.os == 'macOS'
+        working-directory: desktop/dist
+        run: |
+          APP="mac-universal/Cadenza.app"
+          codesign --verify --deep --strict --verbose=2 "$APP"
+          lipo -archs "$APP/Contents/MacOS/Cadenza" | tee /dev/stderr | grep -q "x86_64 arm64"
+          DMG=$(ls *.dmg | head -1)
+          hdiutil attach -nobrowse -readonly -mountpoint /tmp/cadenza-dmg "$DMG"
+          codesign --verify --deep --strict "/tmp/cadenza-dmg/Cadenza.app"
+          ls "/tmp/cadenza-dmg"
+          hdiutil detach /tmp/cadenza-dmg
+
+      - name: Launch test (macOS)
+        if: runner.os == 'macOS'
+        working-directory: desktop/dist
+        run: |
+          # simulate a browser download (quarantine flag) is not possible for the runner itself,
+          # so launch the exact bundle that ships and require it to render the UI and run audio code
+          CADENZA_SMOKE_TEST=1 "mac-universal/Cadenza.app/Contents/MacOS/Cadenza" 2>&1 | tee smoke.log
+          grep -q SMOKE_OK smoke.log
+
+      - name: Launch test (Windows)
+        if: runner.os == 'Windows'
+        working-directory: desktop/dist
+        run: |
+          CADENZA_SMOKE_TEST=1 timeout 180 ./win-unpacked/Cadenza.exe > smoke.log 2>&1 || (cat smoke.log; exit 1)
+          cat smoke.log
+          echo "Windows app exited cleanly"
+
+      - name: Launch test (Linux)
+        if: runner.os == 'Linux'
+        working-directory: desktop/dist
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq xvfb > /dev/null
+          CADENZA_SMOKE_TEST=1 xvfb-run -a ./linux-unpacked/cadenza-desktop --no-sandbox 2>&1 | tee smoke.log
+          grep -q SMOKE_OK smoke.log
+
       - uses: actions/upload-artifact@v4
         with:
-          name: cadenza-${{ matrix.os }}
+          name: cadenza-${{ runner.os }}
           path: |
             desktop/dist/*.exe
             desktop/dist/*.dmg
-            desktop/dist/*.zip
+            desktop/dist/*-mac-*.zip
             desktop/dist/*.AppImage
             desktop/dist/*.deb
-          if-no-files-found: ignore
+          if-no-files-found: error
 
   web-package:
     needs: test
@@ -66,7 +139,24 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v4
-        with: { path: artifacts }
+        with: { path: artifacts, merge-multiple: true }
+      - run: ls -la artifacts
       - uses: softprops/action-gh-release@v2
         with:
-          files: artifacts/**/*
+          name: Cadenza ${{ github.ref_name }}
+          body: |
+            ## Download Cadenza
+
+            | Your computer | File |
+            | --- | --- |
+            | **Windows** (installer) | `Cadenza-*-windows-setup.exe` |
+            | **Windows** (no install) | `Cadenza-*-windows-portable.exe` |
+            | **Mac** (Apple Silicon & Intel) | `Cadenza-*-mac-universal.dmg` |
+            | **Linux** | `Cadenza-*-linux-x86_64.AppImage` or `.deb` |
+            | **Any computer, no install** | `Cadenza-web-*.zip` (open `index.html` in Chrome/Edge) |
+
+            **Mac, first launch:** drag Cadenza to Applications and open it. If macOS says it can't verify the developer,
+            go to *System Settings → Privacy & Security* and click **Open Anyway** (once). Full steps are in the DMG.
+
+            **Windows, first launch:** if SmartScreen appears, click **More info → Run anyway**.
+          files: artifacts/*

@@ -1,7 +1,7 @@
 {
   "name": "cadenza-desktop",
   "productName": "Cadenza",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "Cadenza \u2014 offline AI practice coach for piano, guitar, bass & trumpet, with a built-in classroom server",
   "main": "main.js",
   "author": "Cadenza",
@@ -34,8 +34,18 @@
     "artifactName": "Cadenza-${version}-${os}-${arch}.${ext}",
     "win": {
       "target": [
-        "nsis",
-        "portable"
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
       ],
       "icon": "build/icon.png",
       "signAndEditExecutable": false
@@ -45,35 +55,83 @@
       "perMachine": false,
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
-      "shortcutName": "Cadenza"
+      "shortcutName": "Cadenza",
+      "artifactName": "Cadenza-${version}-windows-setup.${ext}"
     },
     "portable": {
-      "artifactName": "Cadenza-${version}-portable.exe"
+      "artifactName": "Cadenza-${version}-windows-portable.exe"
     },
     "mac": {
       "target": [
-        "dmg",
-        "zip"
+        {
+          "target": "dmg",
+          "arch": [
+            "universal"
+          ]
+        },
+        {
+          "target": "zip",
+          "arch": [
+            "universal"
+          ]
+        }
       ],
       "category": "public.app-category.music",
       "icon": "build/icon.png",
       "hardenedRuntime": false,
-      "entitlements": "build/entitlements.mac.plist",
-      "entitlementsInherit": "build/entitlements.mac.plist",
+      "gatekeeperAssess": false,
       "extendInfo": {
-        "NSMicrophoneUsageDescription": "Cadenza listens to your instrument to coach you in real time. Audio never leaves your computer."
+        "NSMicrophoneUsageDescription": "Cadenza listens to your instrument to coach you in real time. Audio never leaves your computer.",
+        "LSMinimumSystemVersion": "10.15"
       }
     },
     "linux": {
       "target": [
-        "AppImage",
-        "deb"
+        {
+          "target": "AppImage",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "deb",
+          "arch": [
+            "x64"
+          ]
+        }
       ],
       "category": "Audio",
       "icon": "build/icon.png",
       "maintainer": "Cadenza <hello@cadenza.app>"
     },
-    "publish": null
+    "publish": null,
+    "afterPack": "build/after-pack.js",
+    "dmg": {
+      "title": "Cadenza ${version}",
+      "contents": [
+        {
+          "x": 150,
+          "y": 190,
+          "type": "file"
+        },
+        {
+          "x": 450,
+          "y": 190,
+          "type": "link",
+          "path": "/Applications"
+        },
+        {
+          "x": 300,
+          "y": 360,
+          "type": "file",
+          "path": "build/How to open on Mac.txt"
+        }
+      ],
+      "window": {
+        "width": 600,
+        "height": 460
+      }
+    }
   },
   "repository": {
     "type": "git",

@@ -46,13 +46,38 @@ app.whenReady().then(async () => {
   const allowed = new Set(['media', 'midi', 'midiSysex', 'audioCapture', 'clipboard-sanitized-write']);
   session.defaultSession.setPermissionRequestHandler((_wc, permission, cb) => cb(allowed.has(permission)));
   session.defaultSession.setPermissionCheckHandler((_wc, permission) => allowed.has(permission));
-  if (process.platform === 'darwin' && systemPreferences.askForMediaAccess) {
-    try { await systemPreferences.askForMediaAccess('microphone'); } catch (e) { /* user can enable later */ }
-  }
   if (process.platform !== 'darwin') Menu.setApplicationMenu(null);
   createWindow();
+  // ask for the microphone after the window is visible (never block start-up on the prompt)
+  if (process.platform === 'darwin' && systemPreferences.askForMediaAccess) {
+    systemPreferences.askForMediaAccess('microphone').catch(() => { /* user can enable later */ });
+  }
+  if (process.env.CADENZA_SMOKE_TEST) smokeTest();
   app.on('activate', () => { if (BrowserWindow.getAllWindows().length === 0) createWindow(); });
 });
+
+/** CI check: the packaged app must start, render the UI and run its audio engine. */
+function smokeTest() {
+  const fail = (why) => { console.error('SMOKE_FAIL ' + why); app.exit(1); };
+  const timer = setTimeout(() => fail('timeout'), 45000);
+  win.webContents.once('did-fail-load', (_e, code, desc) => fail('load ' + code + ' ' + desc));
+  win.webContents.on('render-process-gone', (_e, d) => fail('renderer ' + d.reason));
+  win.webContents.once('did-finish-load', async () => {
+    try {
+      const r = await win.webContents.executeJavaScript(`(async () => {
+        await new Promise((res) => setTimeout(res, 1500));
+        const ok = !!document.querySelector('.brand-name') && typeof PM === 'object' && !!PM.App && !!PM.Analyzer;
+        const n = PM.Midi.renderNotes([{ midi: 60, start: 0, end: 0.5 }], { sampleRate: 8000 });
+        return { ok, title: document.title, samples: n.data.length, desktop: !!window.cadenzaDesktop };
+      })()`);
+      const st = await require('./app/server/server.js');
+      clearTimeout(timer);
+      if (!r.ok || !r.samples || !r.desktop || !st.createServer) return fail(JSON.stringify(r));
+      console.log('SMOKE_OK ' + JSON.stringify(r));
+      app.exit(0);
+    } catch (e) { fail(e.message); }
+  });
+}
 
 app.on('window-all-closed', () => {
   if (classroom) classroom.server.close();
