@@ -29,7 +29,7 @@ ipcMain.handle('classroom:start', async (_e, opts) => {
   if (classroom) return serverStatus();
   const { createServer } = require('./app/server/server.js');
   const dataDir = path.join(app.getPath('userData'), 'classroom-data');
-  const server = createServer({ dataDir, appDir: path.join(__dirname, 'app') });
+  const server = createServer({ dataDir, appDir: path.join(__dirname, 'app'), trustProxy: true }); // works behind Cloudflare Tunnel too
   const port = (opts && opts.port) || 8787;
   await new Promise((resolve, reject) => { server.once('error', reject); server.listen(port, '0.0.0.0', resolve); });
   classroom = { server, port, dataDir };

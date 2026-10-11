@@ -1,0 +1,26 @@
+# Cadenza on your own server with automatic HTTPS (Let's Encrypt via Caddy).
+#   1. Point a domain (e.g. music.yourschool.com) at this server's IP address.
+#   2. cd deploy && DOMAIN=music.yourschool.com docker compose up -d
+services:
+  cadenza:
+    build: ..
+    restart: unless-stopped
+    environment:
+      TRUST_PROXY: "1"
+    volumes:
+      - cadenza-data:/data
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    ports: ["80:80", "443:443"]
+    environment:
+      DOMAIN: ${DOMAIN:?Set DOMAIN to your domain name, e.g. DOMAIN=music.example.com}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on: [cadenza]
+volumes:
+  cadenza-data:
+  caddy-data:
+  caddy-config:

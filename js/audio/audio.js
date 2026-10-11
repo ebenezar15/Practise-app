@@ -13,6 +13,25 @@
     return ctx;
   }
 
+  /** iOS/iPadOS audio session: 'playback' ignores the silent switch; 'play-and-record' while listening. */
+  function setSessionType(type) {
+    try { if (navigator.audioSession && navigator.audioSession.type !== type) navigator.audioSession.type = type; } catch (e) { /* older Safari */ }
+  }
+
+  /** Safari only starts audio from a user gesture: unlock the AudioContext on the first tap. */
+  let unlocked = false;
+  function unlockAudio() {
+    if (unlocked) return;
+    unlocked = true;
+    setSessionType('playback');
+    try {
+      const c = getCtx();
+      const b = c.createBuffer(1, 1, 22050), s = c.createBufferSource();
+      s.buffer = b; s.connect(c.destination); s.start(0);
+    } catch (e) { unlocked = false; }
+  }
+  if (root.addEventListener) for (const ev of ['pointerdown', 'touchend', 'keydown']) root.addEventListener(ev, unlockAudio, { capture: true, passive: true });
+
   const isMidiFile = (file) => /\.(mid|midi|smf|kar)$/i.test(file.name) || /midi/.test(file.type);
 
   async function decodeAudioFile(file) {
@@ -65,6 +84,16 @@
     unload() { this.pause(); if (this.url) URL.revokeObjectURL(this.url); this.url = null; this.el.removeAttribute('src'); }
     get loaded() { return !!this.url; }
     async play() { this.connect(); getCtx(); try { await this.el.play(); } catch (e) { console.warn(e); } }
+    /** Call synchronously inside a tap: lets a later, delayed play() work on iOS (e.g. after a count-in). */
+    prime() {
+      if (!this.url) return;
+      this.connect();
+      const t = this.el.currentTime, el = this.el;
+      el.muted = true;
+      const p = el.play();
+      const done = () => { el.pause(); el.currentTime = t; el.muted = false; };
+      if (p && p.then) p.then(done, () => { el.muted = false; }); else done();
+    }
     pause() { this.el.pause(); }
     get playing() { return !this.el.paused && !this.el.ended; }
     get time() { return this.el.currentTime || 0; }
@@ -114,5 +143,5 @@
     async get(id) { try { const r = await tx('readonly', (s) => s.get(id)); return r && r.id ? r : null; } catch (e) { return null; } },
   };
 
-  PM.Audio = { getCtx, decodeAudioFile, isMidiFile, Player, Library };
+  PM.Audio = { getCtx, setSessionType, unlockAudio, decodeAudioFile, isMidiFile, Player, Library };
 })(typeof self !== 'undefined' ? self : globalThis);

@@ -25,6 +25,12 @@ the app is "damaged", run `xattr -dr com.apple.quarantine /Applications/Cadenza.
 prompt entirely, add an Apple Developer ID certificate as repository secrets (see `.github/workflows/desktop.yml`)
 and the build signs and notarizes automatically.
 
+**iPad & iPhone:** there's no App Store app; Cadenza installs from your classroom server's
+`https://` address in Safari → **Share → Add to Home Screen**. It then runs full-screen, offline,
+stays signed in and syncs. The app shows these steps itself. See **[docs/HOSTING.md](docs/HOSTING.md)**
+to put your server online (Render.com, your own server with Docker, or your computer + Cloudflare Tunnel).
+USB MIDI keyboards aren't supported on iPad/iPhone (use the microphone).
+
 **First launch on Windows:** if SmartScreen appears, click **More info → Run anyway**.
 
 Builds come from the *Build desktop apps* GitHub Action, which launches every packaged app on its own OS before

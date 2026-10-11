@@ -1,0 +1,17 @@
+# One-click hosting on Render.com: New + > Blueprint > pick this repository.
+# HTTPS and a https://<name>.onrender.com address are provided automatically.
+services:
+  - type: web
+    name: cadenza
+    runtime: docker
+    plan: starter            # a paid plan is required for the persistent disk below
+    healthCheckPath: /api/health
+    envVars:
+      - key: TRUST_PROXY
+        value: "1"
+      - key: DATA_DIR
+        value: /data
+    disk:
+      name: cadenza-data
+      mountPath: /data
+      sizeGB: 1

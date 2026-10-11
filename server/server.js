@@ -84,6 +84,7 @@ function createServer(opts) {
   const store = createStore(dataDir);
   const db = store.db;
   const failures = new Map(); // ip → [timestamps]
+  const trustProxy = opts.trustProxy != null ? opts.trustProxy : /^(1|true|yes)$/i.test(process.env.TRUST_PROXY || '');
 
   function auth(req) {
     const h = req.headers.authorization || '';
@@ -139,7 +140,9 @@ function createServer(opts) {
   async function api(req, res, url) {
     const method = req.method;
     const parts = url.pathname.replace(/^\/api\/?/, '').split('/').filter(Boolean);
-    const ip = req.socket.remoteAddress || '';
+    // behind an HTTPS proxy (Caddy, Render, Cloudflare…) use the real client address for rate limiting
+    const fwd = trustProxy && String(req.headers['cf-connecting-ip'] || req.headers['x-forwarded-for'] || '').split(',')[0].trim();
+    const ip = fwd || req.socket.remoteAddress || '';
     const json = async () => {
       const buf = await readBody(req, 2 * 1024 * 1024);
       if (!buf.length) return {};

@@ -135,7 +135,7 @@
             <div class="spacer"></div>
             <div class="speed">Speed <input type="range" id="speed" min="0.5" max="1.25" step="0.05" value="${player.rate || 1}"><b id="speedLbl">${Math.round((player.rate || 1) * 100)}%</b></div>
           </div>
-          <p class="muted small" style="margin-top:8px">Click the timeline to seek · Shift-drag to loop · Space play/pause · L listen · slowing down keeps the pitch.</p>`;
+          <p class="muted small" style="margin-top:8px">${matchMedia('(hover: none)').matches ? 'Tap the timeline to jump · use Loop 2 bars to repeat a section · slowing down keeps the pitch.' : 'Click the timeline to seek · Shift-drag to loop · Space play/pause · L listen · slowing down keeps the pitch.'}</p>`;
         timeline = new UI.Timeline($('#tl', host), a, {
           onSeek: (t) => { player.time = t; timeline.setTime(t); },
           onLoop: (loop) => { player.setLoop(loop && loop.a, loop && loop.b); $('#loopBtn', host).classList.toggle('primary', !!loop); },
@@ -150,6 +150,7 @@
           if (player.playing) { player.pause(); return; }
           if ($('#countIn', host).checked) {
             countingIn = true;
+            player.prime(); // iOS: the song starts after the count-in, outside this tap
             const m = App.metronome;
             const prev = { bpm: m.bpm, bpb: m.beatsPerBar, sub: m.subdivision };
             const pulses = a.meter.compound ? a.meter.pulsesPerBar : a.meter.beatsPerBar;

@@ -1,0 +1,55 @@
+name: iPad (Safari engine) & hosting checks
+
+# 1. Runs Cadenza in WebKit (Safari's engine) emulating iPad Pro 11 (portrait & landscape) and
+#    iPhone 13: every screen, playback after count-in, games, metronome, classroom sign-in,
+#    service worker and offline reload. Screenshots are uploaded as an artifact.
+# 2. Builds the Docker image and runs the Caddy HTTPS stack from deploy/, then checks the app,
+#    the API and the http→https redirect through the proxy.
+on:
+  workflow_dispatch:
+  push:
+    branches: ['claude/**', 'main']
+    paths: ['js/**', 'css/**', 'index.html', 'sw.js', 'server/**', 'deploy/**', 'Dockerfile', 'scripts/ipad-smoke.js', '.github/workflows/ipad-and-hosting.yml']
+
+jobs:
+  ipad-webkit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - name: Install Playwright WebKit
+        run: |
+          npm install --no-save --no-audit --no-fund playwright@1.56.1
+          npx playwright install --with-deps webkit
+      - name: iPad / iPhone smoke test (WebKit)
+        run: node scripts/ipad-smoke.js webkit ipad-screens
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: ipad-screenshots, path: ipad-screens }
+
+  hosting:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Start Cadenza + Caddy (HTTPS)
+        working-directory: deploy
+        run: DOMAIN=localhost docker compose up -d --build
+      - name: Check HTTPS app, API and redirect
+        env: { DOMAIN: localhost }
+        run: |
+          for i in $(seq 1 30); do curl -skf https://localhost/api/health && break; sleep 2; done
+          curl -skf https://localhost/api/health | grep -q '"ok":true'
+          curl -skf https://localhost/ | grep -q '<title>Cadenza'
+          curl -skf https://localhost/sw.js | grep -q 'cadenza-v'
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://localhost/)" = "308"
+          test "$(curl -sk -o /dev/null -w '%{http_code}' https://localhost/server/server.js)" = "404"
+          curl -skf -X POST https://localhost/api/setup -H 'Content-Type: application/json' -d '{"username":"maestro","password":"supersecret"}' | grep -q token
+          docker compose -f deploy/docker-compose.yml restart cadenza
+          sleep 5
+          for i in $(seq 1 30); do curl -skf https://localhost/api/health && break; sleep 2; done
+          curl -skf https://localhost/api/health | grep -q '"needsSetup":false'
+          echo "HTTPS hosting stack works and keeps data across restarts"
+      - if: always()
+        run: docker compose -f deploy/docker-compose.yml logs --tail 50
+        env: { DOMAIN: localhost }

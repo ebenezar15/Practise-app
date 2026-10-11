@@ -32,9 +32,14 @@
     async start(deviceId) {
       const ctx = PM.Audio.getCtx();
       this.stop();
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error(root.isSecureContext === false ? 'The microphone only works when Cadenza is opened over https:// (or installed as an app).' : 'This browser cannot access a microphone.');
+      }
       const constraints = { audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } };
       if (deviceId) constraints.audio.deviceId = { exact: deviceId };
-      this.stream = await navigator.mediaDevices.getUserMedia(constraints);
+      PM.Audio.setSessionType('play-and-record');
+      try { this.stream = await navigator.mediaDevices.getUserMedia(constraints); }
+      catch (e) { PM.Audio.setSessionType('playback'); throw e; }
       this.src = ctx.createMediaStreamSource(this.stream);
       this.gain = ctx.createGain();
       this.gain.gain.value = this.inputGain;
@@ -72,7 +77,7 @@
     stop() {
       this.running = false;
       if (this.raf) cancelAnimationFrame(this.raf);
-      if (this.stream) this.stream.getTracks().forEach((t) => t.stop());
+      if (this.stream) { this.stream.getTracks().forEach((t) => t.stop()); PM.Audio.setSessionType('playback'); }
       try { this.src && this.src.disconnect(); this.gain && this.gain.disconnect(); this.monitorGain && this.monitorGain.disconnect(); } catch (e) { /* ignore */ }
       this.stream = null;
     }

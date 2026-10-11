@@ -20,7 +20,7 @@
       const inst = App.instrument;
       const recent = s.history.slice(0, 5);
       const nextBadge = PM.GameData.BADGES.find((b) => !s.badges[b.id]);
-      host.innerHTML = `
+      host.innerHTML = `<div id="installHint" class="hidden"></div>
         <section class="card stage hero">
           <div>
             <div class="now-label">${greeting()}${s.name ? ', ' + esc(s.name) : ''} · ${PM.Instruments.get(inst).emoji} ${esc(PM.Instruments.get(inst).label)} mode</div>
@@ -83,6 +83,7 @@
             <div class="notice" style="margin-top:16px">${icon('headphones')}<div><b>Best results:</b> wear headphones while playing along so the coach hears only <i>you</i>, not the backing track. Using an audio interface? Pick it as the input in the Studio.</div></div>
           </div>
         </div>`;
+      PM.Install.render(host.querySelector('#installHint'));
     },
   });
 })(typeof self !== 'undefined' ? self : globalThis);

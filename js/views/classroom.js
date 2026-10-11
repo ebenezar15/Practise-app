@@ -72,6 +72,7 @@
     host.innerHTML = `
       <div class="page-head"><div><div class="eyebrow">Classroom</div><h1>Connect with your teacher</h1>
         <p>Sign in to your music school's Cadenza server to receive assignments, send your results and keep your progress synced across devices. Practising always works offline — results upload when you're back online.</p></div></div>
+      <div id="installHint" class="hidden"></div>
       <div class="grid g2">
         <section class="card">
           <div class="card-head"><h3>${icon('users')} Sign in or join</h3><span class="tag" id="srvState">server not checked</span></div>
@@ -92,6 +93,7 @@
         </section>
       </div>`;
     if (d) renderHostBox($('#hostBox', host), App);
+    PM.Install.render($('#installHint', host));
     const srv = $('#srv', host), form = $('#joinForm', host), msg = $('#joinMsg', host);
     let tab = 'login', health = null;
     const draw = () => {
