@@ -82,7 +82,9 @@
   // ------------------------------------------------------------------ join / sign in
   async function renderJoin(host, App) {
     const d = desktop();
-    const guess = location.protocol.startsWith('http') ? location.origin : (localStorage.getItem('cadenza.lastServer') || '');
+    // the app is served by the classroom server itself — except on static hosting (GitHub Pages)
+    const staticHost = /\.github\.io$/i.test(location.hostname);
+    const guess = localStorage.getItem('cadenza.lastServer') || (location.protocol.startsWith('http') && !staticHost ? location.origin : '');
     host.innerHTML = `
       <div class="page-head"><div><div class="eyebrow">Classroom</div><h1>Connect with your teacher</h1>
         <p>Sign in to your music school's Cadenza server to receive assignments, send your results and keep your progress synced across devices. Practising always works offline — results upload when you're back online.</p></div></div>
