@@ -315,7 +315,7 @@
   function buildShell() {
     // grouped navigation with clear names; phones show the first five + a "More" sheet
     const NAV = [
-      ['Learn', [['home', 'Home', 'Home'], ['academy', 'Academy', 'Academy'], ['learn', 'Practice Room', 'Practice'], ['kids', 'Kids Zone', 'Kids']]],
+      ['Learn', [['home', 'Home', 'Home'], ['academy', 'Academy', 'Academy'], ['learn', 'Practice Room', 'Practice'], ['kids', 'Kids Zone', 'Kids'], ['games', 'Challenge Arena', 'Challenges']]],
       ['Play', [['studio', 'Play-Along Studio', 'Play Along'], ['songs', 'Song Library', 'Songs'], ['metronome', 'Rhythm & Metronome', 'Rhythm'], ['tuner', 'Tuner', 'Tuner']]],
       ['Tools', [['insights', 'Song Analyzer', 'Analyzer'], ['toolkit', 'Music Toolkit', 'Toolkit'], ['planner', 'Practice Planner', 'Planner']]],
       ['You', [['progress', 'My Progress', 'Progress'], ['classroom', 'Classroom', 'Classroom']]],

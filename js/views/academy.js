@@ -380,5 +380,5 @@
     draw();
   }
 
-  PM.AcademyView = { keysSvg, play, quiz };
+  PM.AcademyView = { keysSvg, playKeys, fretSvg, valveIcons, play, quiz };
 })(typeof self !== 'undefined' ? self : globalThis);

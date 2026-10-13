@@ -38,12 +38,13 @@
   }
 
   PM.App.register({
-    id: 'games', title: 'Challenges', icon: 'games', hidden: true, // opened from Learn
+    id: 'games', title: 'Challenge Arena', icon: 'games',
     render(host, App) {
       const hs = App.game.state.highScores;
       host.innerHTML = `
-        <div class="page-head"><div><div class="eyebrow">Challenges</div><h1>Level up with games</h1><p>Short, focused drills that turn practice into play. Every round earns XP, and high scores are saved.</p></div>
-        <div class="row"><label class="field">Difficulty<select id="diff"><option value="easy">Easy</option><option value="medium" selected>Medium</option><option value="hard">Hard</option></select></label></div></div>
+        <div class="page-head"><div><div class="eyebrow">Challenges</div><h1>Level up with games</h1><p>Creative challenges at every level — ear duels, beat-the-clock sprints, survival rounds, rhythm tap-backs and memory games. The questions change every time you play.</p></div></div>
+        <section class="card ar-wrap" id="arena"></section>
+        <div class="card-head" style="margin:26px 0 10px"><h3>🎸 Play-on-your-instrument games</h3><div class="row"><label class="field">Difficulty<select id="diff"><option value="easy">Easy</option><option value="medium" selected>Medium</option><option value="hard">Hard</option></select></label></div></div>
         <div class="grid" id="cards" style="grid-template-columns:repeat(auto-fill,minmax(230px,1fr))">${GAMES.filter((g) => (g.id !== 'chord-quest' || PM.Instruments.get(App.instrument).chordal) && (g.id !== 'long-tones' || App.instrument !== 'piano')).map((g) => `
           <section class="card game-card">
             <div class="game-art"><span>${g.art}</span></div>
@@ -51,6 +52,7 @@
             <div class="row"><span class="muted small">Best: <b>${hs[g.id] || 0}</b></span><div class="spacer"></div><button class="btn primary sm" data-g="${g.id}">${icon('play')} Play</button></div>
           </section>`).join('')}</div>
         <section class="card stage game-stage hidden" id="stage" style="margin-top:18px"></section>`;
+      if (PM.Arena) PM.Arena.mount($('#arena', host), App);
       let current = null;
       const stage = $('#stage', host);
       $$('[data-g]', host).forEach((b) => (b.onclick = () => {

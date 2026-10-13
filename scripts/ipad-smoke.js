@@ -241,6 +241,22 @@ fs.mkdirSync(outDir, { recursive: true });
       await shot('click-patterns');
       return q + ' clicks scheduled';
     });
+    await step('challenge arena: 20+ per level, a round with fresh questions', async () => {
+      await page.goto(base + '/#/games');
+      await page.waitForSelector('.ar-card', { timeout: 5000 });
+      const counts = [];
+      for (const lv of [1, 2, 3]) { await tap(`#arLvl [data-l="${lv}"]`); counts.push(await page.locator('.ar-card').count()); }
+      if (counts.some((n) => n < 20)) throw new Error('levels have ' + counts.join('/'));
+      await tap('#arLvl [data-l="1"]');
+      await tap('.ar-card[data-c="band-builder"]');
+      await page.waitForSelector('#arA .ar-opt', { timeout: 5000 });
+      const p1 = await page.textContent('.ar-prompt');
+      await page.evaluate(() => document.querySelector('#arA .ar-opt').click());
+      await page.waitForTimeout(1700);
+      await shot('challenge-arena');
+      await closeModals();
+      return counts.join('/') + ' challenges · “' + p1.slice(0, 40) + '…”';
+    });
     await step('Cadi answers a question', async () => {
       await page.evaluate(() => document.querySelectorAll('.cadi-bubble').forEach((b) => b.classList.add('hidden')));
       await tap('#cadiFab');
