@@ -206,8 +206,14 @@ fs.mkdirSync(outDir, { recursive: true });
       if (!/F#/.test(t)) throw new Error('unexpected answer: ' + t);
     });
     await step('insights render', async () => {
+      await page.evaluate(() => { window.__smokeMark = 1; });
+      const pre = await page.evaluate(() => (PM.App.track ? 'track "' + PM.App.track.name + '"' : 'no track') + ' at ' + location.hash);
       await page.goto(base + '/#/insights');
-      await page.waitForSelector('#dyn', { timeout: 10000 });
+      try { await page.waitForSelector('#dyn', { timeout: 10000 }); }
+      catch (e) {
+        const post = await page.evaluate(() => `${window.__smokeMark ? 'same page' : 'PAGE RELOADED'}, ${PM.App.track ? 'track "' + PM.App.track.name + '" analysis ' + !!PM.App.track.analysis : 'no track'}, view ${PM.App.currentView}`);
+        throw new Error(`no #dyn — before: ${pre}; after: ${post}`);
+      }
       await shot('insights');
     });
     await step('studio: navigate the song (sections, next chord, track switcher, mini transport)', async () => {
@@ -280,6 +286,94 @@ fs.mkdirSync(outDir, { recursive: true });
       await shot('voice-insights');
       if (!/For your voice/.test(txt)) throw new Error('no voice section');
       if (!/Melody, voicings/.test(txt)) throw new Error('no melody section');
+    });
+    await step('worship library: Bethel chart, guitar & piano tutorial, groove hand-off', async () => {
+      await page.goto(base + '/#/songs');
+      await page.waitForSelector('#sgCol', { timeout: 5000 });
+      await tap('#sgCol [data-c="Bethel Music"]');
+      const n = await page.locator('.song-card').count();
+      await page.goto(base + '/#/songs?id=wl-goodness-of-god');
+      await page.waitForSelector('.cp-bar', { timeout: 5000 });
+      await page.waitForSelector('.tutorial', { timeout: 5000 });
+      await tap('#tutSeg [data-v="piano"]');
+      await page.waitForSelector('.tut-voicing', { timeout: 3000 });
+      await shot('worship-tutorial');
+      await tap('#tutSeg [data-v="guitar"]');
+      const steps = await page.locator('.tut-steps li').count();
+      await tap('#tutGroove');
+      await page.waitForSelector('.style-item', { timeout: 5000 });
+      const style = await page.evaluate(() => PM.App.sequencer && PM.App.sequencer.style && PM.App.sequencer.style.id);
+      if (n < 4) throw new Error('only ' + n + ' Bethel songs');
+      if (steps < 6) throw new Error('tutorial steps ' + steps);
+      return `${n} Bethel songs · ${steps} tutorial steps · groove ${style}`;
+    });
+    await step('Tamil worship patterns render', async () => {
+      await page.goto(base + '/#/songs?id=ta-keharwa-praise');
+      await page.waitForSelector('.cp-bar', { timeout: 5000 });
+      const h = await page.textContent('.cp-section');
+      if (!/பல்லவி/.test(h)) throw new Error('section label ' + h);
+    });
+    await step('kids: plan, tap-the-colours lesson, stars and sticker book', async () => {
+      await page.goto(base + '/#/kids');
+      await page.waitForSelector('.plan-card', { timeout: 5000 });
+      await closeModals();
+      await tap('#kTrack [data-t="piano"]');
+      const before = await page.evaluate(() => PM.App.game.state.kids.stars);
+      await tap('.kid-tile[data-l="p3"]');
+      await page.waitForSelector('#kOk', { timeout: 5000 });
+      await shot('kids-step');
+      await tap('#kOk');
+      for (const m of [60, 62, 64, 62, 60]) { await tap(`.ck[data-m="${m}"]`); await page.waitForTimeout(120); }
+      await page.waitForSelector('.kp-done', { timeout: 5000 });
+      await shot('kids-done');
+      await page.evaluate(() => document.querySelectorAll('.modal-back').forEach((m) => m.remove()));
+      const after = await page.evaluate(() => PM.App.game.state.kids.stars);
+      if (!(after > before)) throw new Error('no stars');
+      return `${after - before} stars`;
+    });
+    await step('kids: tap-along beat and breathing break', async () => {
+      await page.goto(base + '/#/kids');
+      await tap('#kTrack [data-t="rhythm"]');
+      await tap('.kid-tile[data-l="r1"]');
+      await tap('#kOk');
+      await tap('#kStart');
+      const beat = 60 / 70;
+      await page.waitForTimeout(300 + 4 * beat * 1000);
+      for (let i = 0; i < 8; i++) { await page.locator('#kPad').dispatchEvent('pointerdown'); await page.waitForTimeout(beat * 1000); }
+      await page.waitForSelector('#kNext', { timeout: 6000 });
+      const res = await page.textContent('.kp-say h2');
+      await tap('#kNext');
+      await page.waitForSelector('.kp-done', { timeout: 5000 });
+      await page.evaluate(() => document.querySelectorAll('.modal-back').forEach((m) => m.remove()));
+      await tap('#kBreathe');
+      await page.waitForSelector('.bubble', { timeout: 3000 });
+      await page.waitForTimeout(2500);
+      await shot('kids-breathe');
+      await page.evaluate(() => document.querySelectorAll('.modal-back').forEach((m) => m.remove()));
+      return res;
+    });
+    await step('appearance: ocean theme, dark mode, readable font', async () => {
+      await page.goto(base + '/#/progress');
+      await page.waitForSelector('#appearance .theme-sw', { timeout: 5000 });
+      await page.locator('[data-theme-id="ocean"]').evaluate((e) => e.scrollIntoView({ block: 'center' }));
+      await tap('[data-theme-id="ocean"]');
+      await tap('#apMode [data-v="dark"]');
+      await tap('[data-font-id="readable"]');
+      const d = await page.evaluate(() => ({ ...document.documentElement.dataset, bg: getComputedStyle(document.body).backgroundColor, family: getComputedStyle(document.body).fontFamily }));
+      await page.goto(base + '/#/kids');
+      await page.waitForSelector('.plan-card', { timeout: 5000 });
+      await shot('dark-ocean-kids');
+      await page.goto(base + '/#/songs?id=wl-goodness-of-god');
+      await page.waitForSelector('.tutorial', { timeout: 5000 });
+      await shot('dark-ocean-song');
+      await page.reload();
+      await page.waitForSelector('.tutorial', { timeout: 10000 });
+      const kept = await page.evaluate(() => document.documentElement.dataset.theme + '/' + document.documentElement.dataset.mode);
+      // back to the defaults for the remaining steps
+      await page.evaluate(() => { PM.App.settings.appearance = {}; PM.App.saveSettings(); PM.Theme.apply(PM.App.settings); });
+      if (d.theme !== 'ocean' || d.mode !== 'dark' || d.font !== 'readable') throw new Error(JSON.stringify(d));
+      if (kept !== 'ocean/dark') throw new Error('not kept after reload: ' + kept);
+      return `${d.bg} · ${d.family.split(',')[0]}`;
     });
     await step('ear trainer game', async () => {
       await page.goto(base + '/#/games');

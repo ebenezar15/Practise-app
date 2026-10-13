@@ -23,6 +23,17 @@
     const S = seq(App);
     const prefs = Object.assign({ chords: 'C | G | Am | F', cat: 'All', styleId: 'pop-ballad', accomp: true, autoFill: 4 }, loadJ(PREF_KEY, {}));
     const savePrefs = () => saveJ(PREF_KEY, prefs);
+    // arriving from a song tutorial: pick the matching groove, the song's chords and tempo
+    if (App.pendingGroove && tab === 'styles') {
+      const g = App.pendingGroove;
+      App.pendingGroove = null;
+      const map = { ballad: 'pop-ballad', mid: 'worship-pop', upbeat: 'gospel-praise', slow68: 'worship-68', waltz: 'slow-waltz', hymn: 'pop-ballad', keharwa: 'keherwa', dadra: 'dadra' };
+      prefs.styleId = Styles.get(map[g.feel]) ? map[g.feel] : prefs.styleId;
+      if (g.chords && g.chords.length) prefs.chords = g.chords.join(' | ');
+      savePrefs();
+      if (S.style && S.style.id !== prefs.styleId) S.setStyle(Styles.get(prefs.styleId));
+      if (g.bpm) S.bpm = Math.round(g.bpm);
+    }
     let cleanup = [];
     host.innerHTML = `<div class="page-head"><div><div class="eyebrow">Metronome & rhythm</div><h1>${tab === 'styles' ? 'Practise with real grooves' : 'Build your own beats'}</h1>
       <p>${tab === 'styles' ? 'Keyboard-style rhythms with Intro, Main A/B, Fill and Ending. Type chords and the bass and piano/guitar follow you.' : 'Tap the grid to program drums. Click once for a hit, again for an accent, again for a ghost note. Then practise along — Cadenza scores every hit.'}</p></div></div>

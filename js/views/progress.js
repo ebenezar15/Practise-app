@@ -55,7 +55,9 @@
           <div class="row" style="margin-top:10px"><button class="btn sm" id="calib">${icon('target')} Auto-calibrate latency</button><span class="muted small" id="calibMsg">Uses your speakers + mic: turn the volume up and stay quiet for 6 seconds.</span></div>
           <p class="small" style="margin-top:8px">Latency: if the coach consistently says you're “dragging” while you feel on time, raise this value until timing reads centred. Bluetooth headphones usually need 150–200 ms.</p>
           <div class="row" style="margin-top:14px"><button class="btn danger sm" id="reset">${icon('trash')} Reset all progress</button></div>
-        </section>`;
+        </section>
+        <section class="card" id="appearance" style="margin-top:18px"></section>`;
+      PM.Theme.panel($('#appearance', host), App);
       const draw = () => UI.barChart($('#chart', host), days.map((d) => ({ label: d.label.slice(0, 2), value: Math.round(d.seconds / 60) })), { goal: App.settings.dailyGoal });
       draw();
       addEventListener('resize', draw);

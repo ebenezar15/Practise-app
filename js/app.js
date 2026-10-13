@@ -277,6 +277,7 @@
             ${PM.Instruments.list().map((I) => `<button data-inst="${I.id}" title="${esc(I.label)}">${icon(I.icon)}${esc(I.short)}</button>`).join('')}
           </div>
           <div class="mini-level"></div>
+          <button class="theme-btn" id="themeBtn" title="Appearance: colours, fonts, calm mode">🎨 Theme & fonts</button>
           <div class="offline-pill"><i></i> Works offline · on-device AI</div>
           <a class="sync-pill" id="syncSide" href="#/classroom" style="text-decoration:none"><i></i><span>Classroom: not connected</span></a>
         </div>
@@ -286,10 +287,12 @@
       b.classList.toggle('on', b.dataset.inst === App.instrument);
       b.addEventListener('click', () => App.setInstrument(b.dataset.inst));
     });
+    $('#themeBtn').onclick = () => PM.Theme.openModal(App);
     updateMiniLevel();
   }
 
   App.start = function () {
+    PM.Theme.apply(App.settings);
     if (App.settings.voiceType) PM.Learn.setVoiceType(App.settings.voiceType);
     App.live.instrument = App.instrument;
     App.live.latency = App.settings.latency;

@@ -15,6 +15,15 @@
   <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="icons/icon.png">
   <link rel="stylesheet" href="css/styles.css">
+  <script>
+    // apply the saved theme before first paint (no flash of the default colours)
+    try {
+      var a = (JSON.parse(localStorage.getItem('cadenza.settings.v1') || '{}').appearance) || {}, d = document.documentElement;
+      d.dataset.theme = a.theme || 'violet'; d.dataset.font = a.font || 'avenir'; d.dataset.text = a.text || 'md';
+      d.dataset.spacing = a.spacing || 'normal'; d.dataset.calm = a.calm ? '1' : '0';
+      d.dataset.mode = a.mode === 'dark' || (a.mode === 'auto' && matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+    } catch (e) { /* defaults */ }
+  </script>
 </head>
 <body>
   <div id="app" class="app"></div>
@@ -39,6 +48,8 @@
   <script src="js/core/curriculum.js"></script>
   <script src="js/core/styles.js"></script>
   <script src="js/core/agent.js"></script>
+  <script src="js/core/worship.js"></script>
+  <script src="js/core/kids.js"></script>
   <!-- Browser audio -->
   <script src="js/audio/audio.js"></script>
   <script src="js/audio/live.js"></script>
@@ -50,6 +61,7 @@
   <script src="js/ui/install.js"></script>
   <script src="js/ui/docview.js"></script>
   <script src="js/ui/recordpanel.js"></script>
+  <script src="js/ui/theme.js"></script>
   <script src="js/ui/pitchtrail.js"></script>
   <script src="js/ui/playalong.js"></script>
   <script src="js/ui/agent.js"></script>
@@ -60,6 +72,7 @@
   <script src="js/views/studio.js"></script>
   <script src="js/views/songs.js"></script>
   <script src="js/views/learn.js"></script>
+  <script src="js/views/kids.js"></script>
   <script src="js/views/insights.js"></script>
   <script src="js/views/games.js"></script>
   <script src="js/views/metronome.js"></script>

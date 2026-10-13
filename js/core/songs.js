@@ -138,7 +138,12 @@
           });
           if (prev < next.length) segs[segs.length - 1].text += next.slice(prev);
           lines.push({ type: 'lyric', segs, section });
-        } else lines.push({ type: 'lyric', segs: chords.map((c) => ({ chord: c.chord, text: ' ' })), section, chordsOnly: true });
+        } else {
+          const entry = { type: 'lyric', segs: chords.map((c) => ({ chord: c.chord, text: ' ' })), section, chordsOnly: true };
+          // "| G | C D | Em |" — explicit bars (one cell per bar, several chords share it)
+          if (/\|/.test(line)) entry.barCells = line.split('|').map((c) => c.trim().split(/\s+/).filter((t) => splitChord(t) || t === '%')).filter((c) => c.length);
+          lines.push(entry);
+        }
         continue;
       }
       const segs = [];
@@ -207,6 +212,15 @@
     let carry = null;
     parsed.lines.forEach((l, li) => {
       if (l.type !== 'lyric') return;
+      if (l.barCells) {
+        for (const cell of l.barCells) {
+          const names = cell.map((t) => (t === '%' ? carry : t)).filter(Boolean);
+          if (!names.length) continue;
+          carry = names[names.length - 1];
+          out.push({ chords: names.map((n) => mk(n, bpb / names.length)).filter(Boolean), line: li });
+        }
+        return;
+      }
       const len = l.segs.reduce((n, s) => n + Math.max(1, s.text.length), 0);
       const nCh = l.segs.filter((s) => s.chord && splitChord(s.chord)).length;
       const lineBars = Math.max(barsPerLine, Math.ceil(nCh / slots));

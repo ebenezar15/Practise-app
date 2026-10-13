@@ -83,6 +83,7 @@
   }
 
   function confetti() {
+    if (PM.Theme && PM.Theme.calm()) return; // calm mode: no flashing celebration
     const c = document.createElement('canvas');
     c.id = 'confetti';
     document.body.appendChild(c);

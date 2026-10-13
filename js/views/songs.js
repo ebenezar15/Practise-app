@@ -23,6 +23,7 @@
     return list;
   }
   const findSong = (id) => allSongs().find((s) => s.id === id) || null;
+  const colOf = (s) => s.collection || (s.source === 'builtin' ? 'Hymns' : '');
   const langOf = (s) => s.language || (Songs.hasTamil(s.chart) ? 'Tamil' : 'English');
   const srcLabel = { builtin: 'Hymnal', class: 'Classroom', mine: 'My songs' };
   const canEdit = (s) => s.source === 'mine' || (s.source === 'class' && Sync.isStaff);
@@ -42,31 +43,38 @@
 
   // ------------------------------------------------------------------ list
   function renderList(host, App) {
-    const st = App.songFilter || (App.songFilter = { q: '', lang: 'all' });
+    const st = App.songFilter || (App.songFilter = { q: '', lang: 'all', col: 'all' });
+    st.col = st.col || 'all';
+    const COLS = ['all'].concat(PM.Worship ? PM.Worship.COLLECTIONS : ['Hymns']);
     const songs = allSongs();
     const langs = ['all', ...new Set(songs.map(langOf).concat(['English', 'Tamil']))];
     const canAdd = !Sync.connected || Sync.isStaff;
     host.innerHTML = `
-      <div class="page-head"><div><div class="eyebrow">Songs</div><h1>Gospel & hymn library</h1>
-        <p>Chord charts you can transpose, play with a backing band and record for your teacher. ${Sync.connected ? 'Songs and chord PDFs your teacher adds appear here automatically.' : 'Sign in to a classroom to get your teacher\'s songs and chord PDFs.'}</p></div>
+      <div class="page-head"><div><div class="eyebrow">Songs</div><h1>Worship, gospel & hymn library</h1>
+        <p>Bethel, Hillsong and contemporary worship chord charts, public-domain hymns with words and Tamil worship patterns — each with a guitar & piano tutorial, strumming pattern and a backing band. ${Sync.connected ? 'Songs and chord PDFs your teacher adds appear here automatically.' : 'Sign in to a classroom to get your teacher\'s songs and chord PDFs.'}</p></div>
         <div class="row">${canAdd ? `<button class="btn primary" id="sgAdd">${icon('plus')} Add a song</button>` : ''}</div></div>
       <section class="card" style="margin-bottom:18px"><div class="row" style="gap:12px">
         <input type="search" id="sgQ" placeholder="Search title, author, words or tag…" value="${esc(st.q)}" style="flex:1 1 200px;min-width:0;max-width:100%">
+        <div class="seg seg-wrap" id="sgCol">${COLS.map((c) => `<button data-c="${esc(c)}" class="${st.col === c ? 'on' : ''}">${c === 'all' ? 'All collections' : esc(c)}</button>`).join('')}</div>
         <div class="seg seg-wrap" id="sgLang">${langs.map((l) => `<button data-l="${esc(l)}" class="${st.lang === l ? 'on' : ''}">${l === 'all' ? 'All' : l === 'Tamil' ? 'Tamil · தமிழ்' : esc(l)}</button>`).join('')}</div></div></section>
       <div id="sgList"></div>`;
     const draw = () => {
       const q = st.q.trim().toLowerCase();
-      const list = songs.filter((s) => (st.lang === 'all' || langOf(s) === st.lang) && (!q || [s.title, s.author, s.chart, (s.tags || []).join(' ')].join(' ').toLowerCase().includes(q)));
-      const groups = ['class', 'mine', 'builtin'].map((src) => [src, list.filter((s) => s.source === src)]).filter(([, l]) => l.length);
+      const list = songs.filter((s) => (st.lang === 'all' || langOf(s) === st.lang) && (st.col === 'all' || colOf(s) === st.col) && (!q || [s.title, s.author, s.chart, (s.tags || []).join(' ')].join(' ').toLowerCase().includes(q)));
+      const groups = ['class', 'mine'].map((src) => [src, list.filter((s) => s.source === src)])
+        .concat(COLS.slice(1).map((c) => ['col:' + c, list.filter((s) => s.source === 'builtin' && colOf(s) === c)]))
+        .filter(([, l]) => l.length);
+      const GH = { class: '🎓 From your classroom', mine: '⭐ My songs', 'col:Bethel Music': '🔥 Bethel Music · chord charts', 'col:Hillsong': '🌊 Hillsong · chord charts', 'col:Contemporary worship': '🎸 Contemporary worship · chord charts', 'col:Hymns': '📖 Hymns & spirituals · words and chords (public domain)', 'col:Tamil worship': '🪔 Tamil worship · தமிழ் practice patterns' };
       $('#sgList', host).innerHTML = groups.length ? groups.map(([src, l]) => `
-        <h3 style="margin:6px 0 12px">${src === 'class' ? '🎓 From your classroom' : src === 'mine' ? '⭐ My songs' : '📖 Public-domain hymns & spirituals'}</h3>
+        <h3 style="margin:6px 0 12px">${GH[src] || esc(src)}</h3>
         <div class="song-grid">${l.map((s) => `<a class="card song-card" href="#/songs?id=${encodeURIComponent(s.id)}">
           <div class="song-art ${langOf(s) === 'Tamil' ? 'ta' : ''}">${langOf(s) === 'Tamil' ? 'த' : '♪'}</div>
           <div style="min-width:0;flex:1"><b class="${Songs.hasTamil(s.title) ? 'tamil' : ''}">${esc(s.title)}</b><div class="muted small" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(s.author || '')}</div>
-          <div class="row" style="gap:6px;margin-top:6px"><span class="tag">${esc(s.key || '?')}</span><span class="tag">${esc(s.timeSig || '4/4')}</span><span class="tag">${esc(langOf(s))}</span>${(s.attachments || []).length ? `<span class="tag">📄 ${s.attachments.length}</span>` : ''}</div></div></a>`).join('')}</div>`).join('')
+          <div class="row" style="gap:6px;margin-top:6px"><span class="tag">${esc(s.key || '?')}</span><span class="tag">${esc(s.timeSig || '4/4')}</span><span class="tag">${esc(langOf(s))}</span>${s.level ? `<span class="tag">L${s.level}</span>` : ''}${s.lyrics === 'chords' ? '<span class="tag">chords</span>' : ''}${(s.attachments || []).length ? `<span class="tag">📄 ${s.attachments.length}</span>` : ''}</div></div></a>`).join('')}</div>`).join('')
         : `<div class="empty">No songs match.${canAdd ? ' Add one with <b>Add a song</b> — paste the chords & lyrics (English, Tamil or any language) and attach a chord PDF.' : ''}</div>`;
     };
     $('#sgQ', host).oninput = (e) => { st.q = e.target.value; draw(); };
+    $$('#sgCol button', host).forEach((b) => (b.onclick = () => { st.col = b.dataset.c; $$('#sgCol button', host).forEach((x) => x.classList.toggle('on', x === b)); draw(); }));
     $$('#sgLang button', host).forEach((b) => (b.onclick = () => { st.lang = b.dataset.l; $$('#sgLang button', host).forEach((x) => x.classList.toggle('on', x === b)); draw(); }));
     const add = $('#sgAdd', host);
     if (add) add.onclick = () => editSong(null, App);
@@ -91,8 +99,8 @@
     host.innerHTML = `
       <div class="page-head"><div style="min-width:0"><a href="#/songs" class="eyebrow" style="text-decoration:none">${icon('back')} All songs</a>
         <h1 class="${Songs.hasTamil(song.title) ? 'tamil' : ''}">${esc(song.title)}</h1><p>${esc(song.author || '')}</p>
-        <div class="row" style="gap:6px;margin-top:8px"><span class="chip" id="kChip"></span><span class="chip">${esc(song.timeSig || parsed.meta.time || '4/4')}</span><span class="chip">${song.bpm || parsed.meta.tempo || 90} BPM</span><span class="chip">${esc(langOf(song))}</span><span class="chip">${srcLabel[song.source]}</span></div></div>
-        <div class="row">${canEdit(song) ? `<button class="btn ghost sm" id="sgEdit">${icon('sliders')} Edit</button><button class="btn ghost sm" id="sgDel" style="color:var(--bad)">${icon('trash')} Delete</button>` : ''}${Sync.isStaff ? `<button class="btn sm" id="sgAssign">${icon('clipboard')} Assign</button>` : ''}</div></div>
+        <div class="row" style="gap:6px;margin-top:8px"><span class="chip" id="kChip"></span><span class="chip">${esc(song.timeSig || parsed.meta.time || '4/4')}</span><span class="chip">${song.bpm || parsed.meta.tempo || 90} BPM</span><span class="chip">${esc(langOf(song))}</span><span class="chip">${esc(song.source === 'builtin' ? colOf(song) : srcLabel[song.source] || 'My songs')}</span></div></div>
+        <div class="row">${song.source === 'builtin' ? `<button class="btn ghost sm" id="sgCopy" title="Copy this song to edit the chords, add words or a chord sheet">${icon('plus')} Make my copy</button>` : ''}${canEdit(song) ? `<button class="btn ghost sm" id="sgEdit">${icon('sliders')} Edit</button><button class="btn ghost sm" id="sgDel" style="color:var(--bad)">${icon('trash')} Delete</button>` : ''}${Sync.isStaff ? `<button class="btn sm" id="sgAssign">${icon('clipboard')} Assign</button>` : ''}</div></div>
       ${asg ? `<div class="notice" style="margin-bottom:16px">${icon('clipboard')}<div><b>Assignment: ${esc(asg.title)}</b>${asg.instructions ? '<br>' + esc(asg.instructions) : ''}<br><span class="small">Practise it, then press <b>Record & send</b> when you're ready.</span></div></div>` : ''}
       <div class="song-layout">
         <section class="card song-main">
@@ -106,6 +114,7 @@
           ${written ? '<p class="muted small" style="margin:0 0 10px">Chords are shown in <b>B♭ trumpet (written) pitch</b>.</p>' : ''}
           <div class="chart ${Songs.hasTamil(song.chart) ? 'tamil' : ''}" id="chart"></div>
           ${song.notes ? `<div class="notice" style="margin-top:16px">${icon('info')}<div style="white-space:pre-wrap">${esc(song.notes)}</div></div>` : ''}
+          <div id="tut" style="margin-top:18px"></div>
         </section>
         <aside class="song-side">
           <section class="card"><div class="card-head"><h3>${icon('mic')} Practise</h3></div>
@@ -133,6 +142,7 @@
         if (l.type === 'section') html += `<div class="cp-section ${l.kind}">${esc(l.label)}</div>`;
         else if (l.type === 'comment') html += `<div class="cp-comment">${esc(l.text)}</div>`;
         else if (l.type === 'blank') html += '<div class="cp-gap"></div>';
+        else if (l.type === 'lyric' && l.barCells) html += `<div class="cp-line cp-bars${l.section === 'chorus' ? ' chorus' : ''}" data-li="${li}">${l.barCells.map((cell) => `<span class="cp-bar">${cell.map((c) => esc(c === '%' ? '%' : Songs.transposeChord(c, n, fl))).join(' ')}</span>`).join('')}</div>`;
         else if (l.type === 'lyric') html += `<div class="cp-line${l.section === 'chorus' ? ' chorus' : ''}" data-li="${li}">${l.segs.map((s) => `<span class="cp-seg"><span class="cp-ch">${s.chord ? esc(Songs.transposeChord(s.chord, n, fl)) : ''}</span><span class="cp-tx">${esc(s.text) || '&nbsp;'}</span></span>`).join('')}</div>`;
       });
       chartEl.innerHTML = html || '<div class="empty">This song has no chord chart yet — see the attached chord sheet.</div>';
@@ -141,7 +151,40 @@
       else kc.textContent = 'Key —';
       $('#tLbl', host).textContent = (p.t > 0 ? '+' : '') + p.t;
       drawDiagrams();
+      drawTutorial();
     };
+    // ---- tutorial (guitar & piano): patterns, capo, voicings, steps and dynamics
+    const drawTutorial = () => {
+      const box = $('#tut', host);
+      if (!box || !PM.Worship || !parsed.lines.some((l) => l.type === 'lyric')) return;
+      const n = p.t, fl = Songs.prefersFlats(key, n);
+      const shifted = Object.assign({}, song, { key: key ? Songs.keyName(key, n) : song.key, chart: transposedChart(n, fl) });
+      const tu = PM.Worship.tutorial(shifted);
+      const view = p.tutView || (I.family === 'keys' ? 'piano' : 'guitar');
+      const done = p.steps || (p.steps = {});
+      const grid = (pat, label) => `<div class="tut-pat"><span class="small muted">${label}</span><div class="tut-grid">${pat.split('').map((c, i) => `<span class="${c === '-' ? 'rest' : ''}${i % (tu.feel.grid === 6 ? 3 : 2) === 0 ? ' beat' : ''}">${c === 'D' ? '↓' : c === 'U' ? '↑' : c === '-' ? '·' : c}</span>`).join('')}</div><div class="tut-count">${pat.split('').map((_, i) => `<span>${tu.feel.grid === 6 ? i + 1 : i % 2 ? '&' : i / 2 + 1}</span>`).join('')}</div></div>`;
+      box.innerHTML = `<div class="tutorial">
+        <div class="card-head"><h3>🎓 Tutorial · ${esc(tu.feel.name)}</h3><div class="seg" id="tutSeg"><button data-v="guitar" class="${view === 'guitar' ? 'on' : ''}">🎸 Guitar</button><button data-v="piano" class="${view === 'piano' ? 'on' : ''}">🎹 Piano</button></div></div>
+        ${view === 'guitar' ? `
+          <div class="grid g2">${grid(tu.feel.strum, 'Strumming pattern')}${grid(tu.feel.easy, 'Easier version (start here)')}</div>
+          ${grid(tu.feel.pick, 'Finger-picking (B = bass string, 1–3 = top strings) — great for verses')}
+          ${tu.capo.length ? `<div class="notice" style="margin-top:12px">🎸<div><b>Capo options</b> (sound in ${esc(shifted.key)}): ${tu.capo.map((c) => `${c.capo ? 'capo ' + c.capo : 'no capo'} → <b>${esc(c.shapes)} shapes</b> (${c.chords.join(' ')})${c.barre ? ` · ${c.barre} barre` : ' · no barre chords'}`).join('; ')}</div></div>` : ''}`
+        : `
+          <div class="tut-piano">${tu.piano.filter(Boolean).map((v) => `<div class="tut-voicing"><b>${esc(v.chord)}</b><span>RH ${esc(v.names.join(' '))}</span><span class="small muted">${esc(v.inversion)} · LH ${esc(v.bass)}</span></div>`).join('')}</div>
+          <p class="small" style="margin-top:8px">These right-hand voicings are <b>voice-led</b>: each chord uses the inversion closest to the one before, so your hand barely moves.</p>
+          <div class="grid g2" style="margin-top:10px"><div class="notice">🫲<div><b>Left hand</b><br>${esc(tu.feel.pianoLH)}</div></div><div class="notice">🫱<div><b>Right hand</b><br>${esc(tu.feel.pianoRH)}</div></div></div>`}
+        ${tu.hardest ? `<div class="notice" style="margin-top:12px">⏱️<div><b>Hardest change: ${esc(tu.hardest.pair)}</b> — practise it on its own for a minute and count clean changes.</div></div>` : ''}
+        <h4 style="margin:16px 0 8px">Step by step</h4>
+        <ol class="tut-steps">${tu.steps.map((st, i) => `<li class="${done[i] ? 'done' : ''}"><label><input type="checkbox" data-step="${i}" ${done[i] ? 'checked' : ''}><b>${esc(st.t)}</b></label><span>${esc(st.d)}</span></li>`).join('')}</ol>
+        ${tu.roadmap.length ? `<h4 style="margin:16px 0 8px">Dynamics roadmap</h4><div class="tut-road">${tu.roadmap.map((r) => `<div><b>${esc(r.label)}</b><span>${esc(r.plan)}</span></div>`).join('')}</div>` : ''}
+        <div class="row" style="margin-top:12px"><button class="btn sm" id="tutMetro">${icon('metronome')} Metronome at ${Math.round(tu.bpm * 0.7)} BPM</button><button class="btn sm ghost" id="tutGroove">${icon('music')} Practise with a ${esc(tu.feel.drums)} groove</button></div>
+      </div>`;
+      $$('#tutSeg [data-v]', box).forEach((b) => (b.onclick = () => { p.tutView = b.dataset.v; savePrefs(); drawTutorial(); }));
+      $$('[data-step]', box).forEach((c) => (c.onchange = () => { done[c.dataset.step] = c.checked; savePrefs(); c.closest('li').classList.toggle('done', c.checked); if (c.checked && Object.values(done).filter(Boolean).length === tu.steps.length) { UI.toast('Tutorial complete — record it for your teacher!', { icon: '🏆' }); UI.confetti(); } }));
+      $('#tutMetro', box).onclick = () => { const m = App.metronome; m.setBpm(Math.round(tu.bpm * 0.7)); m.beatsPerBar = bpb; App.go('metronome'); };
+      $('#tutGroove', box).onclick = () => { App.pendingGroove = { feel: song.feel || (bpb === 3 ? 'waltz' : 'mid'), bpm: tu.bpm, chords: tu.unique }; App.metroTab = 'styles'; App.go('metronome'); };
+    };
+    const transposedChart = (n, fl) => (n ? (song.chart || '').replace(/\[([^\]]+)\]/g, (m0, c) => '[' + Songs.transposeChord(c, n, fl) + ']').replace(/^(\s*\|.*)$/gm, (line) => line.replace(/[A-G][#b]?[^\s|]*/g, (c) => Songs.transposeChord(c, n, fl))) : song.chart || '');
     const drawDiagrams = () => {
       const n = shown(), fl = flats();
       const names = Songs.chartChords(parsed);
@@ -162,6 +205,7 @@
     $('#showCh', host).onchange = (e) => { p.chords = e.target.checked; savePrefs(); drawChart(); };
     drawChart();
     if ($('#atts', host)) PM.DocView.wire($('#atts', host), song.attachments);
+    if ($('#sgCopy', host)) $('#sgCopy', host).onclick = () => editSong(Object.assign({}, song, { source: 'copy', id: null, title: song.title, chart: song.chart, notes: '' }), App);
 
     // ---- auto-scroll (manual speed, or following the band)
     let scrolling = false, sraf = 0, lastT = 0, acc = 0;
@@ -296,11 +340,11 @@
 
   // ------------------------------------------------------------------ editor
   function editSong(song, App) {
-    const toClass = Sync.connected && Sync.isStaff && (!song || song.source === 'class');
+    const toClass = Sync.connected && Sync.isStaff && (!song || song.source === 'class' || song.source === 'copy');
     const s = song ? Object.assign({}, song) : { title: '', author: '', language: 'English', key: 'G', timeSig: '4/4', bpm: 90, chart: '', bars: '', notes: '', tags: [], attachments: [] };
     let atts = (s.attachments || []).slice();
     const m = UI.modal(`<div class="modal-body">
-      <h2>${song ? 'Edit song' : 'Add a song'}</h2>
+      <h2>${song && song.source === 'copy' ? 'Make my copy' : song ? 'Edit song' : 'Add a song'}</h2>
       <p class="small" style="margin-top:4px">${toClass ? 'Saved to your classroom — every student sees it.' : 'Saved on this device.'} Lyrics can be in any language (தமிழ் works too).</p>
       <div class="grid g2" style="margin-top:12px">
         <label class="field">Title<input type="text" id="eTitle" value="${esc(s.title)}"></label>
@@ -357,7 +401,7 @@
         const data = { title, author: q('eAuthor').value.trim(), language: q('eLang').value, key: q('eKey').value.trim() || pm.key || '', timeSig: q('eTime').value, bpm: +q('eBpm').value || 90, chart, bars: q('eBars').value, notes: q('eNotes').value, tags: q('eTags').value.split(',').map((t) => t.trim()).filter(Boolean), attachments: atts };
         let id;
         if (toClass) {
-          const d = song ? await Sync.request('PATCH', '/songs/' + song.id, data) : await Sync.request('POST', '/songs', data);
+          const d = song && song.source === 'class' ? await Sync.request('PATCH', '/songs/' + song.id, data) : await Sync.request('POST', '/songs', data);
           id = d.song.id;
           await Sync.fetchSongs();
         } else {

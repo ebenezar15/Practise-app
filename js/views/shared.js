@@ -21,6 +21,17 @@
         <span class="muted small">No file handy?</span>
         ${(() => { const I = PM.Instruments.get(App.instrument); return `<button class="btn sm ghost" data-demo="${I.id}">${icon(I.icon)} ${esc(I.short)} demo</button>`; })()}
       </div>`;
+    // pick up where you left off (Safari on iPad may reload a background tab)
+    PM.Audio.Library.list().then((items) => {
+      const last = items.find((x) => x.analysis && x.analysis.beats);
+      if (!last || !container.querySelector('.dropzone')) return;
+      const row = document.createElement('div');
+      row.className = 'row';
+      row.style.cssText = 'justify-content:center;margin-top:8px';
+      row.innerHTML = `<button class="btn sm" data-continue>${icon('play')} Continue with “${esc(last.name)}”</button>`;
+      container.appendChild(row);
+      row.querySelector('[data-continue]').onclick = () => run(async (p) => { p(0.3, 'Opening…'); await App.openFromLibrary(last); return last; });
+    }).catch(() => {});
     const dz = container.querySelector('.dropzone');
     const input = dz.querySelector('input');
     const run = async (fn) => {

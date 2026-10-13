@@ -16,7 +16,7 @@ const path = require('path');
 const crypto = require('crypto');
 const { mergeProgress } = require('../js/core/syncmerge.js');
 
-const VERSION = '2.3.0';
+const VERSION = '2.4.0';
 const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.svg': 'image/svg+xml', '.json': 'application/json', '.webmanifest': 'application/manifest+json', '.png': 'image/png', '.wav': 'audio/wav', '.mid': 'audio/midi', '.mp3': 'audio/mpeg' };
 
 // ---------------- storage ----------------
