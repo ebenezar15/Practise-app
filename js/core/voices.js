@@ -92,6 +92,17 @@
     for (const c of fs) for (let i = 0; i < out.length; i++) out[i] = bq(c, out[i]);
   }
 
+  function toneCurveCircular(buf, gains, sr) {
+    const N = buf.length, fs = [];
+    TONE_BANDS.forEach((f, k) => { if (Math.abs(gains[k]) > 0.05 && f < sr * 0.45) fs.push(biquad('peaking', f, 2.6, sr, gains[k])); });
+    if (!fs.length) return;
+    const reps = Math.max(3, Math.ceil((0.06 * sr) / N)); // run long enough for the low bands to settle
+    const y = new Float32Array(N);
+    for (let r = 0; r < reps; r++) for (let i = 0; i < N; i++) { let x = buf[i]; for (const c of fs) x = bq(c, x); if (r === reps - 1) y[i] = x; }
+    let m = 0; for (let i = 0; i < N; i++) m += y[i];
+    m /= N; for (let i = 0; i < N; i++) buf[i] = y[i] - m;
+  }
+
   // ------------------------------------------------------------------ plucked strings (KS)
   function pluck(midi, o, kind) {
     const sr = o.sr, vel = o.vel, f = mtof(midi), r = rng(midi * 104729 + (kind === 'bass' ? 3 : kind === 'electric' ? 2 : 1));
@@ -115,6 +126,10 @@
     for (let i = 0; i < N; i++) { buf[i] = ex[i] - (i >= pd ? ex[i - pd] : 0); mean += buf[i]; }
     mean /= N;
     for (let i = 0; i < N; i++) buf[i] -= mean;
+    // the string loop is linear, so shaping the initial vibration (one period, filtered
+    // circularly until steady) sets every harmonic's level exactly like an output EQ, at a
+    // tiny fraction of the cost
+    if (kind === 'guitar') toneCurveCircular(buf, TONE.guitar, sr);
     let idx = 0, prev = 0, ax = 0, ay = 0;
     for (let i = 0; i < len; i++) {
       const x = buf[idx];
@@ -129,7 +144,6 @@
       // recording of a strummed grand-auditorium guitar (TONE.guitar, half-octave bands)
       const b1 = biquad('bandpass', 98, 5, sr), b2 = biquad('bandpass', 196, 4, sr), b3 = biquad('bandpass', 390, 3, sr);
       for (let i = 0; i < len; i++) { const x = out[i]; out[i] = x * 0.9 + bq(b1, x) * 1.1 + bq(b2, x) * 0.6 + bq(b3, x) * 0.15; }
-      toneCurve(out, TONE.guitar, sr);
       // the strum's bite: the first moments ring louder, then settle into the body's sustain
       for (let i = 0, n = Math.floor(0.25 * sr); i < n && i < len; i++) out[i] *= 1 + TONE.guitarAttack * Math.exp(-i / (0.035 * sr));
       const cl = Math.floor(0.003 * sr), hp = biquad('highpass', 2500, 0.7, sr);
