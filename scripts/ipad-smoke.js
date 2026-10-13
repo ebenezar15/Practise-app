@@ -154,12 +154,56 @@ fs.mkdirSync(outDir, { recursive: true });
       for (let i = 0; i < 3; i++) { await tap('[data-l="E"]'); await page.waitForTimeout(1200); }
       const r = await page.textContent('#nR');
       await tap('[data-a="scales"]');
-      await page.waitForSelector('.sq', { timeout: 5000 });
+      await page.waitForSelector('#paLane', { timeout: 5000 });
       await shot('learn-scales');
       await tap('[data-a="sight"]');
       await page.waitForSelector('.staff', { timeout: 5000 });
       await shot('learn-sight');
       return 'round ' + r;
+    });
+    await step('exercise path: open an exercise, listen to the reference', async () => {
+      await page.goto(base + '/#/learn');
+      await tap('[data-a="path"]');
+      await page.waitForSelector('.path-item', { timeout: 5000 });
+      const n = await page.locator('.path-item').count();
+      await tap('.path-item');
+      await page.waitForSelector('#paGo', { timeout: 5000 });
+      await tap('#paListen');
+      await page.waitForTimeout(800);
+      await shot('exercise-path');
+      if (n < 50) throw new Error('only ' + n + ' exercises');
+      return n + ' exercises';
+    });
+    await step('styles: groove plays with Main B and accompaniment', async () => {
+      await page.goto(base + '/#/metronome');
+      await tap('#mTabs [data-t="styles"]');
+      await page.waitForSelector('.style-item', { timeout: 5000 });
+      await tap('[data-st="gospel-praise"]');
+      await tap('#rPlay');
+      await page.waitForTimeout(1200);
+      await tap('[data-sec="B"]');
+      await page.waitForTimeout(2500);
+      const q = await page.evaluate(() => PM.App.sequencer.running && PM.App.sequencer.queue.length);
+      await shot('styles');
+      await tap('#rPlay');
+      if (!q) throw new Error('sequencer not running');
+      return q + ' steps scheduled';
+    });
+    await step('beat maker grid', async () => {
+      await tap('#mTabs [data-t="beats"]');
+      await page.waitForSelector('.sq-cell', { timeout: 5000 });
+      await tap('.sq-row[data-v="clap"] .sq-cell');
+      await shot('beat-maker');
+    });
+    await step('Cadi answers a question', async () => {
+      await page.evaluate(() => document.querySelectorAll('.cadi-bubble').forEach((b) => b.classList.add('hidden')));
+      await tap('#cadiFab');
+      await page.fill('#cadiQ', 'notes in G major');
+      await page.press('#cadiQ', 'Enter');
+      await page.waitForTimeout(700);
+      const t = await page.locator('.cadi-msg.cadi').last().textContent();
+      await tap('#cadiClose');
+      if (!/F#/.test(t)) throw new Error('unexpected answer: ' + t);
     });
     await step('insights render', async () => {
       await page.goto(base + '/#/insights');
@@ -175,6 +219,7 @@ fs.mkdirSync(outDir, { recursive: true });
     });
     await step('metronome starts and ticks', async () => {
       await page.goto(base + '/#/metronome');
+      await tap('#mTabs [data-t="click"]');
       await tap('#startBtn');
       await page.waitForTimeout(1500);
       const ticks = await page.evaluate(() => PM.App.metronome.queue.length);

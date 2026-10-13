@@ -159,12 +159,16 @@ jobs:
           name: Cadenza ${{ steps.tag.outputs.name }}
           make_latest: true
           body: |
-            ## What's new in 2.1
-            * **Custom assignments** with chord PDFs / sheet music / audio attachments and *student must send a recording*.
-            * **Record & send for review** (with or without the backing track, works offline); teachers **listen**, give stars, a pitch/timing/tone/expression rubric and comments, or **ask to try again**.
-            * **Songs**: gospel & hymn library — English, Tamil or any language — chord charts with transpose/capo/auto-scroll, chord PDFs, a backing band in the song's meter, song assignments.
-            * **Learn**: scales, arpeggios, technique exercises, sight-reading, note names, chord library & one-minute changes, interval ear training, call & response, progression builder.
-            * **Free online classroom**: *Classroom → Host classroom → Put online* opens a Cloudflare Tunnel with an `https://` address for students at home and iPads.
+            ## What's new in 2.2
+            * **Exercise path:** 70+ graded exercises per instrument (piano, acoustic, electric, bass, trumpet) from Level 1 to Level 5 — scales, arpeggios, melodies, rhythm, intervals, modes, chord changes and technique.
+            * **Play along with live feedback:** count-in and click, scrolling note lane, every note judged for pitch and timing (on time / early / late / wrong / missed), stars and progress that sync.
+            * **Playback revisions:** every take is recorded — play it back, hear it against the reference, compare takes and send the best one to your teacher.
+            * **Rhythm styles:** 41 keyboard-style rhythms (ballads, disco, hard rock, funk, Latin, jazz, gospel, world…) with Intro / Main A / Main B / Fill / Ending and auto-accompaniment that follows your chords.
+            * **Beat maker:** step sequencer & pattern builder (16ths, triplets, 3/4, 6/8, swing, accents, ghost notes), save your patterns, start from any style, and rhythm practice that scores every hit.
+            * **Cadi, your practice coach:** comments live while you play, reviews and compares takes, plans your practice and answers music questions (chords, scales, intervals, time signatures, technique) — offline, with optional spoken tips.
+
+            ### Also in 2.1
+            * Custom assignments with PDFs, record & send for review, teacher listening review, gospel/hymn song library (English, Tamil & any language), Learn modes, free Cloudflare Tunnel hosting.
 
             ## Download Cadenza
 

@@ -13,8 +13,20 @@
     id: 'metronome', title: 'Metronome', icon: 'metronome',
     render(host, App) {
       const m = App.metronome;
+      const tab = App.metroTab || 'click';
+      const tabs = `<div class="seg big-tabs" id="mTabs" style="margin-bottom:18px">${[['click', 'metronome', 'Click'], ['styles', 'music', 'Styles (40+ rhythms)'], ['beats', 'sliders', 'Beat maker']].map(([k, ic, l]) => `<button data-t="${k}" class="${tab === k ? 'on' : ''}">${icon(ic)} ${l}</button>`).join('')}</div>`;
+      const wireTabs = () => $$('#mTabs button', host).forEach((b) => (b.onclick = () => { if (b.dataset.t === tab) return; App.metroTab = b.dataset.t; App.keepSequencer = true; App.rerender(); }));
+      const seqCleanup = () => { if (App.keepSequencer) { App.keepSequencer = false; return; } if (App.sequencer && App.sequencer.running) App.sequencer.stop(); };
+      if (tab !== 'click') {
+        if (m.running) m.stop();
+        const c = PM.RhythmView.render(host, App, tab, tabs);
+        wireTabs();
+        return () => { c && c(); seqCleanup(); };
+      }
+      if (App.sequencer && App.sequencer.running) App.sequencer.stop();
       host.innerHTML = `
-        <div class="page-head"><div><div class="eyebrow">Metronome</div><h1>Lock in your time</h1><p>Accents, subdivisions and odd meters — plus a speed trainer and a live timing check that scores how tight you play against the click.</p></div></div>
+        <div class="page-head"><div><div class="eyebrow">Metronome</div><h1>Lock in your time</h1><p>Accents, subdivisions and odd meters — plus a speed trainer and a live timing check that scores how tight you play against the click. For grooves, open <b>Styles</b> or build your own in the <b>Beat maker</b>.</p></div></div>
+        ${tabs}
         <div class="metro-stage">
           <section class="card stage">
             <div class="metro-circle" id="circle"><div class="metro-flash" id="flash"></div>
@@ -195,7 +207,8 @@
         else if (e.key === 't' || e.key === 'T') { m.tap(); syncBpm(); }
       };
       addEventListener('keydown', onKey);
-      return () => { cancelAnimationFrame(raf); offM(); removeEventListener('keydown', onKey); stopCheck(false); };
+      wireTabs();
+      return () => { cancelAnimationFrame(raf); offM(); removeEventListener('keydown', onKey); stopCheck(false); App.keepSequencer = false; };
     },
   });
 })(typeof self !== 'undefined' ? self : globalThis);

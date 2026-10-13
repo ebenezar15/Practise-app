@@ -296,6 +296,7 @@
     PM.Sync.on(pill);
     PM.Sync.start();
     pill();
+    if (PM.Cadi) PM.Cadi.init(App);
     addEventListener('hashchange', () => App.route());
     App.route();
     if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {

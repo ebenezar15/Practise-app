@@ -57,6 +57,11 @@ Local builds: `cd desktop && npm install && npm run dist:mac` (or `dist:win`, `d
 | **Learn** | Scales (major, minors, pentatonics, blues, modes; 1–2 octaves, any key), arpeggios, instrument-specific technique (five-finger & Hanon-style, chromatic 1-2-3-4, root–fifth, lip slurs…), sight-reading on the staff, note-names quiz, chord library + one-minute changes, interval ear training, call & response (echo & improvised answers), progression builder → jam with a band. The coach listens and moves on with you; slips are reported. |
 | **Songs** | Public-domain hymns & spirituals built in; teachers add songs in **English, Tamil or any language** (ChordPro or chords-over-lyrics) with **chord PDFs**, images and audio. Transpose, capo, text size, auto-scroll, chord diagrams for your instrument (B♭ chords for trumpet), a generated **backing band in the song's meter** whose lyrics highlight as it plays, and **record & send for review**. |
 | **Recordings & review** | Record with or without the backing track, listen back, add a note, send (queued offline, uploads later). Teachers listen in **Results**, give 1–5 stars, a pitch/timing/tone/expression rubric and comments, or **ask to try again**. |
+| **Exercise path** | 70+ graded exercises per instrument (Level 1 → 5): first notes, pulse, scales in many keys, arpeggios, melodies, rhythms, intervals, modes, 7th arpeggios, ii–V–I chord tones, chord changes and instrument technique. Play along with count-in and click — every note is judged for pitch and timing — or use *Wait for me*. Stars and progress sync. |
+| **Takes & playback** | Every play-along take is recorded: play it back, hear it **with the reference**, compare takes (accuracy, timing ±ms) and send the best to your teacher. |
+| **Rhythm styles** | 41 arranger-keyboard style rhythms (pop/worship ballads, soft & hard rock, disco, funk, house, hip-hop, reggae, bossa, samba, cha cha, tango, swing, jazz waltz, country, waltzes, gospel 12/8, 6/8 worship, bhangra, keherwa, dadra…) with Intro, Main A/B, Fill, Ending and auto-accompaniment (bass + chords) following the chords you type. |
+| **Beat maker** | Step sequencer & pattern builder: 18 synthesized drum voices, 16th/8th/triplet/3/4/6/8/5/4/7/8 grids, accents, ghost notes, swing, save/load, start from a style. **Rhythm practice** scores your claps/strums against any drum part. |
+| **Cadi — practice coach** | Built-in, offline coach: live comments while you play (rushing/dragging, repeated wrong notes, streaks), take reviews and comparisons, practice plans from your history, and answers to music questions (chords for your instrument, scales, intervals, time signatures, tempo words, technique). Optional spoken tips. |
 | **Challenges** | Chord Quest, Rhythm Hero, Note Hunter (per-instrument ranges), Long Tones, Ear Trainer. |
 | **Gamification** | XP, levels, streaks, daily challenges, 21 badges (incl. Improviser & Homework Hero), stars, history. |
 | **Classroom** | Master teacher, teachers & students; invite codes; **custom assignments** (instructions + PDFs/audio + required recording), song-library and Learn assignments, play-along/improvise/challenge assignments with mix, speed, targets and due dates; results with coach insights; listening review; synced progress. |
@@ -142,11 +147,11 @@ real-world mixes (MIDI is exact), and all results are best treated as a practice
 
 ```
 index.html, css/, icons/, sw.js, manifest.webmanifest, serve.js
-js/core/     dsp · theory · instruments · rhythm · midi · analyzer · separation · improv · backing · coach · game · syncmerge · songs · learn
-js/audio/    AudioContext + player + IndexedDB library · live mic/MIDI engines · metronome · recorder
+js/core/     dsp · theory · instruments · rhythm · midi · analyzer · separation · improv · backing · coach · game · syncmerge · songs · learn · curriculum · styles · agent
+js/audio/    AudioContext + player + IndexedDB library · live mic/MIDI engines · metronome · recorder · drums (kit, step sequencer, accompaniment)
 js/sync/     classroom account, outbox & progress sync client
-js/ui/       components (keyboard, fretboard, valves, chord diagrams, timeline, radar, charts) · PDF/attachment viewer · record panel
-js/views/    home · studio · songs · learn · insights · games · metronome · tuner · progress · classroom
+js/ui/       components (keyboard, fretboard, valves, chord diagrams, timeline, radar, charts) · PDF/attachment viewer · record panel · play-along trainer · Cadi coach panel
+js/views/    home · studio · songs · learn · rhythm (styles & beat maker) · insights · games · metronome · tuner · progress · classroom
 vendor/      pdf.js (Apache-2.0) for chord-sheet PDFs, offline
 server/      zero-dependency classroom server (accounts, invites, assignments, files, results, sync)
 desktop/     Electron shell (offline app + "Host classroom" + Cloudflare Tunnel), electron-builder config

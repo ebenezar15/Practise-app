@@ -8,6 +8,7 @@
   const { icon, esc, $, $$ } = UI;
 
   const ACTIVITIES = [
+    { id: 'path', art: '🧭', name: 'Exercise path (50+)', desc: 'Step-by-step exercises from your first notes to advanced technique. Play along with the click, get live feedback on every note and compare your takes.', input: true },
     { id: 'scales', art: '🪜', name: 'Scales', desc: 'Major, minor, pentatonic, blues and modes in every key. Cadenza listens and moves on with you.', input: true },
     { id: 'arpeggios', art: '🌈', name: 'Arpeggios', desc: 'Chord tones one at a time — the bridge between scales and chords.', input: true },
     { id: 'technique', art: '💪', name: 'Technique exercises', desc: 'Warm-ups made for your instrument: finger patterns, chromatic drills, lip slurs, root–fifth grooves.', input: true },
@@ -99,7 +100,8 @@
         setTimeout(() => stage.scrollIntoView({ behavior: 'smooth', block: 'start' }), 30);
       };
       $$('[data-a]', host).forEach((b) => (b.onclick = () => open(b.dataset.a)));
-      if (App.pendingLearn && App.pendingLearn.learn && ACT[App.pendingLearn.learn.activity]) open(App.pendingLearn.learn.activity, Object.assign({ assignment: App.pendingLearn }, App.pendingLearn.learn));
+      if (App.pendingExercise) { const id = App.pendingExercise; App.pendingExercise = null; open('path', { exercise: id }); }
+      else if (App.pendingLearn && App.pendingLearn.learn && ACT[App.pendingLearn.learn.activity]) open(App.pendingLearn.learn.activity, Object.assign({ assignment: App.pendingLearn }, App.pendingLearn.learn));
       return () => { if (current && current.stop) current.stop(); };
     },
   });
@@ -246,12 +248,55 @@
     const go = () => {
       if (ctl.tr) ctl.tr.stop();
       const spec = build();
-      ctl.tr = sequenceTrainer($('#lBox', stage), App, Object.assign({ onDone: (summary, secs) => finish(App, summary, { seconds: secs, title: spec.title }, p) }, spec));
+      const box = $('#lBox', stage);
+      box.innerHTML = (spec.staff ? `<div class="staff-box" style="margin-bottom:12px">${staffSvg(spec.notes.map((m) => m + writtenOffset(App.instrument)), { flats: spec.flats, clef: App.instrument === 'bass' ? 'bass' : undefined })}</div>` : '') + '<div id="lPa"></div>';
+      ctl.tr = PM.PlayAlong.mount($('#lPa', box), App, { id: 'drill-' + id + '-' + spec.title.replace(/\W+/g, '-').toLowerCase(), title: spec.title, notes: spec.notes, beats: spec.notes.map(() => spec.each || 1), bpm: spec.bpm || 72, level: spec.level || 2, cat: ART[id].name, tip: spec.tip || '', octaveFree: spec.octaveFree },
+        { assignment: p.assignment, onSession: (summary, secs) => finish(App, summary, { seconds: secs, title: spec.title }, p), onTake: (t) => { if (p.assignment && App.pendingLearn === p.assignment && t.stats.accuracy >= 0.7) App.pendingLearn = null; } });
     };
     $('#lBuild', stage).onclick = go;
     go();
     return ctl;
   }
+
+  ACT.path = (stage, App, p) => {
+    const inst = App.instrument, I = Instruments.get(inst);
+    const list = PM.Curriculum.forInstrument(inst);
+    const ctl = { stop() { if (ctl.tr) ctl.tr.stop(); } };
+    let level = 0;
+    const prog = () => App.game.state.path || {};
+    const nextEx = () => list.find((e) => !(prog()[e.id] && prog()[e.id].stars >= 1)) || list[list.length - 1];
+    const draw = (openId) => {
+      const pr = prog();
+      const passed = list.filter((e) => pr[e.id] && pr[e.id].stars >= 1).length;
+      const shown = level ? list.filter((e) => e.level === level) : list;
+      stage.innerHTML = head(stage, 'path', `<span class="chip">${passed}/${list.length} passed</span>`) + asgNote(p) + `
+        <p class="small" style="color:rgba(255,255,255,.8)">${list.length} exercises for ${esc(I.label.toLowerCase())}, from Level 1 to Level 5. Pass an exercise with ★ (70%+ right notes) to unlock your progress; aim for ★★★.</p>
+        <div class="path-bar"><i style="width:${Math.round((passed / list.length) * 100)}%"></i></div>
+        <div class="seg" id="pLvl" style="margin:12px 0">${['All', ...PM.Curriculum.LEVELS.slice(1)].map((n, i) => `<button data-l="${i}" class="${i === level ? 'on' : ''}">${i ? i + ' · ' + n : n}</button>`).join('')}</div>
+        <div class="path-list">${shown.map((e) => { const r = pr[e.id]; const st = r ? r.stars : 0; return `<button class="path-item ${openId === e.id ? 'on' : ''} ${st ? 'done' : ''} ${nextEx() === e ? 'next' : ''}" data-e="${e.id}">
+          <span class="pn">${e.n}</span><span class="pi"><b>${esc(e.title)}</b><span class="small">L${e.level} · ${esc(e.cat)}${e.kind === 'chords' ? ' · chords' : ` · ${e.notes.length} notes`} · ${e.bpm} BPM</span></span>
+          <span class="ps">${st ? '★'.repeat(st) + '☆'.repeat(3 - st) : nextEx() === e ? 'next' : ''}</span></button>`; }).join('')}</div>
+        <div id="pBox" style="margin-top:16px"></div>`;
+      wireClose(stage, ctl);
+      $$('#pLvl button', stage).forEach((b) => (b.onclick = () => { level = +b.dataset.l; draw(openId); }));
+      $$('[data-e]', stage).forEach((b) => (b.onclick = () => draw(b.dataset.e)));
+      if (openId) {
+        const ex = list.find((e) => e.id === openId);
+        if (ctl.tr) ctl.tr.stop();
+        const box = $('#pBox', stage);
+        box.innerHTML = '<div id="pPa"></div><div class="row" style="justify-content:space-between;margin-top:12px"><button class="btn glass sm" id="pPrev">← Previous</button><button class="btn glass sm" id="pNext">Next exercise →</button></div>';
+        ctl.tr = PM.PlayAlong.mount($('#pPa', box), App, ex, { path: true, assignment: p.assignment, onSession: (summary, secs) => finish(App, summary, { seconds: secs, title: ex.title }, p), onProgress: () => { const el = $(`[data-e="${ex.id}"] .ps`, stage); const r = prog()[ex.id]; if (el && r && r.stars) el.textContent = '★'.repeat(r.stars) + '☆'.repeat(3 - r.stars); } });
+        const idx = list.indexOf(ex);
+        $('#pPrev', box).disabled = idx <= 0;
+        $('#pNext', box).disabled = idx >= list.length - 1;
+        $('#pPrev', box).onclick = () => draw(list[idx - 1].id);
+        $('#pNext', box).onclick = () => draw(list[idx + 1].id);
+        setTimeout(() => box.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60);
+      }
+    };
+    draw(p.exercise || null);
+    return ctl;
+  };
 
   ACT.scales = (stage, App, p) => noteDrill('scales', stage, App, p, () => {
     const tonic = +$('#lKey', stage).value, sc = $('#lScale', stage).value, oct = +$('#lOct', stage).value, dir = $('#lDir', stage).value;
@@ -280,7 +325,8 @@
       const ex = list.find((e) => e.id === exId) || list[0];
       $$('[data-ex]', stage).forEach((b) => b.classList.toggle('on', b.dataset.ex === ex.id));
       if (ctl.tr) ctl.tr.stop();
-      ctl.tr = sequenceTrainer($('#lBox', stage), App, { notes: ex.notes, flats: flatsFor(tonic), title: ex.name, onDone: (summary, secs) => finish(App, summary, { seconds: secs, title: ex.name + ' · ' + KEYS[tonic].name }, p) });
+      ctl.tr = PM.PlayAlong.mount($('#lBox', stage), App, { id: 'tech-' + App.instrument + '-' + ex.id + '-' + tonic, title: ex.name + ' · ' + KEYS[tonic].name, notes: ex.notes, beats: ex.notes.map(() => 1), bpm: 72, level: 2, cat: 'Technique', tip: ex.desc },
+        { assignment: p.assignment, onSession: (summary, secs) => finish(App, summary, { seconds: secs, title: ex.name + ' · ' + KEYS[tonic].name }, p) });
     };
     draw(p.tonic != null ? +p.tonic : 0, p.exercise);
     return ctl;
@@ -603,5 +649,5 @@
     return ctl;
   };
 
-  PM.LearnView = { ACTIVITIES, playNotes, staffSvg, sequenceTrainer };
+  PM.LearnView = { ACTIVITIES, playNotes, staffSvg, sequenceTrainer, ACT };
 })(typeof self !== 'undefined' ? self : globalThis);

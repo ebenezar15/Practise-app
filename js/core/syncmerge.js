@@ -42,6 +42,12 @@
     out.history = [...seen.values()].sort((x, y) => (x.date < y.date ? 1 : -1)).slice(0, 200);
     const da = a.daily, db = b.daily;
     out.daily = !da ? db : !db ? da : da.day !== db.day ? (da.day > db.day ? da : db) : Object.assign({}, da, { progress: Math.max(da.progress || 0, db.progress || 0), done: !!(da.done || db.done) });
+    // exercise-path results: keep the best of each exercise
+    out.path = Object.assign({}, a.path);
+    for (const [k, v] of Object.entries(b.path || {})) {
+      const o = out.path[k];
+      out.path[k] = !o ? v : { best: Math.max(o.best || 0, v.best || 0), stars: Math.max(o.stars || 0, v.stars || 0), bpm: Math.max(o.bpm || 0, v.bpm || 0), takes: Math.max(o.takes || 0, v.takes || 0), last: (o.last || '') > (v.last || '') ? o.last : v.last };
+    }
     out.name = b.name || a.name || '';
     out.dailyGoalMinutes = b.dailyGoalMinutes || a.dailyGoalMinutes;
     return out;
