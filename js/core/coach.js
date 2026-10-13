@@ -177,7 +177,7 @@
       }
 
       // --- single-line instruments (bass, trumpet): follow the part's notes, or the harmony
-      if (!this.I.chordal) this.monoUpdate(frame, st, expected, ref, refTime);
+      if (!this.I.chordal && this.I.family !== 'drums') this.monoUpdate(frame, st, expected, ref, refTime);
       else if (this.I.bends && (!frame.notes || frame.notes.length <= 1)) this.heldUpdate(frame, st);
 
       // --- note accuracy for piano melodies (when reference has notes but no clear chord)
@@ -218,7 +218,7 @@
       }
 
       // --- intonation (guitar strings / single notes)
-      if (frame.active && frame.pitch && frame.pitch.confidence > 0.88 && this.I.id !== 'piano' && (!this.I.chordal || !frame.notes || frame.notes.length <= 1)) {
+      if (frame.active && frame.pitch && frame.pitch.confidence > 0.88 && this.I.id !== 'piano' && this.I.family !== 'drums' && (!this.I.chordal || !frame.notes || frame.notes.length <= 1)) {
         const c = frame.pitch.cents;
         st.intonation = { cents: c, note: frame.pitch.name };
         s.intonationSamples++;

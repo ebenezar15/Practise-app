@@ -291,6 +291,7 @@
 
   const cache = {};
   function forInstrument(inst) {
+    if (inst === 'drums') return cache.drums || (cache.drums = PM.DrumCore.exercises());
     const key = inst === 'voice' ? 'voice:' + (PM.Learn.RANGE.voice.type || 'alto') : inst === 'bass' ? 'bass:' + PM.Instruments.get('bass').strings.length : inst;
     return cache[key] || (cache[key] = inst === 'voice' ? buildVoice() : build(inst));
   }

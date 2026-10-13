@@ -96,6 +96,22 @@
         'Record yourself and listen back — the voice sounds different inside your head.',
       ],
     },
+    drums: {
+      id: 'drums', label: 'Drums', short: 'Drums', emoji: '🥁', icon: 'drum', family: 'drums',
+      chordal: false, mono: false, rhythmOnly: true, range: [35, 81], viewRange: [35, 81], transpose: 0, synth: 'drums', part: 'drums', minFreq: 40, maxFreq: 1600,
+      tips: [
+        'Hold the sticks loosely between thumb and first two fingers — let them bounce back off the drum.',
+        'Count out loud: "1 & 2 &" — your voice is the best metronome you own.',
+        'Play the hi-hat a little softer than the snare backbeat so the groove breathes.',
+        'Keep the kick and the bass player together — that is the foundation of the band.',
+        'Practise slowly with a click; speed is just accuracy repeated faster.',
+        'Strokes start from the wrist; let the arm follow only for big accents.',
+        'Sit at a height where your thighs slope slightly down to the knees.',
+        'End fills on the next beat 1 with a crash and kick — and never drop the tempo.',
+        'Ghost notes should be barely heard: play them 1–2 inches above the head.',
+        'Protect your ears: use earplugs when playing an acoustic kit.',
+      ],
+    },
   };
 
   /** Comfortable ranges (MIDI) for each voice type. */

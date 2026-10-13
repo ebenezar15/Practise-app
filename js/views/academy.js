@@ -204,7 +204,11 @@
     const out = [];
     const instOf = () => l.instrument || App.instrument;
     l.body.forEach((b, k) => {
-      if (b.t === 'fing') {
+      if (b.t === 'drumx') {
+        const el = $(`[data-drumx="${k}"]`, host); if (!el || !PM.DrumAlong) return;
+        const ctl = PM.DrumAlong.mount(el, App, { id: 'academy-' + b.id, title: b.title, level: l.level, cat: 'Academy', pattern: b.pattern, bpm: b.bpm }, { loops: 2 });
+        out.push(() => ctl.stop());
+      } else if (b.t === 'fing') {
         const el = $(`[data-fing="${k}"]`, host); if (!el || !PM.FingerPanel) return;
         const beats = Array.isArray(b.beats) ? b.beats : b.notes.map(() => b.beats || 1);
         const panel = PM.FingerPanel.mount(el, { inst: instOf(), notes: b.notes, beats, title: false, hand: b.hand });
@@ -277,6 +281,7 @@
       case 'use': return `<div class="notice ak-use">🌍<div><b>In real music</b><br>${md(b.text)}</div></div>`;
       case 'tip': return `<div class="notice">💡<div>${md(b.text)}</div></div>`;
       case 'inst': return `<div class="ak-instwrap"><div class="small muted">${icon(I.icon)} On your ${esc(I.short.toLowerCase())}</div>${instPanel(b, App)}</div>`;
+      case 'drumx': return `<div class="ak-int stage"><div class="ak-int-head"><b>🥁 ${esc(b.title)}</b></div><div data-drumx="${k}"></div></div>`;
       case 'fing': return `<div class="ak-int stage"><div class="ak-int-head"><b>🖐️ ${esc(b.title)}</b><button class="btn sm glass" data-fhear="${k}">▶ Hear & follow</button></div><div data-fing="${k}"></div></div>`;
       case 'drill': return `<div class="ak-drill pop-in"><span class="ak-drill-em">🎤</span><div><b>${esc(b.title)}</b><span class="small muted">Play it now — Cadenza listens and scores every note.</span></div><button class="btn primary sm" data-drill="${k}">Play it now</button></div>`;
       case 'fretx': return `<div class="ak-int stage"><div class="ak-int-head"><b>👆 ${esc(b.title)}</b></div><div class="fret-wrap" data-fretx="${k}"></div><div class="small ak-out" data-fxo="${k}">Tap any string and fret.</div></div>`;
@@ -306,7 +311,7 @@
         <p class="ak-prompt">${esc(q.prompt)}</p>
         ${q.show && q.show.keys ? keysSvg(q.show.keys) : ''}${q.show && q.show.staff ? `<div class="staff-box">${PM.LearnView.staffSvg(q.show.staff, { clef: q.show.clef })}</div>` : ''}
         ${q.show && q.show.fret ? `<div class="ak-show">${fretSvg(q.show.fret)}</div>` : ''}${q.show && q.show.diagram ? `<div class="ak-show ak-diag">${UI.chordDiagram(q.show.diagram)}</div>` : ''}
-        ${q.show && q.show.tab ? `<pre class="ak-tab">${esc(q.show.tab.join('\n'))}</pre>` : ''}${q.show && q.show.valves ? `<div class="ak-show">${valveIcons(q.show.valves)}</div>` : ''}
+        ${q.show && q.show.tab ? `<pre class="ak-tab">${esc(q.show.tab.join('\n'))}</pre>` : ''}${q.show && q.show.valves ? `<div class="ak-show">${valveIcons(q.show.valves)}</div>` : ''}${q.show && q.show.drumgrid && PM.DrumAlong ? `<div class="ak-show ak-dgrid">${PM.DrumAlong.gridHtml(q.show.drumgrid)}</div>` : ''}
         ${q.play ? `<button class="btn sm" id="akPlay">🔊 ${q.ear ? 'Play' : 'Hear it'}</button>` : ''}
         <div class="ak-opts">${q.options.map((o, i) => `<button class="ak-opt" data-o="${i}">${esc(o)}</button>`).join('')}</div>
         <p class="ak-fb" id="akFb"></p></div>`;

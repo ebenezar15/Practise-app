@@ -94,6 +94,20 @@
       ['Which vowel shape is most open and resonant?', '“Ah”', ['“Ee”', '“Mm”', '“Ss”']],
     ],
   };
+  FACTS.drums = [
+    ['Which drum usually plays the backbeat on 2 and 4?', 'Snare drum', ['Kick drum', 'Floor tom', 'Crash cymbal']],
+    ['Which part of the kit is played with the right foot?', 'The kick (bass) drum', ['The snare', 'The ride', 'The high tom']],
+    ['The hi-hat is played by…', 'Sticks and the left foot pedal', ['Only the right foot', 'Only brushes', 'The kick beater']],
+    ['A ghost note is…', 'A very soft snare tap between the main hits', ['A missed note', 'A cymbal choke', 'A loud accent']],
+    ['A paradiddle is sticked…', 'R L R R  L R L L', ['R L R L  R L R L', 'R R L L  R R L L', 'R R R L  L L R L']],
+    ['Where do fills usually end?', 'On beat 1 of the next bar, often with a crash', ['On beat 3', 'In the middle of a bar', 'They never end']],
+    ['The crash cymbal is mostly used to…', 'Mark the start of a new section', ['Keep steady 8ths', 'Play the backbeat', 'Tune the toms']],
+    ['In a half-time feel the snare plays on…', 'Beat 3', ['Beats 2 and 4', 'Every beat', 'Beat 1 only']],
+    ['A shuffle is built on…', 'Triplets with the middle note left out', ['Straight 16ths', 'Whole notes', 'Quintuplets']],
+    ['Why do drummers count out loud?', 'To keep an internal clock and place every note', ['To warm up the voice', 'To tune the drums', 'It is required by law']],
+    ['Matched grip means…', 'Both hands hold the sticks the same way', ['Only one stick is used', 'Holding the sticks at the tips', 'Using brushes']],
+    ['In worship songs, verses are often played…', 'Softly — side-stick, hats or toms', ['As loud as possible', 'With double-kick', 'Without any time']],
+  ];
   const facts = (k) => (r) => { const [q, a, w] = pick(r, FACTS[k]); return mc(r, q, a, w); };
 
   // ------------------------------------------------------------------ instrument question generators
@@ -179,7 +193,13 @@
   const intervalSong = (r) => { const [iv, song] = pick(r, REF); const st = A.INTERVALS.find((x) => x[1] === iv)[0]; return mc(r, `Singers remember intervals with songs. “${song}” starts with a…`, iv, REF.map((x) => x[0]), { play: { notes: [60, 60 + st] } }); };
   const singHarmony = (r) => { const pc = pick(r, [0, 2, 4, 5, 7]); const k = Math.floor(r() * 5); const tonic = 60; const mel = tonic + MAJOR[k]; const harm = tonic + MAJOR[(k + 2) % 7] + (k + 2 >= 7 ? 12 : 0); void pc; return mc(r, `In C major the melody sings ${spell(mel)}. A harmony a 3rd above sings…`, spell(harm), SH.filter((x) => !x.includes('♯') && !x.includes('♭')), { play: { chord: [mel, harm] } }); };
 
+  const COUNT16 = ['1', 'e', '&', 'a'];
+  const drumCount = (r) => { const beat = 1 + Math.floor(r() * 4), sub = Math.floor(r() * 4); const name = sub ? COUNT16[sub] + ' of ' + beat : String(beat); const spot = sub ? `the “${COUNT16[sub]}” after beat ${beat}` : `beat ${beat}`; return mc(r, `Counting 16ths (“1 e & a 2 e & a…”), which syllable is ${spot}?`, sub ? COUNT16[sub] : String(beat), ['1', '2', '3', '4', 'e', '&', 'a'], { extra: name }); };
+  const drumPiece = (r) => { const pcs = PM.DrumCore ? PM.DrumCore.PIECES.filter((p) => p.id !== 'cowbell' && p.id !== 'hhp') : []; const p = pick(r, pcs); return mc(r, 'Which part of the kit is this? “' + p.role.split('.')[0] + '.”', p.name, pcs.map((x) => x.name)); };
+  const drumGrid = (r) => { const G = PM.DrumCore.GROOVES.filter((g) => g.level <= 3); const g = pick(r, G); return mc(r, 'Look at the grid: which groove is it?', g.name, G.map((x) => x.name), { show: { drumgrid: g } }); };
+  const drumNote = (r) => { const V = [['Whole note', 4, 'one hit lasting the whole 4/4 bar'], ['Half note', 2, 'two per bar'], ['Quarter note', 1, 'one per beat'], ['Eighth note', 0.5, 'two per beat'], ['Sixteenth note', 0.25, 'four per beat'], ['Eighth-note triplet', 1 / 3, 'three per beat']]; const [n, , d] = pick(r, V); return mc(r, `On the drums, ${d} is a…`, n, V.map((x) => x[0])); };
   Object.assign(A.GEN, {
+    'drum-count': drumCount, 'drum-piece': drumPiece, 'drum-grid': drumGrid, 'drum-note': drumNote, 'facts-drums': facts('drums'),
     'fret-note-g': fretNote('guitar'), 'fret-find-g': fretFind('guitar'), 'string-order-g': stringOrder('guitar'), 'tab-g': tabRead('guitar'),
     'fret-note-b': fretNote('bass'), 'fret-find-b': fretFind('bass'), 'string-order-b': stringOrder('bass'), 'tab-b': tabRead('bass'),
     'piano-finger': pianoFinger, 'piano-inversion': pianoInversion, 'piano-chord-keys': pianoChordKeys,
@@ -202,6 +222,7 @@
   const keyx = (title, o) => Object.assign({ t: 'keyx', title }, o || {});
   const valvex = (title) => ({ t: 'valvex', title });
   const W = (written) => written.map((m) => m - 2); // trumpet: written → concert
+  const drumx = (title, id, o) => Object.assign({ t: 'drumx', title, id }, o || {});
 
   const ODE = [64, 64, 65, 67, 67, 65, 64, 62, 60, 60, 62, 64, 64, 62, 62];
   const C5F = [60, 62, 64, 65, 67, 65, 64, 62, 60];
@@ -211,6 +232,7 @@
     { id: 'guitar-course', name: 'Guitar course', emoji: '🎸', color: '#f97316', desc: 'Open chords and strumming to barre chords, scales, CAGED and soloing.', course: 'guitar' },
     { id: 'bass-course', name: 'Bass course', emoji: '🎸', color: '#0ea5e9', desc: 'Roots and grooves to walking lines, 5-string low B and slap.', course: 'bass' },
     { id: 'trumpet-course', name: 'Trumpet course', emoji: '🎺', color: '#eab308', desc: 'Buzzing and valves to lip slurs, alternate fingerings and lead playing.', course: 'trumpet' },
+    { id: 'drums-course', name: 'Drums course', emoji: '🥁', color: '#22c55e', desc: 'Note lengths and counting to grooves, rudiments, fills, shuffles and odd meters.', course: 'drums' },
     { id: 'voice-course', name: 'Singing course', emoji: '🎤', color: '#ec4899', desc: 'Breath, pitch and range to harmony, mix voice, runs and leading worship.', course: 'voice' },
   ];
 
@@ -478,6 +500,61 @@
       p('Horns answer the vocal, double a hook, or play pads in the chorus. Play less, phrase together, and watch the dynamics map.'),
       list('Transpose the chart (concert → written)', 'Play the hook in the intro and tag', 'Stay out of the way of the singer'),
     ], [{ gen: 'trumpet-written', n: 3 }, { gen: 'band-role', n: 3 }], [{ label: 'Songs library', go: 'songs' }]),
+
+    // =================================================================== DRUMS
+    L('dc1', 'drums-course', 'drums', 1, 'Meet the kit', 6, [
+      p('A drum kit is a band in one: the **kick** (right foot) and **snare** make the backbone, the **hi-hat** and **ride** keep time, **toms** play fills and **crash** cymbals mark big moments.'),
+      list('Kick = the heartbeat, locks with the bass guitar', 'Snare = the "crack" on 2 and 4', 'Hi-hat = steady 8ths, opened and closed with the left foot', 'Toms & crash = fills and big moments'),
+      tip('Open the **Drum Studio** to play every piece with your fingers or keyboard.'),
+      drumx('Backbeat (no hi-hat)', 'drums-backbeat', { pattern: { bpb: 4, spb: 1, bars: 2, tracks: { snare: '.x.x.x.x', kick: 'x.x.x.x.' } }, bpm: 76 }),
+    ], [{ gen: 'drum-piece', n: 5 }, { gen: 'facts-drums', n: 3 }], [{ label: 'Drum Studio', go: 'drums' }]),
+    L('dc2', 'drums-course', 'drums', 1, 'Counting and note lengths', 7, [
+      p('Drummers count everything. **Quarters**: "1 2 3 4". **Eighths**: "1 & 2 &". **Sixteenths**: "1 e & a 2 e & a". Saying it out loud builds an inner clock.'),
+      ex('Quarters, eighths, then sixteenths', { rhythm: [1, 1, 1, 1, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25], bpm: 72, accents: 0 }),
+      drumx('Eighth notes', 'drums-8ths', { pattern: { bpb: 4, spb: 2, bars: 2, sticking: 'RLRLRLRLRLRLRLRL', tracks: { snare: 'XxXxXxXxXxXxXxXx' } }, bpm: 72 }),
+    ], [{ gen: 'drum-count', n: 5 }, { gen: 'drum-note', n: 4 }], [{ label: 'Exercise path', go: 'learn', activity: 'path' }]),
+    L('dc3', 'drums-course', 'drums', 1, 'Your first rock beat', 7, [
+      p('Right hand on the hi-hat (8ths), left hand on the snare (2 and 4), right foot on the kick (1 and 3). Build it limb by limb: hat alone → add kick → add snare.'),
+      drumx('Rock 8ths', 'drums-rock', { pattern: { bpb: 4, spb: 2, bars: 1, tracks: { hhc: 'xxxxxxxx', snare: '..X...X.', kick: 'X...X...' } }, bpm: 84 }),
+      use('This one beat fits thousands of pop, rock and worship songs.'),
+    ], [{ gen: 'drum-grid', n: 4 }, { gen: 'drum-count', n: 3 }], [{ label: 'Groove library', go: 'drums' }]),
+    L('dc4', 'drums-course', 'drums', 1, 'Rests and space', 6, [
+      p('Silence is part of the groove. A **rest** is a beat you count but don\'t play. Keep your foot tapping through rests so the time never stops.'),
+      drumx('Quarter rests', 'drums-rests', { pattern: { bpb: 4, spb: 1, bars: 2, tracks: { snare: 'x.x.xx.x' } }, bpm: 72 }),
+    ], [{ gen: 'drum-note', n: 3 }, { gen: 'facts-drums', n: 3 }], []),
+    L('dc5', 'drums-course', 'drums', 2, 'Rudiments: singles, doubles, paradiddles', 8, [
+      p('**Rudiments** are the scales of drumming. Singles (R L R L), doubles (R R L L) and paradiddles (R L R R L R L L) build even, controlled hands.'),
+      drumx('Single paradiddle', 'drums-para', { pattern: { bpb: 4, spb: 4, bars: 1, sticking: 'RLRRLRLLRLRRLRLL', tracks: { snare: 'XxxxXxxxXxxxXxxx' } }, bpm: 66 }),
+    ], [{ gen: 'facts-drums', n: 4 }, { gen: 'drum-count', n: 3 }], [{ label: 'Rudiments', go: 'drums' }]),
+    L('dc6', 'drums-course', 'drums', 2, 'Hi-hat openings and kick variations', 7, [
+      p('Small changes make a groove sing: an **open hi-hat** on the "&" of 4 pushes into the next bar; an extra **kick** on the "&" of 3 adds bounce.'),
+      drumx('Pop with a push', 'drums-push', { pattern: { bpb: 4, spb: 2, bars: 1, tracks: { hho: '.......x', hhc: 'xxxxxxx.', snare: '..X...X.', kick: 'X..xX...' } }, bpm: 92 }),
+    ], [{ gen: 'drum-grid', n: 4 }, { gen: 'drum-count', n: 3 }], [{ label: 'Groove remix', go: 'drums' }]),
+    L('dc7', 'drums-course', 'drums', 2, 'Your first fills', 7, [
+      p('A **fill** is a short break at the end of a phrase. Start simple: snare–snare–tom–tom on beats 3 and 4, then crash + kick on the next 1.'),
+      drumx('Around the toms', 'drums-fill8', { pattern: { bpb: 4, spb: 2, bars: 1, tracks: { snare: 'xx......', tomh: '..xx....', tomm: '....xx..', toml: '......xx' } }, bpm: 80 }),
+      tip('The Drum Studio makes a **brand-new fill** every time you press the dice.'),
+    ], [{ gen: 'facts-drums', n: 4 }, { gen: 'drum-count', n: 3 }], [{ label: 'Fill generator', go: 'drums' }]),
+    L('dc8', 'drums-course', 'drums', 2, 'Dynamics in worship drumming', 6, [
+      p('Serve the song: **verse** — side-stick or hi-hat, light kick; **pre-chorus** — floor-tom 8ths; **chorus** — ride or open hats, crash on 1; **bridge** — build with toms.'),
+      drumx('Worship tom build', 'drums-build', { pattern: { bpb: 4, spb: 4, bars: 1, tracks: { toml: 'x.x.x.x.x.x.x.x.', tomh: '..x...x...x...x.', kick: 'X.......X.......' } }, bpm: 76 }),
+    ], [{ gen: 'band-role', n: 3 }, { gen: 'facts-drums', n: 3 }], [{ label: 'Songs library', go: 'songs' }]),
+    L('dc9', 'drums-course', 'drums', 3, 'Triplets, shuffle and 6/8', 8, [
+      p('Triplets split the beat in **three**: "1-&-a". Leave out the middle note for a **shuffle**; group 6 eighths in two for **6/8**.'),
+      drumx('Shuffle', 'drums-shuffle', { pattern: { bpb: 4, spb: 3, bars: 1, tracks: { hhc: 'x.xx.xx.xx.x', snare: '...X.....X..', kick: 'X.....X.....' } }, bpm: 92 }),
+    ], [{ gen: 'drum-note', n: 3 }, { gen: 'drum-grid', n: 3 }, { gen: 'facts-drums', n: 2 }], []),
+    L('dc10', 'drums-course', 'drums', 3, 'Sixteenth grooves and ghost notes', 8, [
+      p('Play 16ths on the hat with both hands, or keep 8ths and add **ghost notes** — tiny snare taps — between the backbeats. That is the secret of funk and gospel feel.'),
+      drumx('Funk with ghost notes', 'drums-funk', { pattern: { bpb: 4, spb: 4, bars: 1, tracks: { hhc: 'x.x.x.x.x.x.x.x.', snare: '..o.X..o.o.oX..o', kick: 'X..x..x...X.....' } }, bpm: 80 }),
+    ], [{ gen: 'drum-count', n: 4 }, { gen: 'facts-drums', n: 3 }], [{ label: 'Groove library', go: 'drums' }]),
+    L('dc11', 'drums-course', 'drums', 3, 'Odd meters: 5/4 and 7/8', 7, [
+      p('Odd meters are groups of 2s and 3s. **5/4** = 3 + 2. **7/8** = 2 + 2 + 3. Count the groups and put the kick at the start of each.'),
+      drumx('7/8 groove', 'drums-78', { pattern: { bpb: 7, spb: 1, bars: 2, tracks: { hhc: 'xxxxxxxxxxxxxx', snare: '..X.X....X.X..', kick: 'X.X.X..X.X.X..' } }, bpm: 130 }),
+    ], [{ gen: 'time-sig', n: 4 }, { gen: 'drum-count', n: 3 }], []),
+    L('dc12', 'drums-course', 'drums', 3, 'Create your own grooves', 6, [
+      p('Take any groove and change **one thing**: move a kick, swap hats for ride, add a ghost note, open the hat. Record ideas in the loop recorder and keep the best ones.'),
+      list('Use the Groove remix to get ideas', 'Record a 2-bar loop and overdub', 'Build it in the Beat maker to save it'),
+    ], [{ gen: 'drum-grid', n: 3 }, { gen: 'facts-drums', n: 3 }], [{ label: 'Drum Studio', go: 'drums' }, { label: 'Beat maker', go: 'metronome' }]),
 
     // =================================================================== VOICE
     L('vc1', 'voice-course', 'voice', 1, 'Breath and posture', 5, [

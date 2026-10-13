@@ -257,6 +257,18 @@ fs.mkdirSync(outDir, { recursive: true });
       await closeModals();
       return counts.join('/') + ' challenges · “' + p1.slice(0, 40) + '…”';
     });
+    await step('drum studio: kit, groove trainer scores tapped hits, drum path', async () => {
+      await page.goto(base + '/#/drums');
+      await page.waitForSelector('.dr-kit', { timeout: 5000 });
+      await page.locator('.dr-pad[data-p="snare"]').dispatchEvent('pointerdown');
+      const info = await page.textContent('#drInfoT');
+      if (!/Snare/.test(info)) throw new Error('kit pad did not respond: ' + info);
+      await tap('#drTabs [data-t="grooves"]');
+      await page.waitForSelector('.da .dg-row', { timeout: 5000 });
+      const rows = await page.locator('.da .dg-row').count();
+      await shot('drum-grooves');
+      return info + ' · ' + rows + ' grid rows';
+    });
     await step('Cadi answers a question', async () => {
       await page.evaluate(() => document.querySelectorAll('.cadi-bubble').forEach((b) => b.classList.add('hidden')));
       await tap('#cadiFab');

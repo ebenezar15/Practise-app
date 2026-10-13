@@ -20,7 +20,17 @@
     { id: 'harmony', art: '🎶', name: 'Harmony & part singing', desc: 'Sing soprano, alto, tenor or bass in famous hymns while Cadenza sings the other parts. Rounds, thirds and drones too.', input: true, link: 'harmony' },
     { id: 'builder', art: '🧱', name: 'Progression builder', desc: 'Build your own chord progression, hear it with a band and improvise over it. Save it as a song.', input: false },
   ];
-  const ART = Object.fromEntries(ACTIVITIES.map((a) => [a.id, a]));
+  // activities a drummer gets (rhythm-only); pitched activities are hidden for drums
+  const DRUM_ACTIVITIES = [
+    { id: 'drumkit', art: '🥁', name: 'Play the kit', desc: 'A playable kit with keyboard keys and a loop recorder — make your own beats.', input: false, link: 'drums', tab: 'kit' },
+    { id: 'drumgrooves', art: '🎶', name: 'Groove library', desc: 'Rock, pop, worship, shuffle, 6/8, reggae, funk, bossa and odd meters — hear them and get scored.', input: true, link: 'drums', tab: 'grooves' },
+    { id: 'drumrud', art: '✋', name: 'Rudiments', desc: 'Singles, doubles, paradiddles, rolls and triplets with sticking shown.', input: true, link: 'drums', tab: 'rudiments' },
+    { id: 'drumfills', art: '🎲', name: 'Fills & remix', desc: 'A brand-new fill every time and remixed grooves to spark ideas.', input: true, link: 'drums', tab: 'fills' },
+    { id: 'drumread', art: '📖', name: 'Read rhythms', desc: 'Learn to read the drum grid and play every note length.', input: true, link: 'drums', tab: 'learn' },
+  ];
+  const DRUM_SHOW = new Set(['path', 'intervals', 'notes']);
+  const activitiesFor = (inst) => (inst === 'drums' ? ACTIVITIES.filter((a) => DRUM_SHOW.has(a.id)).concat(DRUM_ACTIVITIES) : ACTIVITIES);
+  const ART = Object.fromEntries(ACTIVITIES.concat(DRUM_ACTIVITIES).map((a) => [a.id, a]));
   const KEYS = Theory.FLATS.map((n, i) => ({ pc: i, name: [1, 3, 6, 8, 10].includes(i) ? (i === 6 ? 'F#' : n) : n }));
   const keySel = (id, sel) => `<select id="${id}">${KEYS.map((k) => `<option value="${k.pc}" ${k.pc === sel ? 'selected' : ''}>${k.name}</option>`).join('')}</select>`;
   const flatsFor = (pc) => [5, 10, 3, 8, 1].includes(((pc % 12) + 12) % 12);
@@ -77,12 +87,13 @@
         ${I.family === 'voice' ? `<section class="card" style="margin-bottom:16px"><div class="card-head"><h3>🎤 Your voice type</h3><span class="muted small">Exercises, scales and sing-alongs are pitched for it</span></div>
           <div class="seg voice-types" id="vType">${Object.entries(Instruments.VOICE_TYPES).map(([id, v]) => `<button data-v="${id}" class="${(App.settings.voiceType || 'alto') === id ? 'on' : ''}">${esc(v.label)} <span class="muted small">${PM.DSP.midiName(v.range[0])}–${PM.DSP.midiName(v.range[1])}</span></button>`).join('')}</div>
           <p class="small muted" style="margin-top:8px">Not sure? Most women sing alto or mezzo, most men baritone or tenor. If high notes strain, pick the lower type.</p></section>` : ''}
-        <div class="learn-grid" id="lGrid">${ACTIVITIES.map((a) => `<button class="card learn-tile" data-a="${a.id}"><span class="lt-art">${a.art}</span><b>${a.name}</b><span class="small">${a.desc}</span>${a.input ? '' : '<span class="tag" style="align-self:flex-start">no instrument needed</span>'}</button>`).join('')}</div>
+        ${I.id === 'drums' ? '<section class="card" style="margin-bottom:16px"><div class="card-head"><h3>🥁 Drums</h3><a class="btn sm primary" href="#/drums">Open the Drum Studio →</a></div><p class="small">Your exercise path scores every hit for timing — with a microphone on a real kit, or the on-screen / keyboard pads.</p></section>' : ''}
+        <div class="learn-grid" id="lGrid">${activitiesFor(I.id).map((a) => `<button class="card learn-tile" data-a="${a.id}"><span class="lt-art">${a.art}</span><b>${a.name}</b><span class="small">${a.desc}</span>${a.input ? '' : '<span class="tag" style="align-self:flex-start">no instrument needed</span>'}</button>`).join('')}</div>
         <section class="card stage hidden" id="lStage" style="margin-top:18px"></section>`;
       const stage = $('#lStage', host);
       let current = null;
       const open = (id, params) => {
-        if (ART[id] && ART[id].link) { App.go(ART[id].link); return; }
+        if (ART[id] && ART[id].link) { if (ART[id].tab) App.drumTab = ART[id].tab; App.go(ART[id].link); return; }
         if (current && current.stop) current.stop();
         stage.classList.remove('hidden');
         $$('.learn-tile', host).forEach((t) => t.classList.toggle('on', t.dataset.a === id));
@@ -267,7 +278,7 @@
         <div class="path-bar"><i style="width:${Math.round((passed / list.length) * 100)}%"></i></div>
         <div class="seg" id="pLvl" style="margin:12px 0">${['All', ...PM.Curriculum.LEVELS.slice(1)].map((n, i) => `<button data-l="${i}" class="${i === level ? 'on' : ''}">${i ? i + ' · ' + n : n}</button>`).join('')}</div>
         <div class="path-list">${shown.map((e) => { const r = pr[e.id]; const st = r ? r.stars : 0; return `<button class="path-item ${openId === e.id ? 'on' : ''} ${st ? 'done' : ''} ${nextEx() === e ? 'next' : ''}" data-e="${e.id}">
-          <span class="pn">${e.n}</span><span class="pi"><b>${esc(e.title)}</b><span class="small">L${e.level} · ${esc(e.cat)}${e.kind === 'chords' ? ' · chords' : ` · ${e.notes.length} notes`} · ${e.bpm} BPM</span></span>
+          <span class="pn">${e.n}</span><span class="pi"><b>${esc(e.title)}</b><span class="small">L${e.level} · ${esc(e.cat)}${e.kind === 'chords' ? ' · chords' : e.kind === 'rhythm' ? ` · ${e.hitCount} hits` : ` · ${e.notes.length} notes`} · ${e.bpm} BPM</span></span>
           <span class="ps">${st ? '★'.repeat(st) + '☆'.repeat(3 - st) : nextEx() === e ? 'next' : ''}</span></button>`; }).join('')}</div>
         <div id="pBox" style="margin-top:16px"></div>`;
       wireClose(stage, ctl);
@@ -278,7 +289,7 @@
         if (ctl.tr) ctl.tr.stop();
         const box = $('#pBox', stage);
         box.innerHTML = '<div id="pPa"></div><div class="row" style="justify-content:space-between;margin-top:12px"><button class="btn glass sm" id="pPrev">← Previous</button><button class="btn glass sm" id="pNext">Next exercise →</button></div>';
-        ctl.tr = PM.PlayAlong.mount($('#pPa', box), App, ex, { path: true, assignment: p.assignment, onSession: (summary, secs) => finish(App, summary, { seconds: secs, title: ex.title }, p), onProgress: () => { const el = $(`[data-e="${ex.id}"] .ps`, stage); const r = prog()[ex.id]; if (el && r && r.stars) el.textContent = '★'.repeat(r.stars) + '☆'.repeat(3 - r.stars); } });
+        ctl.tr = (ex.kind === 'rhythm' ? PM.DrumAlong : PM.PlayAlong).mount($('#pPa', box), App, ex, { path: true, assignment: p.assignment, onSession: (summary, secs) => finish(App, summary, { seconds: secs, title: ex.title }, p), onProgress: () => { const el = $(`[data-e="${ex.id}"] .ps`, stage); const r = prog()[ex.id]; if (el && r && r.stars) el.textContent = '★'.repeat(r.stars) + '☆'.repeat(3 - r.stars); } });
         const idx = list.indexOf(ex);
         $('#pPrev', box).disabled = idx <= 0;
         $('#pNext', box).disabled = idx >= list.length - 1;

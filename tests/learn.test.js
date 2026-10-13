@@ -67,7 +67,7 @@ test('scales, arpeggios and exercises fit each instrument', () => {
   const mel = Learn.scale({ tonic: 9, scale: 'melodic', instrument: 'piano', octaves: 1 });
   assert.ok(mel.includes(mel[0] + 11) && mel.slice(8).includes(mel[0] + 10), 'melodic minor goes up raised, down natural');
   assert.deepStrictEqual(Learn.arpeggio({ tonic: 7, type: '7', instrument: 'guitar', direction: 'up' }).map((m) => m % 12), [7, 11, 2, 5, 7]);
-  for (const inst of Object.keys(Instruments.INSTRUMENTS)) {
+  for (const inst of Object.keys(Instruments.INSTRUMENTS).filter((i) => !Instruments.INSTRUMENTS[i].rhythmOnly)) {
     const R = Learn.RANGE[inst];
     for (let tonic = 0; tonic < 12; tonic++) {
       const s = Learn.scale({ tonic, scale: 'major', instrument: inst, octaves: inst === 'trumpet' || inst === 'voice' ? 1 : 2 });

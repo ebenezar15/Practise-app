@@ -47,6 +47,6 @@ test('instrument registry: trumpet transposition & fingering, fret positions', (
   assert.deepStrictEqual(Instruments.trumpetInfo(58), { written: 60, valves: '0' }); // concert Bb = written C open
   assert.strictEqual(Instruments.trumpetInfo(60).valves, '1 3'); // concert C = written D
   assert.deepStrictEqual(Instruments.fretPosition('bass', 33), { string: 1, fret: 0 });
-  assert.strictEqual(Instruments.list().length, 6);
+  assert.strictEqual(Instruments.list().length, 7);
   assert.strictEqual(Instruments.get('voice').part, 'vocals');
 });

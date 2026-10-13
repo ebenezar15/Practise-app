@@ -21,6 +21,10 @@ test('every instrument has 50+ graded exercises, ordered simple → complex and 
         assert.strictEqual(e.notes.length, e.beats.length, e.title);
         assert.ok(e.notes.length >= 3);
         assert.ok(Math.min(...e.notes) >= R.low && Math.max(...e.notes) <= R.high, `${inst} ${e.title} in range`);
+      } else if (e.kind === 'rhythm') {
+        const p = e.pattern, n = p.bpb * p.spb * p.bars;
+        for (const t of Object.values(p.tracks)) assert.strictEqual(t.length, n, `${e.title}: track length`);
+        assert.ok(e.hitCount >= 2, e.title);
       } else {
         assert.strictEqual(e.kind, 'chords');
         for (const c of e.chords) assert.ok(PM.Theory.parseChordName(c), `${c} parses`);

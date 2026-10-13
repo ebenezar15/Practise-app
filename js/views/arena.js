@@ -81,7 +81,7 @@
       fb('');
       const box = $('#arQ', el);
       const playBtn = q.play ? `<button class="btn glass sm" id="arPlay">🔊 ${q.ear ? 'Play again' : 'Hear it'}</button>` : '';
-      const show = q.show ? `${q.show.keys ? AV().keysSvg(q.show.keys) : ''}${q.show.staff ? `<div class="staff-box">${PM.LearnView.staffSvg(q.show.staff, { clef: q.show.clef })}</div>` : ''}${q.show.fret ? AV().fretSvg(q.show.fret) : ''}${q.show.diagram ? UI.chordDiagram(q.show.diagram) : ''}${q.show.valves ? AV().valveIcons(q.show.valves) : ''}` : '';
+      const show = q.show ? `${q.show.keys ? AV().keysSvg(q.show.keys) : ''}${q.show.staff ? `<div class="staff-box">${PM.LearnView.staffSvg(q.show.staff, { clef: q.show.clef })}</div>` : ''}${q.show.fret ? AV().fretSvg(q.show.fret) : ''}${q.show.diagram ? UI.chordDiagram(q.show.diagram) : ''}${q.show.valves ? AV().valveIcons(q.show.valves) : ''}${q.show.drumgrid ? PM.DrumAlong.gridHtml(q.show.drumgrid) : ''}` : '';
       box.innerHTML = `<p class="ar-prompt pop-in">${esc(q.prompt)}</p>${q.big ? `<div class="ar-big">${esc(q.big)}</div>` : ''}${show ? `<div class="ar-show">${show}</div>` : ''}${playBtn}<div id="arA"></div>`;
       const pb = $('#arPlay', box); if (pb) pb.onclick = () => play(q.play);
       if (q.ear && q.play && q.type !== 'tap') setTimeout(() => !S.over && play(q.play), 200);

@@ -34,7 +34,7 @@
         <div class="page-head"><div><div class="eyebrow">Challenges</div><h1>Level up with games</h1><p>Creative challenges at every level — ear duels, beat-the-clock sprints, survival rounds, rhythm tap-backs and memory games. The questions change every time you play.</p></div></div>
         <section class="card ar-wrap" id="arena"></section>
         <div class="card-head" style="margin:26px 0 10px"><h3>🎸 Play-on-your-instrument games</h3><div class="row"><label class="field">Difficulty<select id="diff"><option value="easy">Easy</option><option value="medium" selected>Medium</option><option value="hard">Hard</option></select></label></div></div>
-        <div class="grid" id="cards" style="grid-template-columns:repeat(auto-fill,minmax(230px,1fr))">${GAMES.filter((g) => (g.id !== 'chord-quest' || PM.Instruments.get(App.instrument).chordal) && (g.id !== 'long-tones' || App.instrument !== 'piano')).map((g) => `
+        <div class="grid" id="cards" style="grid-template-columns:repeat(auto-fill,minmax(230px,1fr))">${GAMES.filter((g) => (g.id !== 'chord-quest' || PM.Instruments.get(App.instrument).chordal) && (g.id !== 'long-tones' || (App.instrument !== 'piano' && App.instrument !== 'drums')) && (g.id !== 'note-hunter' || App.instrument !== 'drums')).map((g) => `
           <section class="card game-card">
             <div class="game-art"><span>${g.art}</span></div>
             <h3>${g.name}</h3><p class="small" style="flex:1">${g.desc}</p>
