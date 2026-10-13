@@ -51,6 +51,7 @@
           </section>
           <section class="card">
             ${fretted ? `<div class="card-head"><h3>${icon(I.icon)} Standard tuning</h3><span class="tag" id="mode">auto</span></div>
+            ${inst === 'bass' ? `<div style="margin-bottom:10px">${PM.Shared.bassStrings(App)}</div>` : ''}
             <div class="strings" style="grid-template-columns:repeat(${STRINGS.length},1fr)">${STRINGS.map((s, i) => `<button class="string-btn" data-i="${i}">${s.n}<small>${DSP.midiName(s.m)}</small></button>`).join('')}</div>
             <p class="small" style="margin-top:10px">Tap a string to lock the target, tap again for auto. Strings turn green once they're in tune.</p>` : ''}
             <div class="card-head" style="margin-top:${fretted ? 20 : 0}px"><h3>${icon('sliders')} Reference</h3></div>
@@ -63,6 +64,7 @@
           </section>
         </div>`;
 
+      PM.Shared.wireBassStrings(host, App);
       const tuned = new Set();
       $$('.string-btn', host).forEach((b) => (b.onclick = () => {
         const i = +b.dataset.i;

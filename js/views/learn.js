@@ -89,6 +89,7 @@
         <div class="page-head"><div><div class="eyebrow">Learn · ${esc(I.emoji + ' ' + I.label)}</div><h1>Learn & practise</h1>
           <p>Guided practice that listens to you: scales, chords, reading, ear training and creative exercises. Every session earns XP and counts toward your goals.</p></div>
           <div class="row"><a class="btn ghost" href="#/games">${icon('games')} Challenges</a></div></div>
+        ${I.id === 'bass' ? `<section class="card" style="margin-bottom:16px"><div class="card-head"><h3>🎸 Your bass</h3><span class="muted small">Exercises, fretboard and tuner follow your choice</span></div>${PM.Shared.bassStrings(App)}</section>` : ''}
         ${I.family === 'voice' ? `<section class="card" style="margin-bottom:16px"><div class="card-head"><h3>🎤 Your voice type</h3><span class="muted small">Exercises, scales and sing-alongs are pitched for it</span></div>
           <div class="seg voice-types" id="vType">${Object.entries(Instruments.VOICE_TYPES).map(([id, v]) => `<button data-v="${id}" class="${(App.settings.voiceType || 'alto') === id ? 'on' : ''}">${esc(v.label)} <span class="muted small">${PM.DSP.midiName(v.range[0])}–${PM.DSP.midiName(v.range[1])}</span></button>`).join('')}</div>
           <p class="small muted" style="margin-top:8px">Not sure? Most women sing alto or mezzo, most men baritone or tenor. If high notes strain, pick the lower type.</p></section>` : ''}
@@ -105,6 +106,7 @@
         setTimeout(() => { if (stage.isConnected) stage.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 30);
       };
       $$('[data-a]', host).forEach((b) => (b.onclick = () => open(b.dataset.a)));
+      PM.Shared.wireBassStrings(host, App);
       $$('#vType [data-v]', host).forEach((b) => (b.onclick = () => { App.settings.voiceType = b.dataset.v; App.saveSettings(); PM.Learn.setVoiceType(b.dataset.v); App.rerender(); }));
       if (App.pendingActivity && ACT[App.pendingActivity]) { const a = App.pendingActivity; App.pendingActivity = null; open(a); }
       else if (App.pendingExercise) { const id = App.pendingExercise; App.pendingExercise = null; open('path', { exercise: id }); }

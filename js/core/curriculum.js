@@ -291,7 +291,7 @@
 
   const cache = {};
   function forInstrument(inst) {
-    const key = inst === 'voice' ? 'voice:' + (PM.Learn.RANGE.voice.type || 'alto') : inst;
+    const key = inst === 'voice' ? 'voice:' + (PM.Learn.RANGE.voice.type || 'alto') : inst === 'bass' ? 'bass:' + PM.Instruments.get('bass').strings.length : inst;
     return cache[key] || (cache[key] = inst === 'voice' ? buildVoice() : build(inst));
   }
   const LEVELS = ['', 'Beginner', 'Elementary', 'Intermediate', 'Upper-intermediate', 'Advanced'];

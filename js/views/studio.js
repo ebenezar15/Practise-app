@@ -29,6 +29,7 @@
             <div class="seg" id="modeSeg"><button data-mode="part" class="${!improv ? 'on' : ''}">${icon('music')} Play the part</button><button data-mode="improv" class="${improv ? 'on' : ''}">${icon('improv')} Improvise</button></div>
           </div>
         </div>
+        ${inst === 'bass' ? `<div class="row" style="margin-bottom:12px">${PM.Shared.bassStrings(App)}</div>` : ''}
         <div class="row mobile-inst" style="margin-bottom:12px"><div class="seg">${Instruments.list().map((x) => `<button data-inst="${x.id}" class="${x.id === inst ? 'on' : ''}">${x.emoji} ${esc(x.short)}</button>`).join('')}</div></div>
 
         <section class="card" id="trackCard"></section>
@@ -112,6 +113,7 @@
 
       $$('#modeSeg button', host).forEach((b) => (b.onclick = () => { App.settings.studioMode = b.dataset.mode; App.saveSettings(); App.rerender(); }));
       $$('.mobile-inst [data-inst]', host).forEach((b) => (b.onclick = () => App.setInstrument(b.dataset.inst)));
+      PM.Shared.wireBassStrings(host, App);
 
       // ---------- Track card ----------
       const trackCard = $('#trackCard', host);

@@ -386,6 +386,7 @@
   App.start = function () {
     PM.Theme.apply(App.settings);
     if (App.settings.voiceType) PM.Learn.setVoiceType(App.settings.voiceType);
+    if (App.settings.bassStrings === 5) PM.Instruments.setBassStrings(5);
     App.live.instrument = App.instrument;
     App.live.latency = App.settings.latency;
     buildShell();

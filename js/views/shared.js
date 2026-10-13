@@ -238,5 +238,22 @@
     }));
   }
 
-  PM.Shared = { uploader, trackChips, stars, sessionSummary, calibrateLatency, backingForm, mixer, presetGains, wireRecordingPlayers };
+  /** 4/5-string selector for bass players (shown on bass pages). */
+  function bassStrings(App) {
+    if (App.instrument !== 'bass') return '';
+    const n = PM.Instruments.get('bass').strings.length;
+    return `<div class="seg bass-strings" data-bass-strings>${[4, 5].map((k) => `<button data-bs="${k}" class="${n === k ? 'on' : ''}">${k}-string${k === 5 ? ' (low B)' : ''}</button>`).join('')}</div>`;
+  }
+  function wireBassStrings(host, App) {
+    host.querySelectorAll('[data-bs]').forEach((b) => (b.onclick = () => {
+      const k = +b.dataset.bs;
+      App.settings.bassStrings = k; App.saveSettings();
+      PM.Instruments.setBassStrings(k);
+      App.live.instrument = 'bass';
+      UI.toast(`${k}-string bass`, { icon: '🎸' });
+      App.rerender();
+    }));
+  }
+
+  PM.Shared = { bassStrings, wireBassStrings, uploader, trackChips, stars, sessionSummary, calibrateLatency, backingForm, mixer, presetGains, wireRecordingPlayers };
 })(typeof self !== 'undefined' ? self : globalThis);

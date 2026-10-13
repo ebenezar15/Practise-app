@@ -108,6 +108,16 @@
     bass: { label: 'Bass', range: [40, 64], start: 43 },
   };
 
+  /** 4-string (E A D G) or 5-string (B E A D G) bass: updates strings, range and lowest pitch. */
+  function setBassStrings(n) {
+    const B = INSTRUMENTS.bass;
+    if (n === 5) Object.assign(B, { strings: [23, 28, 33, 38, 43], stringNames: ['B', 'E', 'A', 'D', 'G'], range: [23, 67], minFreq: 28, stringCount: 5 });
+    else Object.assign(B, { strings: [28, 33, 38, 43], stringNames: ['E', 'A', 'D', 'G'], range: [28, 67], minFreq: 35, stringCount: 4 });
+    if (PM.Learn && PM.Learn.RANGE) PM.Learn.RANGE.bass = n === 5 ? { low: 23, high: 63, start: 31, strings: 5 } : { low: 28, high: 63, start: 31, strings: 4 };
+    return B;
+  }
+  INSTRUMENTS.bass.stringCount = 4;
+
   const list = () => Object.values(INSTRUMENTS);
   const get = (id) => INSTRUMENTS[id] || INSTRUMENTS.guitar;
   const isGuitarLike = (id) => get(id).family === 'fretted' && get(id).chordal;
@@ -136,6 +146,6 @@
     return best;
   }
 
-  PM.Instruments = { INSTRUMENTS, VOICE_TYPES, list, get, isGuitarLike, trumpetInfo, fretPosition, TRUMPET_FINGERING };
+  PM.Instruments = { INSTRUMENTS, VOICE_TYPES, setBassStrings, list, get, isGuitarLike, trumpetInfo, fretPosition, TRUMPET_FINGERING };
   if (typeof module !== 'undefined' && module.exports) module.exports = PM.Instruments;
 })(typeof self !== 'undefined' ? self : globalThis);
