@@ -166,6 +166,8 @@
     setTrack(entry, playBlob) {
       this.player.unload();
       this.track = entry;
+      // remember the open song for this tab: Safari on iPhone/iPad may reload a tab in the background
+      try { if (entry && entry.id) sessionStorage.setItem('cadenza.lastTrack', entry.id); else sessionStorage.removeItem('cadenza.lastTrack'); } catch (e) { /* private mode */ }
       if (entry) this.player.load(playBlob || entry.blob);
       this.emit('track', entry);
     },
@@ -399,6 +401,17 @@
     pill();
     if (PM.Cadi) PM.Cadi.init(App);
     if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+    // after a reload, quietly reopen the song that was open in this tab
+    let lastTrack = null;
+    try { lastTrack = sessionStorage.getItem('cadenza.lastTrack'); } catch (e) { /* private mode */ }
+    if (lastTrack && !App.track) {
+      PM.Audio.Library.get(lastTrack).then(async (item) => {
+        if (!item || App.track) return;
+        await App.openFromLibrary(item);
+        if (['studio', 'insights'].includes(App.currentView)) App.rerender();
+        UI.toast(`Reopened “${item.name}”`, { icon: '📂' });
+      }).catch((e) => console.warn('Could not reopen the last song', e));
+    }
     addEventListener('hashchange', () => App.route());
     App.route();
     if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {

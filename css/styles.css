@@ -1183,3 +1183,5 @@ body.has-mini { scroll-padding-bottom: 150px; }
 .pl-week div.today { border-color: var(--v-500); }
 .pl-run { text-align: center; }
 .ak-instwrap > .small svg { width: 16px; height: 16px; vertical-align: -3px; margin-right: 4px; }
+/* page transitions slide sideways: never let them create a horizontal scrollbar */
+main#view { overflow-x: clip; }

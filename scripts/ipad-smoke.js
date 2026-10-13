@@ -258,6 +258,14 @@ fs.mkdirSync(outDir, { recursive: true });
       await page.waitForFunction((x) => PM.App.track && PM.App.track.id === x, id, { timeout: 30000 });
       return `${tracks - 1} saved tracks, chord step ${before.toFixed(2)}→${after.toFixed(2)}s`;
     });
+    await step('a reload reopens the song you had open (iOS tab reloads)', async () => {
+      const before = await page.evaluate(() => PM.App.track && PM.App.track.name);
+      await page.goto(base + '/#/insights');
+      await page.reload();
+      await page.waitForFunction((n) => PM.App.track && PM.App.track.name === n, before, { timeout: 20000 });
+      await page.waitForSelector('#dyn', { timeout: 10000 });
+      return 'reopened “' + before + '”';
+    });
     await step('voice: sing-along demo with vocal stem, pitch trail and karaoke mix', async () => {
       await page.goto(base + '/#/studio');
       await tap('.mobile-inst [data-inst="voice"]');
