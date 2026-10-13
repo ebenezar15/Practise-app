@@ -21,18 +21,11 @@
   const ctx = () => PM.Audio.getCtx();
   function tone(midi, when, dur, vol, type) {
     const c = ctx(), t = when || c.currentTime + 0.02;
-    const o = c.createOscillator(), g = c.createGain();
-    o.type = type || 'triangle'; o.frequency.value = DSP.midiToFreq(midi);
-    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol || 0.3, t + 0.015);
-    g.gain.setTargetAtTime(0.0001, t + (dur || 0.5) * 0.8, 0.08);
-    o.connect(g).connect(c.destination); o.start(t); o.stop(t + (dur || 0.5) + 0.4);
+    PM.Sound.note(type === 'sine' ? 'piano' : PM.Sound.voiceFor(PM.App.instrument) === 'drums' ? 'piano' : PM.Sound.voiceFor(PM.App.instrument), midi, t, dur || 0.5, { vel: Math.min(1, 0.45 + (vol || 0.3)) });
   }
   function click(when, accent, soft) {
     const c = ctx(), t = when || c.currentTime + 0.01;
-    const o = c.createOscillator(), g = c.createGain();
-    o.type = 'sine'; o.frequency.value = accent ? 1200 : 800;
-    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(soft ? 0.12 : accent ? 0.45 : 0.28, t + 0.003); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.06);
-    o.connect(g).connect(c.destination); o.start(t); o.stop(t + 0.08);
+    PM.Sound.drum(accent ? 'woodhi' : 'wood', t, soft ? 0.35 : accent ? 0.95 : 0.7);
   }
   const chime = (App) => { if (!stateOf(App).sounds) return; const t = ctx().currentTime + 0.02; [72, 76, 79, 84].forEach((m, i) => tone(m, t + i * 0.09, 0.5, 0.12, 'sine')); };
   const speak = (text) => { try { if (!root.speechSynthesis) return; root.speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(text.replace(/[^\p{L}\p{N}\s.,!?'"-]/gu, '')); u.rate = 0.92; u.pitch = 1.1; root.speechSynthesis.speak(u); } catch (e) { /* no speech */ } };

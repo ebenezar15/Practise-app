@@ -36,6 +36,7 @@
       $$('.inst-switch button').forEach((b) => b.classList.toggle('on', b.dataset.inst === inst));
       if (this.track) this.preparePart(this.track, true).catch(() => {});
       this.emit('instrument', inst);
+      warmSounds(inst);
       this.rerender();
     },
 
@@ -311,6 +312,17 @@
     if (m) m.innerHTML = `<b>Lv ${lp.level}</b><div class="bar"><i style="width:${lp.pct * 100}%"></i></div><span>${App.game.state.streak}🔥</span>`;
   }
 
+  /** Pre-render the instrument's most used notes and the core drum kit in idle time. */
+  function warmSounds(inst) {
+    if (!PM.Sound || !PM.Voices) return;
+    try {
+      const I = PM.Instruments.get(inst), v = PM.Sound.voiceFor(inst);
+      if (v === 'drums') PM.Sound.warm('drums', [36, 38, 42, 46, 51, 49, 48, 45, 43, 37]);
+      else { const lo = Math.max(I.range[0], (I.strings ? I.strings[0] : 48)), mid = Math.round((I.range[0] + I.range[1]) / 2); const ms = []; for (let m = Math.max(lo, mid - 12); m <= Math.min(I.range[1], mid + 12); m++) ms.push(m); PM.Sound.warm(v, ms); }
+      PM.Sound.warm('drums', [36, 38, 42]);
+    } catch (e) { /* audio unavailable */ }
+  }
+
   // ---------- Shell ----------
   function buildShell() {
     // grouped navigation with clear names; phones show the first five + a "More" sheet
@@ -387,6 +399,7 @@
     PM.Theme.apply(App.settings);
     if (App.settings.voiceType) PM.Learn.setVoiceType(App.settings.voiceType);
     if (App.settings.bassStrings === 5) PM.Instruments.setBassStrings(5);
+    setTimeout(() => warmSounds(App.instrument), 1500);
     App.live.instrument = App.instrument;
     App.live.latency = App.settings.latency;
     buildShell();

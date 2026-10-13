@@ -54,6 +54,15 @@
       this.url = null;
       this.listeners = new Set();
       this.el.addEventListener('ended', () => this.emit('ended'));
+      // WebKit can fail a blob source that was swapped mid-load ("src not supported"): rebuild it once
+      this.el.addEventListener('error', () => {
+        if (!this.blob || this.healed === this.blob) return;
+        this.healed = this.blob;
+        const t = this.el.currentTime || 0, want = this.wantPlay;
+        this.url = URL.createObjectURL(this.blob);
+        this.el.src = this.url; this.el.load();
+        this.el.addEventListener('loadedmetadata', () => { try { this.el.currentTime = t; } catch (e) { /* ignore */ } if (want) this.el.play().catch(() => {}); }, { once: true });
+      });
       this.el.addEventListener('play', () => this.emit('play'));
       this.el.addEventListener('pause', () => this.emit('pause'));
       this.el.addEventListener('timeupdate', () => {
@@ -75,22 +84,24 @@
       } catch (e) { /* already connected */ }
     }
     load(blob) {
-      if (this.url) URL.revokeObjectURL(this.url);
-      this.blob = blob;
+      // revoke the old URL later: WebKit may still be reading it while the new source loads
+      if (this.url) { const old = this.url; setTimeout(() => URL.revokeObjectURL(old), 30000); }
+      this.blob = blob; this.healed = null;
       this.url = URL.createObjectURL(blob);
       this.el.src = this.url;
       this.loop = null;
       this.el.load();
     }
-    unload() { this.pause(); if (this.url) URL.revokeObjectURL(this.url); this.url = null; this.el.removeAttribute('src'); }
+    unload() { this.pause(); if (this.url) { const old = this.url; setTimeout(() => URL.revokeObjectURL(old), 30000); } this.url = null; this.blob = null; this.el.removeAttribute('src'); }
     get loaded() { return !!this.url; }
     async play() {
+      this.wantPlay = true;
       this.connect(); getCtx();
       try { await this.el.play(); } catch (e) {
         // WebKit can reject a blob URL it has dropped ("NotSupportedError"): reload the source once and retry
         if (e && e.name === 'NotSupportedError' && this.blob) {
           const t = this.el.currentTime || 0;
-          if (this.url) URL.revokeObjectURL(this.url);
+          if (this.url) { const old = this.url; setTimeout(() => URL.revokeObjectURL(old), 30000); }
           this.url = URL.createObjectURL(this.blob);
           this.el.src = this.url; this.el.load();
           try { this.el.currentTime = t; } catch (e2) { /* not seekable yet */ }
@@ -109,7 +120,7 @@
       const done = () => { el.pause(); el.currentTime = t; el.muted = false; };
       if (p && p.then) p.then(done, () => { el.muted = false; }); else done();
     }
-    pause() { this.el.pause(); }
+    pause() { this.wantPlay = false; this.el.pause(); }
     get playing() { return !this.el.paused && !this.el.ended; }
     get time() { return this.el.currentTime || 0; }
     set time(t) { this.el.currentTime = Math.max(0, t); }

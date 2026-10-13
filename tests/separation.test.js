@@ -20,7 +20,9 @@ function sources(sr, bars) {
     for (let i = 0; i < 4; i++) for (const m of [55, 59, 62].map((x) => x + (roots[b % 4] - 43))) chords.push({ midi: m - 12 + 12, start: t0 + i * beat, end: t0 + i * beat + 0.4, velocity: 0.7, voice: 'guitar' });
   }
   const dur = bars * 4 * beat + 1;
-  const r = (ns) => Midi.renderNotes(ns, { sampleRate: sr, duration: dur, useProgram: false, normalize: false }).data;
+  // reference test signals: the classic synth the audio separator was tuned against (app voices are
+  // richer, but MIDI songs get exact stems and never go through the audio separator)
+  const r = (ns) => Midi.renderNotes(ns, { sampleRate: sr, duration: dur, useProgram: false, normalize: false, classic: true }).data;
   return { kick: r(kick), snare: r(snare), cymbals: r(cymbals), bass: r(bass), vocals: r(vocals), pads: r(pads), chords: r(chords), vocalNotes: vocals };
 }
 

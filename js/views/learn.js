@@ -30,27 +30,11 @@
   // ------------------------------------------------------------------ sound
   function playNotes(midis, opts) {
     opts = opts || {};
-    const ctx = PM.Audio.getCtx();
     const beat = 60 / (opts.bpm || 90);
-    const t0 = ctx.currentTime + 0.08;
-    const out = ctx.createGain(); out.gain.value = 0.28; out.connect(ctx.destination);
-    const voice = opts.voice || PM.Instruments.get(PM.App.instrument).synth;
-    const list = midis.map((m, i) => (typeof m === 'number' ? { midi: m, start: i * beat, dur: beat * 0.92 } : m));
-    list.forEach((n) => {
-      const f = DSP.midiToFreq(n.midi), st = t0 + n.start, dur = n.dur || beat * 0.9;
-      const parts = voice === 'trumpet' ? [[1, 'sawtooth', 0.22]] : voice === 'bass' ? [[1, 'triangle', 0.55], [2, 'sine', 0.15]] : [[1, 'triangle', 0.45], [2, 'sine', 0.12], [3, 'sine', 0.05]];
-      parts.forEach(([h, type, amp]) => {
-        const o = ctx.createOscillator(), g = ctx.createGain();
-        o.type = type; o.frequency.value = f * h;
-        g.gain.setValueAtTime(0, st); g.gain.linearRampToValueAtTime(amp, st + 0.012);
-        g.gain.setTargetAtTime(amp * (voice === 'trumpet' ? 0.8 : 0.35), st + 0.05, 0.15);
-        g.gain.setTargetAtTime(0, st + dur, 0.05);
-        if (voice === 'trumpet') { const lp = ctx.createBiquadFilter(); lp.frequency.value = 2400; o.connect(lp).connect(g); } else o.connect(g);
-        g.connect(out); o.start(st); o.stop(st + dur + 0.4);
-      });
-    });
-    const end = list.reduce((mx, n) => Math.max(mx, n.start + (n.dur || beat)), 0);
-    return { duration: end, stop: () => { try { out.disconnect(); } catch (e) { /* ignore */ } } };
+    const list = midis.map((m, i) => (typeof m === 'number' ? { midi: m, start: i * beat, dur: beat * 0.92 } : Object.assign({ dur: beat * 0.9 }, m)));
+    const duration = PM.Sound.playNotes(list, { voice: opts.voice || PM.Sound.voiceFor(PM.App.instrument), vel: opts.vel, vowel: opts.vowel });
+    const stop = PM.Sound.playNotes.lastStop;
+    return { duration, stop: () => stop && stop() };
   }
 
   // ------------------------------------------------------------------ staff

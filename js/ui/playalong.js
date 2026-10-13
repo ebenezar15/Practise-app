@@ -16,32 +16,22 @@
   function nameOf(m, inst) { const w = m + (inst === 'trumpet' ? 2 : 0); return Theory.spell(w, false) + (Math.floor(w / 12) - 1); }
   const pcName = (m, inst) => Theory.spell(m + (inst === 'trumpet' ? 2 : 0));
 
-  /** Schedule synth notes at absolute AudioContext times. Returns a stop function. */
+  /** Schedule instrument notes at absolute AudioContext times. Returns a stop function. */
   function synth(notes, voice, gainVal) {
-    const ctx = PM.Audio.getCtx();
-    const out = ctx.createGain(); out.gain.value = gainVal || 0.25; out.connect(ctx.destination);
+    const v = PM.Sound.voiceFor(voice), gain = (gainVal || 0.25) / 0.25, strum = v === 'guitar' || v === 'electric' ? 0.014 : 0;
+    const ctx = PM.Audio.getCtx(), out = ctx.createGain(); out.gain.value = gain; out.connect(PM.Sound.master());
+    const stops = [];
     for (const n of notes) {
-      const f = DSP.midiToFreq(n.midi), st = n.time, dur = Math.max(0.08, n.dur * 0.92);
-      const o = ctx.createOscillator(), g = ctx.createGain();
-      o.type = voice === 'trumpet' ? 'sawtooth' : voice === 'bass' ? 'triangle' : 'triangle';
-      o.frequency.value = f;
-      g.gain.setValueAtTime(0.0001, st); g.gain.exponentialRampToValueAtTime(0.5, st + 0.012);
-      g.gain.setTargetAtTime(voice === 'trumpet' ? 0.35 : 0.15, st + 0.05, 0.12); g.gain.setTargetAtTime(0.0001, st + dur, 0.04);
-      if (voice === 'trumpet') { const lp = ctx.createBiquadFilter(); lp.frequency.value = 2200; o.connect(lp).connect(g); } else o.connect(g);
-      g.connect(out); o.start(st); o.stop(st + dur + 0.3);
-      if (n.chord) n.chord.forEach((m) => { const o2 = ctx.createOscillator(), g2 = ctx.createGain(); o2.type = 'triangle'; o2.frequency.value = DSP.midiToFreq(m); g2.gain.setValueAtTime(0.0001, st); g2.gain.exponentialRampToValueAtTime(0.18, st + 0.01); g2.gain.setTargetAtTime(0.0001, st + dur, 0.08); o2.connect(g2).connect(out); o2.start(st); o2.stop(st + dur + 0.4); });
+      const dur = Math.max(0.08, n.dur * 0.92);
+      if (n.chord) [n.midi].concat(n.chord).forEach((m, k) => stops.push(PM.Sound.note(v, m, n.time + k * strum, dur, { vel: k ? 0.6 : 0.68, dest: out })));
+      else stops.push(PM.Sound.note(v, n.midi, n.time, dur, { vel: 0.78, dest: out }));
     }
-    return () => { try { out.disconnect(); } catch (e) { /* ignore */ } };
+    return () => { stops.forEach((f) => f()); setTimeout(() => { try { out.disconnect(); } catch (e) { /* ignore */ } }, 600); };
   }
   function clicks(times, accents) {
     const ctx = PM.Audio.getCtx();
-    const out = ctx.createGain(); out.gain.value = 0.5; out.connect(ctx.destination);
-    times.forEach((t, i) => {
-      const o = ctx.createOscillator(), g = ctx.createGain();
-      o.frequency.value = accents[i] ? 1600 : 1000; o.type = 'square';
-      g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(accents[i] ? 0.5 : 0.3, t + 0.002); g.gain.exponentialRampToValueAtTime(0.0008, t + 0.035);
-      o.connect(g).connect(out); o.start(t); o.stop(t + 0.05);
-    });
+    const out = ctx.createGain(); out.gain.value = 0.9; out.connect(ctx.destination);
+    times.forEach((t, i) => PM.Sound.drum(accents[i] ? 'woodhi' : 'wood', t, accents[i] ? 0.95 : 0.7, out));
     return () => { try { out.disconnect(); } catch (e) { /* ignore */ } };
   }
 

@@ -181,6 +181,11 @@
       }
     }
     click(time, level) {
+      if ((this.sound === 'wood' || this.sound === 'cow' || this.sound === 'sticks' || this.sound === 'kit') && PM.Sound) {
+        const id = this.sound === 'wood' ? (level === 3 ? 'woodhi' : 'wood') : this.sound === 'cow' ? 'cowbell' : this.sound === 'sticks' ? 'rim' : (level === 3 ? 'kick' : level === 2 ? 'snare' : 'hhc');
+        PM.Sound.drum(id, time, [0, 0.35, 0.7, 1][level], this.out);
+        return;
+      }
       const ctx = PM.Audio.getCtx();
       const o = ctx.createOscillator(), g = ctx.createGain();
       const F = { click: [0, 700, 1000, 1600], wood: [0, 520, 800, 1250], beep: [0, 660, 880, 1320], cow: [0, 540, 560, 800] }[this.sound] || [0, 700, 1000, 1600];

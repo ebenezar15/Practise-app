@@ -75,11 +75,12 @@
       $('#a4', host).oninput = (e) => { a4 = +e.target.value; $('#a4v', host).textContent = a4; };
       $('#refBtn', host).onclick = () => {
         const ctx = PM.Audio.getCtx();
-        const f = a4 * Math.pow(2, (+$('#refNote', host).value - 69) / 12);
-        const o = ctx.createOscillator(), g = ctx.createGain();
-        o.type = 'triangle'; o.frequency.value = f;
-        g.gain.setValueAtTime(0, ctx.currentTime); g.gain.linearRampToValueAtTime(0.3, ctx.currentTime + 0.03); g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 2.2);
-        o.connect(g).connect(ctx.destination); o.start(); o.stop(ctx.currentTime + 2.3);
+        const m = +$('#refNote', host).value;
+        // the real instrument sound, retuned to the chosen A4 (playbackRate) — e.g. a plucked open string
+        const voice = I.family === 'drums' ? 'piano' : PM.Sound.voiceFor(inst);
+        const out = ctx.createGain(); out.connect(PM.Sound.master());
+        const det = 1200 * Math.log2(a4 / 440);
+        PM.Sound.note(voice, m, ctx.currentTime + 0.03, 2.2, { vel: 0.8, dest: out, detune: det });
       };
 
       const hist = [];

@@ -21,20 +21,9 @@
   const shuffle = (a) => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = (Math.random() * (i + 1)) | 0; [a[i], a[j]] = [a[j], a[i]]; } return a; };
 
   function synthChord(midis, when, dur) {
-    const ctx = PM.Audio.getCtx();
-    const t0 = when || ctx.currentTime + 0.05;
-    const out = ctx.createGain(); out.gain.value = 0.22; out.connect(ctx.destination);
-    midis.forEach((m, i) => {
-      const f = DSP.midiToFreq(m);
-      [1, 2, 3].forEach((h) => {
-        const o = ctx.createOscillator(), g = ctx.createGain();
-        o.type = h === 1 ? 'triangle' : 'sine'; o.frequency.value = f * h;
-        const amp = (h === 1 ? 0.5 : 0.18 / h) / Math.sqrt(midis.length);
-        g.gain.setValueAtTime(0, t0 + i * 0.01); g.gain.linearRampToValueAtTime(amp, t0 + i * 0.01 + 0.01);
-        g.gain.exponentialRampToValueAtTime(0.0005, t0 + (dur || 1.6));
-        o.connect(g).connect(out); o.start(t0 + i * 0.01); o.stop(t0 + (dur || 1.6) + 0.05);
-      });
-    });
+    const v = PM.Sound.voiceFor(PM.App.instrument), voice = v === 'drums' || v === 'voice' || v === 'trumpet' || v === 'bass' ? 'piano' : v;
+    const t0 = when || PM.Audio.getCtx().currentTime + 0.05, strum = voice === 'guitar' || voice === 'electric' ? 0.016 : 0.004;
+    midis.slice().sort((x, y) => x - y).forEach((m, i) => PM.Sound.note(voice, m, t0 + i * strum, dur || 1.6, { vel: 0.7 }));
   }
 
   PM.App.register({

@@ -106,6 +106,11 @@
     }
 
     click(time, level) {
+      if ((this.sound === 'wood' || this.sound === 'sticks' || this.sound === 'cowbell' || this.sound === 'kit') && PM.Sound) {
+        const id = this.sound === 'wood' ? (level >= 1.5 ? 'woodhi' : 'wood') : this.sound === 'sticks' ? 'rim' : this.sound === 'cowbell' ? 'cowbell' : (level >= 2 ? 'kick' : level >= 1 ? 'hhc' : 'hhp');
+        PM.Sound.drum(id, time, level >= 2 ? 1 : level >= 1.5 ? 0.85 : level >= 1 ? 0.7 : 0.4, this.out);
+        return;
+      }
       const ctx = PM.Audio.getCtx();
       const osc = ctx.createOscillator();
       const g = ctx.createGain();

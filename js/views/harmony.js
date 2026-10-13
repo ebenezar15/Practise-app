@@ -11,7 +11,7 @@
   const queryParam = (k) => { const m = new RegExp('[?&]' + k + '=([^&]+)').exec(location.hash); return m ? decodeURIComponent(m[1]) : null; };
 
   // ------------------------------------------------------------------ audio
-  const TIMBRE = { S: ['triangle', 0.16, 0.2], A: ['sine', 0.22, 0.05], T: ['triangle', 0.15, -0.05], B: ['sine', 0.3, -0.2] };
+  const TIMBRE = { S: ['ah', 0.85, 0.22], A: ['oo', 0.95, 0.07], T: ['ah', 0.85, -0.07], B: ['oo', 1, -0.22] }; // vowel, level, pan
   class PartPlayer {
     constructor(piece, opts) {
       this.piece = piece; this.opts = opts || {};
@@ -23,13 +23,14 @@
     start(levels) {
       const c = PM.Audio.getCtx();
       const bpb = this.piece.bpb;
+      // render every voice before scheduling so the first chord is on time
+      for (const [id, notes] of Object.entries(this.piece.parts)) for (const n of notes) PM.Sound.prepare('voice', n.midi, 0.7, TIMBRE[id][0]);
       this.t0 = c.currentTime + 0.3 + bpb * this.beat;
-      this.out = c.createGain(); this.out.gain.value = 0.9; this.out.connect(c.destination);
+      this.out = c.createGain(); this.out.gain.value = 0.9; this.out.connect(PM.Sound.master());
       // count-in clicks
       for (let i = 0; i < bpb; i++) {
-        const t = this.t0 - (bpb - i) * this.beat, o = c.createOscillator(), g = c.createGain();
-        o.frequency.value = i === 0 ? 1300 : 900; g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.3, t + 0.004); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.06);
-        o.connect(g).connect(this.out); o.start(t); o.stop(t + 0.08);
+        const t = this.t0 - (bpb - i) * this.beat;
+        PM.Sound.drum(i === 0 ? 'woodhi' : 'wood', t, i === 0 ? 0.9 : 0.65, this.out);
       }
       for (const [id, notes] of Object.entries(this.piece.parts)) {
         const [type, vol, pan] = TIMBRE[id];
@@ -40,12 +41,7 @@
         this.gains[id] = g;
         for (const n of notes) {
           const st = this.t0 + n.start * this.beat, dur = n.dur * this.beat;
-          const o = c.createOscillator(), e = c.createGain();
-          o.type = type; o.frequency.value = DSP.midiToFreq(n.midi);
-          const vib = c.createOscillator(), vg = c.createGain(); vib.frequency.value = 5.2; vg.gain.value = DSP.midiToFreq(n.midi) * 0.004; vib.connect(vg).connect(o.frequency);
-          e.gain.setValueAtTime(0.0001, st); e.gain.exponentialRampToValueAtTime(vol, st + 0.06);
-          e.gain.setTargetAtTime(vol * 0.8, st + 0.1, 0.3); e.gain.setTargetAtTime(0.0001, st + dur - 0.04, 0.05);
-          o.connect(e).connect(g); o.start(st); o.stop(st + dur + 0.3); vib.start(st); vib.stop(st + dur + 0.3);
+          PM.Sound.note('voice', n.midi, st, Math.max(0.1, dur - 0.05), { vel: 0.7, vowel: type, gain: vol * 0.8, dest: g });
         }
       }
       this.running = true;
@@ -184,7 +180,7 @@
             markDone('part'); openLesson('part');
             trainer(all.find((p) => p.id === pieceId) || all[0], mine, '', () => markDone('hymn'));
           }));
-          $$('[data-p]', box).forEach((b) => (b.onclick = () => { const p = PART[b.dataset.p]; const c = PM.Audio.getCtx(), t = c.currentTime + 0.05; [p.range[0], p.range[0] + 4, p.range[0] + 7, p.range[1] - 5, p.range[1]].forEach((m, i) => { const o = c.createOscillator(), g = c.createGain(); o.type = 'triangle'; o.frequency.value = DSP.midiToFreq(m); g.gain.setValueAtTime(0.0001, t + i * 0.4); g.gain.exponentialRampToValueAtTime(0.2, t + i * 0.4 + 0.03); g.gain.setTargetAtTime(0.0001, t + i * 0.4 + 0.32, 0.05); o.connect(g).connect(c.destination); o.start(t + i * 0.4); o.stop(t + i * 0.4 + 0.5); }); mine = b.dataset.p; App.harmonyPart = mine; }));
+          $$('[data-p]', box).forEach((b) => (b.onclick = () => { const p = PART[b.dataset.p]; PM.Sound.playNotes([p.range[0], p.range[0] + 4, p.range[0] + 7, p.range[1] - 5, p.range[1]].map((m, i) => ({ midi: m, start: i * 0.42, dur: 0.38 })), { voice: 'voice' }); mine = b.dataset.p; App.harmonyPart = mine; }));
         } else if (id === 'hymn') {
           box.innerHTML = '<h3>⛪ Four-part hymn</h3><p>Pick a hymn and your part in the trainer below. Start with <b>Listen</b>, then <b>My part alone</b>, then <b>Sing with the others</b>.</p>';
           trainer(all.find((p) => p.id === pieceId) || all[0], mine, '', () => markDone('hymn'));

@@ -11,28 +11,18 @@
   const AV = () => PM.AcademyView;
 
   // ------------------------------------------------------------------ sound
-  function tone(ctx, out, midi, t, dur, vol, type) {
-    const o = ctx.createOscillator(), g = ctx.createGain();
-    o.type = type || 'triangle'; o.frequency.value = DSP.midiToFreq(midi);
-    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + 0.012);
-    g.gain.setTargetAtTime(vol * 0.4, t + 0.06, 0.15); g.gain.setTargetAtTime(0.0001, t + dur, 0.05);
-    o.connect(g).connect(out); o.start(t); o.stop(t + dur + 0.4);
-  }
-  function click(ctx, out, t, accent) {
-    const o = ctx.createOscillator(), g = ctx.createGain();
-    o.type = 'square'; o.frequency.value = accent ? 1600 : 1000;
-    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(accent ? 0.5 : 0.3, t + 0.002); g.gain.exponentialRampToValueAtTime(0.0008, t + 0.04);
-    o.connect(g).connect(out); o.start(t); o.stop(t + 0.06);
-  }
+  const earVoice = () => { const v = PM.Sound.voiceFor(PM.App.instrument); return v === 'drums' ? 'piano' : v; };
+  function tone(ctx, out, midi, t, dur, vol, type) { PM.Sound.note(type === 'square' ? 'drums' : earVoice(), type === 'square' ? 37 : midi, t, dur, { vel: Math.min(1, 0.35 + vol * 1.6), dest: out }); }
+  function click(ctx, out, t, accent) { PM.Sound.drum(accent ? 'woodhi' : 'wood', t, accent ? 0.95 : 0.7, out); }
   /** Play a challenge sound spec; returns its length in seconds. */
   function play(spec) {
     if (!spec) return 0;
-    const ctx = PM.Audio.getCtx(), out = ctx.createGain(); out.gain.value = 0.32; out.connect(ctx.destination);
+    const ctx = PM.Audio.getCtx(), out = ctx.createGain(); out.gain.value = 1; out.connect(PM.Sound.master());
     let t = ctx.currentTime + 0.08;
     const t0 = t;
     if (spec.notes) spec.notes.forEach((m, i) => { tone(ctx, out, m, t, 0.5, spec.vols ? spec.vols[i] : 0.35); t += 0.6; });
-    else if (spec.chord) { spec.chord.forEach((m) => tone(ctx, out, m, t, 1.4, 0.3 / Math.sqrt(spec.chord.length))); t += 1.5; }
-    else if (spec.seq) spec.seq.forEach((ch) => { ch.forEach((m) => tone(ctx, out, m, t, 0.9, 0.28 / Math.sqrt(ch.length))); t += 1.0; });
+    else if (spec.chord) { spec.chord.forEach((m, k) => tone(ctx, out, m, t + k * 0.012, 1.4, 0.3)); t += 1.5; }
+    else if (spec.seq) spec.seq.forEach((ch) => { ch.forEach((m, k) => tone(ctx, out, m, t + k * 0.01, 0.9, 0.27)); t += 1.0; });
     else if (spec.clicks) {
       const run = (c) => { const iv = 60 / c.bpm; for (let i = 0; i < c.n; i++) { const pos = c.bar ? i % c.bar : i; const acc = c.pattern ? c.pattern.includes(pos) : c.accents ? i % c.accents === 0 : false; click(ctx, out, t, acc); t += iv; } };
       run(spec.clicks);

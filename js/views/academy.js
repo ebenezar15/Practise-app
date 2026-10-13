@@ -22,10 +22,7 @@
       const c = PM.Audio.getCtx(), beat = 60 / (spec.bpm || 90);
       let t = c.currentTime + 0.1, k = 0;
       for (const d of spec.rhythm) {
-        const o = c.createOscillator(), g = c.createGain();
-        o.frequency.value = spec.accents && k % spec.accents === 0 ? 1300 : 900;
-        g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.35, t + 0.004); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.08);
-        o.connect(g).connect(c.destination); o.start(t); o.stop(t + 0.1);
+        PM.Sound.drum(spec.accents && k % spec.accents === 0 ? 'woodhi' : 'snare', t, spec.accents && k % spec.accents === 0 ? 0.9 : 0.6);
         t += d * beat; k++;
       }
     }

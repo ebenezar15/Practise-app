@@ -23,7 +23,7 @@
       this.ctx = ctx;
       this.out = ctx.createGain();
       this.out.gain.value = 0.9;
-      this.out.connect(dest || ctx.destination);
+      this.out.connect(dest || (PM.Sound ? PM.Sound.master(ctx) : ctx.destination));
       const len = ctx.sampleRate;
       this.noise = ctx.createBuffer(1, len, ctx.sampleRate);
       const d = this.noise.getChannelData(0);
@@ -53,54 +53,25 @@
     }
     play(id, t, v) {
       v = v == null ? 0.8 : v;
+      if (PM.Sound && PM.Voices) { PM.Sound.drum(id, t, v, this.out); return; }
+      this.legacy(id, t, v);
+    }
+    legacy(id, t, v) {
       switch (id) {
         case 'kick': this.tone(t, 150, 45, 0.42, 1.0 * v, 'sine', 0.12); this.hiss(t, 0.02, 0.25 * v, 'lowpass', 1800); break;
         case 'snare': this.tone(t, 220, 160, 0.12, 0.45 * v, 'triangle'); this.hiss(t, 0.2, 0.55 * v, 'highpass', 1600, 0.7); break;
-        case 'rim': this.tone(t, 1700, 0, 0.035, 0.5 * v, 'square'); this.hiss(t, 0.03, 0.3 * v, 'bandpass', 3000, 2); break;
-        case 'clap': [0, 0.012, 0.024].forEach((d) => this.hiss(t + d, 0.03, 0.4 * v, 'bandpass', 1300, 1.5)); this.hiss(t + 0.03, 0.18, 0.3 * v, 'bandpass', 1200, 1.2); break;
         case 'hhc': this.hiss(t, 0.05, 0.32 * v, 'highpass', 7500, 1); break;
-        case 'hhp': this.hiss(t, 0.04, 0.18 * v, 'highpass', 6500, 1); break;
-        case 'hho': this.hiss(t, 0.35, 0.28 * v, 'highpass', 7000, 1); break;
-        case 'ride': this.hiss(t, 0.5, 0.16 * v, 'bandpass', 6000, 3); this.tone(t, 520, 0, 0.6, 0.06 * v, 'square'); break;
         case 'crash': this.hiss(t, 1.4, 0.38 * v, 'highpass', 4500, 0.6); break;
-        case 'tomh': this.tone(t, 260, 180, 0.3, 0.7 * v); break;
-        case 'tomm': this.tone(t, 190, 130, 0.35, 0.75 * v); break;
-        case 'toml': this.tone(t, 120, 80, 0.45, 0.8 * v); break;
-        case 'shaker': this.hiss(t, 0.06, 0.2 * v, 'bandpass', 8000, 1.5); break;
-        case 'tamb': this.hiss(t, 0.16, 0.25 * v, 'bandpass', 9000, 2); this.tone(t, 6000, 0, 0.06, 0.04 * v, 'square'); break;
-        case 'cowbell': this.tone(t, 800, 0, 0.25, 0.22 * v, 'square'); this.tone(t, 540, 0, 0.25, 0.22 * v, 'square'); break;
-        case 'congah': this.tone(t, 380, 330, 0.18, 0.6 * v); break;
-        case 'congal': this.tone(t, 250, 210, 0.25, 0.65 * v); break;
-        case 'clave': this.tone(t, 2500, 0, 0.05, 0.45 * v, 'sine'); break;
-        default: break;
+        default: this.hiss(t, 0.08, 0.3 * v, 'bandpass', 3000, 1);
       }
     }
-    /** Bass & chord voices for the auto-accompaniment. */
-    bass(t, midi, dur, v) {
-      const c = this.ctx, o = c.createOscillator(), o2 = c.createOscillator(), f = c.createBiquadFilter(), g = c.createGain();
-      const fr = 440 * Math.pow(2, (midi - 69) / 12);
-      o.type = 'triangle'; o.frequency.value = fr; o2.type = 'sine'; o2.frequency.value = fr / 2;
-      f.type = 'lowpass'; f.frequency.value = 900;
-      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.5 * v, t + 0.01);
-      g.gain.setTargetAtTime(0.25 * v, t + 0.05, 0.1); g.gain.setTargetAtTime(0.0001, t + dur, 0.04);
-      o.connect(f); o2.connect(f); f.connect(g).connect(this.out);
-      o.start(t); o2.start(t); o.stop(t + dur + 0.3); o2.stop(t + dur + 0.3);
-    }
+    /** Bass & chord voices for the auto-accompaniment (realistic instrument voices). */
+    bass(t, midi, dur, v) { PM.Sound.note('bass', midi, t, dur, { vel: Math.min(1, 0.5 + 0.45 * v), dest: this.out }); }
     chord(t, midis, dur, v, kind) {
-      const c = this.ctx;
-      midis.forEach((m) => {
-        const o = c.createOscillator(), g = c.createGain(), f = c.createBiquadFilter();
-        o.type = kind === 'organ' ? 'sine' : kind === 'guitar' ? 'sawtooth' : 'triangle';
-        o.frequency.value = 440 * Math.pow(2, (m - 69) / 12);
-        f.type = 'lowpass'; f.frequency.value = kind === 'guitar' ? 2200 : 3200;
-        const pk = (kind === 'pad' || kind === 'organ' ? 0.07 : 0.11) * v;
-        g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(pk, t + (kind === 'pad' ? 0.15 : 0.008));
-        if (kind === 'pad' || kind === 'organ') g.gain.setTargetAtTime(pk * 0.8, t + 0.2, 0.3);
-        else g.gain.setTargetAtTime(pk * 0.35, t + 0.04, 0.18);
-        g.gain.setTargetAtTime(0.0001, t + dur, 0.06);
-        o.connect(f).connect(g).connect(this.out);
-        o.start(t); o.stop(t + dur + 0.4);
-      });
+      const voice = kind === 'organ' ? 'organ' : kind === 'guitar' ? 'guitar' : kind === 'pad' ? 'strings' : 'piano';
+      const strum = voice === 'guitar' ? 0.012 : 0;
+      const g = voice === 'strings' ? 0.55 : voice === 'organ' ? 0.6 : 0.8;
+      midis.forEach((m, k) => PM.Sound.note(voice, m, t + k * strum, dur, { vel: Math.min(1, (0.42 + 0.35 * v)), gain: g, dest: this.out }));
     }
   }
 

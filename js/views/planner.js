@@ -89,7 +89,7 @@
           <div class="row" style="justify-content:center;gap:10px"><button class="btn" id="plOpen">Open ${esc(b.title.toLowerCase())} →</button><button class="btn primary" id="plNext">Next block ➜</button></div>
           <p class="small muted" style="margin-top:10px">Tip: open the page to practise — when you come back to the Planner, “Resume routine” picks up at this block.</p></div>`, { onClose: () => timer && timer.stop() });
         const started = Date.now();
-        timer = PM.KidsView.visualTimer($('#plT', m.el), b.minutes * 60, () => { try { const c = PM.Audio.getCtx(), t = c.currentTime + 0.05; [72, 76, 79].forEach((n, k) => { const o = c.createOscillator(), g = c.createGain(); o.frequency.value = PM.DSP.midiToFreq(n); g.gain.setValueAtTime(0.0001, t + k * 0.12); g.gain.exponentialRampToValueAtTime(0.15, t + k * 0.12 + 0.02); g.gain.setTargetAtTime(0.0001, t + k * 0.12 + 0.3, 0.08); o.connect(g).connect(c.destination); o.start(t + k * 0.12); o.stop(t + k * 0.12 + 0.6); }); } catch (e) { /* audio blocked */ } });
+        timer = PM.KidsView.visualTimer($('#plT', m.el), b.minutes * 60, () => { try { PM.Sound.playNotes([72, 76, 79, 84].map((m, k) => ({ midi: m, start: k * 0.12, dur: 0.9, vel: 0.6 })), { voice: 'piano' }); } catch (e) { /* audio blocked */ } });
         const next = () => { const secs = (Date.now() - started) / 1000; if (secs > 30) App.game.recordSession({ mode: 'planner', instrument: App.instrument, seconds: secs, title: 'Routine · ' + b.title, summary: { accuracy: null, stars: 0, score: 0 } }); m.close(); run(plan, i + 1); };
         $('#plNext', m.el).onclick = next;
         $('#plOpen', m.el).onclick = () => { App.routine = { plan, i }; openBlock(b); };

@@ -269,6 +269,7 @@
   /**
    * Render notes to mono PCM. Each note's voice comes from note.voice, its GM program/channel,
    * or opts.instrument. opts.normalize=false keeps absolute levels (needed for stems).
+   * opts.classic uses the simple reference synth (test signals for the audio separator).
    */
   function renderNotes(notes, opts) {
     opts = opts || {};
@@ -283,6 +284,7 @@
       const vel = 0.25 + 0.75 * (n.velocity == null ? 0.8 : n.velocity);
       const held = Math.max(0.05, n.end - n.start);
       const voice = n.voice || (n.channel === 9 ? 'drums' : opts.useProgram ? FAMILIES[familyOf(n)].voice : instVoice);
+      if (PM.Voices && !opts.classic) { PM.Voices.addNote(out, start, PM.Voices.voiceOf(voice), n.midi, held, sr, Math.min(1, vel)); continue; }
       const f = 440 * Math.pow(2, (n.midi - 69) / 12);
       if (voice === 'drums') drum(out, start, n.midi, sr, vel, rand);
       else if (voice === 'guitar') karplus(out, start, f, held, sr, vel, rand, {});

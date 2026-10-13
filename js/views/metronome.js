@@ -55,7 +55,7 @@
             <div class="card-head"><h3>${icon('sliders')} Settings</h3></div>
             <div class="grid g2">
               <label class="field">Time signature<select id="sig">${SIGS.map((s) => `<option ${s === m.beatsPerBar + '/' + m.beatUnit ? 'selected' : ''}>${s}</option>`).join('')}</select></label>
-              <label class="field">Sound<select id="sound"><option value="click">Click</option><option value="wood">Woodblock</option><option value="beep">Beep</option></select></label>
+              <label class="field">Sound<select id="sound"><option value="click">Click</option><option value="wood">Woodblock</option><option value="sticks">Drum sticks</option><option value="cowbell">Cowbell</option><option value="kit">Kick & hi-hat</option><option value="beep">Beep</option></select></label>
             </div>
             <label class="field" style="margin-top:14px">Subdivision</label>
             <div class="seg" id="subSeg" style="margin-top:6px">${[[1, '♩'], [2, '♫ 8ths'], [3, '3 triplets'], [4, '𝅘𝅥𝅯 16ths']].map(([v, l]) => `<button data-v="${v}" class="${m.subdivision === v ? 'on' : ''}">${l}</button>`).join('')}</div>

@@ -51,7 +51,7 @@
           <div class="grid g3">
             <label class="field">Beats per bar<select id="cpBeats">${Array.from({ length: 12 }, (_, i) => i + 1).map((n) => `<option ${n === p.beats ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
             <label class="field">Bars in loop<select id="cpBars">${[1, 2, 3, 4, 6, 8].map((n) => `<option ${n === p.bars ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
-            <label class="field">Sound<select id="cpSound">${[['click', 'Click'], ['wood', 'Woodblock'], ['beep', 'Beep'], ['cow', 'Cowbell']].map(([k, l]) => `<option value="${k}" ${loop.sound === k ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
+            <label class="field">Sound<select id="cpSound">${[['click', 'Click'], ['wood', 'Woodblock'], ['sticks', 'Drum sticks'], ['cow', 'Cowbell'], ['kit', 'Drum kit (kick · snare · hat)'], ['beep', 'Beep']].map(([k, l]) => `<option value="${k}" ${loop.sound === k ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
           </div>
           <label class="field" style="margin-top:12px">Steps per beat</label>
           <div class="seg" id="cpSub" style="margin-top:6px">${[[1, '♩ 1'], [2, '♫ 2'], [3, '3 triplets'], [4, '𝅘𝅥𝅯 4'], [6, '6']].map(([v, l]) => `<button data-v="${v}" class="${p.sub === v ? 'on' : ''}">${l}</button>`).join('')}</div>
