@@ -59,11 +59,11 @@
     const I = fretInst(spec.inst), ns = I.strings.length, W = 420, left = 28, top = 14, sh = 24, H = top * 2 + sh * (ns - 1) + 14, fw = (W - left - 8) / 12;
     const y = (s) => top + sh * (ns - 1 - s), x = (f) => (f === 0 ? left - 10 : left + (f - 0.5) * fw);
     let g = `<svg class="ak-fret" viewBox="0 0 ${W} ${H}" role="img" aria-label="fretboard">`;
-    g += `<rect x="${left}" y="${top - 6}" width="${W - left - 8}" height="${sh * (ns - 1) + 12}" rx="5" fill="#2a1052"/>`;
-    for (let f = 0; f <= 12; f++) g += `<line x1="${left + f * fw}" y1="${top - 6}" x2="${left + f * fw}" y2="${top + sh * (ns - 1) + 6}" stroke="${f ? 'rgba(196,181,253,.45)' : '#ede9fe'}" stroke-width="${f ? 1.5 : 4}"/>`;
+    g += `<rect x="${left}" y="${top - 6}" width="${W - left - 8}" height="${sh * (ns - 1) + 12}" rx="5" fill="${PM.UI.col('v-850')}"/>`;
+    for (let f = 0; f <= 12; f++) g += `<line x1="${left + f * fw}" y1="${top - 6}" x2="${left + f * fw}" y2="${top + sh * (ns - 1) + 6}" stroke="${f ? PM.UI.rgba('soft', .45) : PM.UI.col('v-100')}" stroke-width="${f ? 1.5 : 4}"/>`;
     for (const f of [3, 5, 7, 9, 12]) g += `<text x="${left + (f - 0.5) * fw}" y="${H - 1}" font-size="11" text-anchor="middle" fill="#8a7fa8" font-weight="700">${f}</text>`;
-    for (let s = 0; s < ns; s++) g += `<line x1="${left}" y1="${y(s)}" x2="${W - 8}" y2="${y(s)}" stroke="${spec.string === s && spec.fret == null ? '#f0abfc' : 'rgba(237,233,254,.6)'}" stroke-width="${spec.string === s && spec.fret == null ? 3.5 : 1.6}"/><text x="${left - 18}" y="${y(s) + 4}" font-size="13" font-weight="800" fill="#a78bfa" text-anchor="middle">${I.stringNames[s]}</text>`;
-    if (spec.fret != null) g += `<circle cx="${x(spec.fret)}" cy="${y(spec.string)}" r="10" fill="${spec.fret ? '#d946ef' : 'none'}" stroke="#d946ef" stroke-width="2.5"/>`;
+    for (let s = 0; s < ns; s++) g += `<line x1="${left}" y1="${y(s)}" x2="${W - 8}" y2="${y(s)}" stroke="${spec.string === s && spec.fret == null ? PM.UI.col('pink') : PM.UI.rgba('tint', .6)}" stroke-width="${spec.string === s && spec.fret == null ? 3.5 : 1.6}"/><text x="${left - 18}" y="${y(s) + 4}" font-size="13" font-weight="800" fill="${PM.UI.col('v-400')}" text-anchor="middle">${I.stringNames[s]}</text>`;
+    if (spec.fret != null) g += `<circle cx="${x(spec.fret)}" cy="${y(spec.string)}" r="10" fill="${spec.fret ? PM.UI.col('fuchsia') : 'none'}" stroke="${PM.UI.col('fuchsia')}" stroke-width="2.5"/>`;
     return g + '</svg>';
   }
   const valveIcons = (v) => { const d = v && v !== '0' ? v.split(' ').map(Number) : []; return `<div class="fp-vrow ak-valves">${[1, 2, 3].map((k) => `<div class="fp-valve ${d.includes(k) ? 'down' : ''}"><i></i><span>${k}</span></div>`).join('')}</div>`; };
@@ -242,7 +242,7 @@
         const fb = new UI.Fretboard(el, { strings: I.strings, names: I.stringNames, frets: 12 });
         const out2 = $(`[data-fxo="${k}"]`, host);
         const pcs = new Set(b.pcs || []);
-        const base = () => { let h = ''; for (let s2 = 0; s2 < I.strings.length; s2++) for (let f = 0; f <= 12; f++) { const m = I.strings[s2] + f; if (!pcs.has(m % 12)) continue; const root = b.root != null && m % 12 === b.root; h += `<circle cx="${fb.xOf(f)}" cy="${fb.yOf(s2)}" r="${root ? 10 : 8}" fill="${root ? '#d946ef' : 'rgba(168,85,247,.55)'}"/><text x="${fb.xOf(f)}" y="${fb.yOf(s2) + 3.5}" text-anchor="middle" font-size="9" font-weight="800" fill="#fff">${Theory.spell(m % 12)}</text>`; } return h; };
+        const base = () => { let h = ''; for (let s2 = 0; s2 < I.strings.length; s2++) for (let f = 0; f <= 12; f++) { const m = I.strings[s2] + f; if (!pcs.has(m % 12)) continue; const root = b.root != null && m % 12 === b.root; h += `<circle cx="${fb.xOf(f)}" cy="${fb.yOf(s2)}" r="${root ? 10 : 8}" fill="${root ? PM.UI.col('fuchsia') : 'rgba(168,85,247,.55)'}"/><text x="${fb.xOf(f)}" y="${fb.yOf(s2) + 3.5}" text-anchor="middle" font-size="9" font-weight="800" fill="#fff">${Theory.spell(m % 12)}</text>`; } return h; };
         fb.dotLayer.innerHTML = base();
         const svg = el.querySelector('svg');
         svg.style.cursor = 'pointer';
@@ -252,7 +252,7 @@
           let s2 = 0, best = 1e9; for (let i = 0; i < I.strings.length; i++) { const d = Math.abs(fb.yOf(i) - loc.y); if (d < best) { best = d; s2 = i; } }
           let f = 0; if (loc.x > fb.fx(0)) { f = 12; for (let i = 1; i <= 12; i++) if (loc.x < fb.fx(i)) { f = i; break; } }
           const m = I.strings[s2] + f;
-          fb.dotLayer.innerHTML = base() + `<circle cx="${fb.xOf(f)}" cy="${fb.yOf(s2)}" r="13" fill="none" stroke="#f0abfc" stroke-width="3" style="filter:drop-shadow(0 0 8px #d946ef)"/>`;
+          fb.dotLayer.innerHTML = base() + `<circle cx="${fb.xOf(f)}" cy="${fb.yOf(s2)}" r="13" fill="none" stroke="${PM.UI.col('pink')}" stroke-width="3" style="filter:drop-shadow(0 0 8px var(--fuchsia))"/>`;
           out2.innerHTML = `<b>${esc(DSP.midiName(m))}</b> · ${esc(I.stringNames[s2])} string, ${f ? 'fret ' + f : 'open'}`;
           PM.LearnView.playNotes([{ midi: m, start: 0, dur: 0.7 }], { voice: I.synth });
         });

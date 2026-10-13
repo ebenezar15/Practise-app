@@ -56,7 +56,7 @@
       const c = chosen();
       if (kind === 'piano') return FCOL[c.fingers[i]];
       if (kind === 'fret') return FCOL[c.path[i].finger];
-      return '#a855f7';
+      return PM.UI.col('v-500');
     }
 
     box.innerHTML = `<div class="fp">
@@ -98,7 +98,7 @@
       let s = `<svg class="fp-roll" viewBox="0 0 ${W} ${H}" role="img" aria-label="Piano roll">`;
       for (let m = lo; m <= hi; m++) {
         const y = yOf(m), blk = PM.Fingering.isBlack(m + tr);
-        s += `<rect x="0" y="${y}" width="${left}" height="${rh}" fill="${blk ? '#2a1052' : '#f6f4ff'}" stroke="#c4b5fd" stroke-width=".4"/>`;
+        s += `<rect x="0" y="${y}" width="${left}" height="${rh}" fill="${blk ? PM.UI.col('v-850') : PM.UI.col('v-50')}" stroke="${PM.UI.col('v-300')}" stroke-width=".4"/>`;
         s += `<rect x="${left}" y="${y}" width="${W - left}" height="${rh}" fill="${blk ? 'rgba(255,255,255,.03)' : 'rgba(255,255,255,.07)'}"/>`;
         if ((m + tr) % 12 === 0 || m === lo + 2) s += `<text x="${left - 3}" y="${y + rh - 2}" font-size="${Math.min(9, rh)}" text-anchor="end" fill="${blk ? '#fff' : '#5b21b6'}" font-weight="700">${nm(m)}</text>`;
       }
@@ -106,7 +106,7 @@
         const x = xOf(starts[i]), w = Math.max(16, xOf(starts[i] + durs[i]) - x - 3), y = yOf(notes[i]);
         const on = i === st.cur, col = colorOf(i), lab = labelOf(i);
         s += `<g class="fp-n${on ? ' on' : ''}" data-i="${i}" tabindex="0" role="button" aria-label="${esc(nm(notes[i]))} ${kind === 'piano' ? 'finger ' + lab : kind === 'fret' ? describe(i) : 'valves ' + lab}">
-          <rect x="${x}" y="${y - 1}" width="${w}" height="${rh + 2}" rx="${Math.min(6, rh / 2 + 1)}" fill="${on ? '#f0abfc' : 'rgba(196,181,253,.85)'}" ${on ? 'stroke="#fff" stroke-width="2"' : ''}/>
+          <rect x="${x}" y="${y - 1}" width="${w}" height="${rh + 2}" rx="${Math.min(6, rh / 2 + 1)}" fill="${on ? PM.UI.col('pink') : PM.UI.rgba('soft', .85)}" ${on ? 'stroke="#fff" stroke-width="2"' : ''}/>
           <circle cx="${x + 9}" cy="${y + rh / 2}" r="${Math.max(7, Math.min(9, rh / 2 + 3))}" fill="${col}"/>
           <text x="${x + 9}" y="${y + rh / 2 + 3.5}" font-size="10" text-anchor="middle" fill="#fff" font-weight="800">${esc(lab)}</text>
           ${w > 44 ? `<text x="${x + 21}" y="${y + rh / 2 + 3.5}" font-size="9.5" fill="#2a0f5c" font-weight="700">${esc(kind === 'fret' ? stringFret(i) : Theory.spell(notes[i] + tr))}</text>` : ''}</g>`;
@@ -131,12 +131,12 @@
       for (const p of PM.Fingering.positions(notes[st.cur], I.strings, I.frets || 15)) {
         if (p.string === cp.string && p.fret === cp.fret) continue;
         const x = fb.xOf(p.fret), y = fb.yOf(p.string);
-        html += `<circle cx="${x}" cy="${y}" r="11" fill="rgba(240,171,252,.12)" stroke="#f0abfc" stroke-width="2" stroke-dasharray="4 3"/><text x="${x}" y="${y + 3.5}" text-anchor="middle" font-size="9" font-weight="800" fill="#f0abfc">alt</text>`;
+        html += `<circle cx="${x}" cy="${y}" r="11" fill="${PM.UI.rgba('accent2', .12)}" stroke="${PM.UI.col('pink')}" stroke-width="2" stroke-dasharray="4 3"/><text x="${x}" y="${y + 3.5}" text-anchor="middle" font-size="9" font-weight="800" fill="${PM.UI.col('pink')}">alt</text>`;
       }
       for (const [k, i] of seen) {
         const p = c.path[i], x = fb.xOf(p.fret), y = fb.yOf(p.string), on = i === st.cur;
         const col = FCOL[p.finger];
-        html += `<g class="fp-dot" data-i="${i}" style="cursor:pointer"><circle cx="${x}" cy="${y}" r="${on ? 14 : 10}" fill="${p.fret === 0 ? 'none' : col}" stroke="${on ? '#fff' : col}" stroke-width="${p.fret === 0 ? 3 : on ? 3 : 0}" ${on ? 'style="filter:drop-shadow(0 0 10px #f0abfc)"' : `opacity="${0.75}"`}/>
+        html += `<g class="fp-dot" data-i="${i}" style="cursor:pointer"><circle cx="${x}" cy="${y}" r="${on ? 14 : 10}" fill="${p.fret === 0 ? 'none' : col}" stroke="${on ? '#fff' : col}" stroke-width="${p.fret === 0 ? 3 : on ? 3 : 0}" ${on ? 'style="filter:drop-shadow(0 0 10px var(--pink))"' : `opacity="${0.75}"`}/>
           <text x="${x}" y="${y + 4}" text-anchor="middle" font-size="${on ? 12 : 10}" font-weight="800" fill="#fff">${p.fret === 0 ? 'O' : p.finger}</text></g>`;
         void k;
       }
@@ -159,10 +159,10 @@
       const mark = (m, x, y, isB) => {
         if (!used.has(m)) return '';
         const i = used.get(m), on = notes[st.cur] === m, f = c.fingers[on ? st.cur : i];
-        return `<circle cx="${x}" cy="${y}" r="${on ? 12 : 9}" fill="${FCOL[f]}" ${on ? 'stroke="#fff" stroke-width="3" style="filter:drop-shadow(0 0 8px #d946ef)"' : `opacity="${isB ? 0.9 : 0.75}"`}/><text x="${x}" y="${y + 4}" text-anchor="middle" font-size="${on ? 13 : 11}" font-weight="800" fill="#fff">${f}</text>`;
+        return `<circle cx="${x}" cy="${y}" r="${on ? 12 : 9}" fill="${FCOL[f]}" ${on ? 'stroke="#fff" stroke-width="3" style="filter:drop-shadow(0 0 8px var(--fuchsia))"' : `opacity="${isB ? 0.9 : 0.75}"`}/><text x="${x}" y="${y + 4}" text-anchor="middle" font-size="${on ? 13 : 11}" font-weight="800" fill="#fff">${f}</text>`;
       };
       let s = `<svg class="fp-keys" viewBox="0 0 ${W} ${KH + 4}" role="img" aria-label="Keyboard with finger numbers">`;
-      whites.forEach((m) => { const on = notes[st.cur] === m; s += `<rect x="${xw[m] + 0.5}" y="0.5" width="${KW - 1}" height="${KH}" rx="4" fill="${on ? '#fae8ff' : '#fff'}" stroke="#c4b5fd"/>`; if ((m + tr) % 12 === 0) s += `<text x="${xw[m] + KW / 2}" y="${KH - 6}" font-size="9" text-anchor="middle" fill="#8a7fa8" font-weight="700">C${(m + tr) / 12 - 1}</text>`; });
+      whites.forEach((m) => { const on = notes[st.cur] === m; s += `<rect x="${xw[m] + 0.5}" y="0.5" width="${KW - 1}" height="${KH}" rx="4" fill="${on ? PM.UI.col('v-100') : '#fff'}" stroke="${PM.UI.col('v-300')}"/>`; if ((m + tr) % 12 === 0) s += `<text x="${xw[m] + KW / 2}" y="${KH - 6}" font-size="9" text-anchor="middle" fill="#8a7fa8" font-weight="700">C${(m + tr) / 12 - 1}</text>`; });
       for (let m = lo; m <= hi; m++) if (PM.Fingering.isBlack(m)) { const x = xw[m - 1] + KW - BW / 2; const on = notes[st.cur] === m; s += `<rect x="${x}" y="0" width="${BW}" height="${BH}" rx="3" fill="${on ? '#a21caf' : '#1f0b44'}"/>`; }
       whites.forEach((m) => (s += mark(m, xw[m] + KW / 2, KH - 30, false)));
       for (let m = lo; m <= hi; m++) if (PM.Fingering.isBlack(m)) s += mark(m, xw[m - 1] + KW, BH - 18, true);

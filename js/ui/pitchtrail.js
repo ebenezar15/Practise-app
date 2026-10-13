@@ -84,7 +84,7 @@
         const y = Y(m), pc = ((m % 12) + 12) % 12, black = [1, 3, 6, 8, 10].includes(pc);
         g.fillStyle = black ? 'rgba(124,58,237,0.05)' : 'rgba(124,58,237,0.09)';
         g.fillRect(labelW, y - (h - 12) / Math.max(1, hi - lo) / 2, w - labelW, (h - 12) / Math.max(1, hi - lo));
-        if (!black && (hi - lo < 30 || pc === 0 || pc === 7)) { g.fillStyle = pc === 0 ? '#7c3aed' : 'rgba(91,33,182,0.65)'; g.fillText(NAMES[pc] + (pc === 0 ? Math.floor(m / 12) - 1 : ''), labelW - 6, y); }
+        if (!black && (hi - lo < 30 || pc === 0 || pc === 7)) { g.fillStyle = pc === 0 ? PM.UI.col('v-600') : PM.UI.rgba('accent', 0.65); g.fillText(NAMES[pc] + (pc === 0 ? Math.floor(m / 12) - 1 : ''), labelW - 6, y); }
       }
       // "now" line
       const xn = X(now);
@@ -106,18 +106,18 @@
       for (const s of this.samples) {
         if (s.t < t0 || s.m == null) { prev = null; continue; }
         if (prev && s.t - prev.t < 0.15) {
-          g.strokeStyle = COL[s.grade] || '#d946ef';
+          g.strokeStyle = COL[s.grade] || PM.UI.col('fuchsia');
           g.beginPath(); g.moveTo(X(prev.t), Y(prev.m)); g.lineTo(X(s.t), Y(s.m)); g.stroke();
         }
         prev = s;
       }
       const last = this.samples[this.samples.length - 1];
       if (last && last.m != null && now - last.t < 0.2) {
-        g.fillStyle = COL[last.grade] || '#d946ef';
+        g.fillStyle = COL[last.grade] || PM.UI.col('fuchsia');
         g.beginPath(); g.arc(X(last.t), Y(last.m), 6, 0, Math.PI * 2); g.fill();
       }
       if (!this.targets.length && !this.samples.some((s) => s.m != null)) {
-        g.fillStyle = 'rgba(91,33,182,0.6)'; g.textAlign = 'center'; g.font = '600 13px ' + font;
+        g.fillStyle = PM.UI.rgba('accent', 0.6); g.textAlign = 'center'; g.font = '600 13px ' + font;
         g.fillText('Sing — your pitch draws here', labelW + (w - labelW) / 2, h / 2);
       }
     }

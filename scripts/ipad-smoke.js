@@ -556,9 +556,26 @@ fs.mkdirSync(outDir, { recursive: true });
       await page.waitForSelector('.ak-result', { timeout: 5000 });
       await shot('academy-lesson');
       const best = await page.evaluate(() => PM.App.game.state.academy.best.c1);
-      if (subjects < 12) throw new Error('subjects ' + subjects);
+      if (subjects < 11) throw new Error('subjects ' + subjects); // instrument lessons live in the courses
       if (best == null) throw new Error('score not saved');
       return `${subjects} subjects · ${answered} questions · best ${Math.round(best * 100)}%`;
+    });
+    await step('practice room: strumming patterns in every meter, tap take and coached result', async () => {
+      await page.evaluate(() => { PM.App.setInstrument('guitar'); location.hash = '#/learn'; });
+      await page.waitForSelector('[data-a="groove"]', { timeout: 5000 });
+      await page.evaluate(() => document.querySelector('[data-a="groove"]').click());
+      await page.waitForSelector('.gv-main .gv-c', { timeout: 5000 });
+      const meters = await page.locator('#gvMeters button').count();
+      await page.evaluate(() => { document.querySelector('#gvMode [data-m="tap"]').click(); document.querySelector('.gv-pat[data-p="s-down-up"]').click(); const b = document.querySelector('#gvBars'); b.value = '2'; b.dispatchEvent(new Event('change')); document.querySelector('#gvGo').click(); });
+      await page.evaluate(async () => {
+        const ctx = PM.Audio.getCtx(), t0 = ctx.currentTime;
+        while (ctx.currentTime < t0 + 3) { document.querySelector('.gv-pads [data-t="D"]').dispatchEvent(new PointerEvent('pointerdown', { bubbles: true })); await new Promise((r) => setTimeout(r, 400)); }
+        document.querySelector('#gvGo').click();
+      });
+      await page.waitForSelector('.gv-coach', { timeout: 5000 });
+      await shot('groove-result');
+      if (meters < 10) throw new Error('meters ' + meters);
+      return `${meters} meter filters · coach tips shown`;
     });
     await step('academy: instrument course lesson with fingering guide, fretboard explorer and drill', async () => {
       await page.goto(base + '/#/academy');

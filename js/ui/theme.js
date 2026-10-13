@@ -6,6 +6,7 @@
   const PM = (root.PM = root.PM || {});
 
   const THEMES = [
+    { id: 'overture', name: 'Overture', sw: 'linear-gradient(135deg,#0b1a36,#2456b8 55%,#f5a524)' },
     { id: 'violet', name: 'Violet', sw: 'linear-gradient(135deg,#7c3aed,#a855f7,#d946ef)' },
     { id: 'ocean', name: 'Ocean', sw: 'linear-gradient(135deg,#0284c7,#0ea5e9,#06b6d4)' },
     { id: 'forest', name: 'Forest', sw: 'linear-gradient(135deg,#059669,#10b981,#14b8a6)' },
@@ -25,8 +26,10 @@
   const MODES = [{ id: 'light', name: '☀️ Light' }, { id: 'dark', name: '🌙 Dark' }, { id: 'auto', name: '🌗 Auto' }];
   const TEXT = [{ id: 'md', name: 'A' }, { id: 'lg', name: 'A+' }, { id: 'xl', name: 'A++' }];
 
-  const DEFAULTS = { theme: 'violet', mode: 'light', font: 'avenir', text: 'md', spacing: 'normal', calm: false };
-  const get = (s) => Object.assign({}, DEFAULTS, (s && s.appearance) || {});
+  const DEFAULTS = { theme: 'overture', mode: 'light', font: 'avenir', text: 'md', spacing: 'normal', calm: false };
+  // before 3.1 the default was 'violet' and was saved with any other appearance change:
+  // move those users to the new Overture design unless they picked violet themselves
+  const get = (s) => { const a = Object.assign({}, DEFAULTS, (s && s.appearance) || {}); if (a.theme === 'violet' && !a.picked) a.theme = 'overture'; return a; };
 
   const darkQuery = root.matchMedia ? root.matchMedia('(prefers-color-scheme: dark)') : null;
   /** Apply appearance settings to the document. */
@@ -52,7 +55,7 @@
     const { esc } = PM.UI;
     const a = get(App.settings);
     const set = (k, v) => {
-      App.settings.appearance = Object.assign(get(App.settings), { [k]: v });
+      App.settings.appearance = Object.assign(get(App.settings), { [k]: v }, k === 'theme' ? { picked: true } : {});
       App.saveSettings();
       apply(App.settings);
       panel(container, App, opts);

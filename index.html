@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Overture · Learn, practise &amp; play music</title>
   <meta name="description" content="Offline AI music practice coach for piano and guitar: real-time chord, timing, intonation and dynamics feedback, song analysis, strumming transcription, metronome, tuner and games.">
-  <meta name="theme-color" content="#2a0f5c">
+  <meta name="theme-color" content="#0b1a36">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -19,7 +19,7 @@
     // apply the saved theme before first paint (no flash of the default colours)
     try {
       var a = (JSON.parse(localStorage.getItem('cadenza.settings.v1') || '{}').appearance) || {}, d = document.documentElement;
-      d.dataset.theme = a.theme || 'violet'; d.dataset.font = a.font || 'avenir'; d.dataset.text = a.text || 'md';
+      d.dataset.theme = a.theme && (a.theme !== 'violet' || a.picked) ? a.theme : 'overture'; d.dataset.font = a.font || 'avenir'; d.dataset.text = a.text || 'md';
       d.dataset.spacing = a.spacing || 'normal'; d.dataset.calm = a.calm ? '1' : '0';
       d.dataset.mode = a.mode === 'dark' || (a.mode === 'auto' && matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
     } catch (e) { /* defaults */ }

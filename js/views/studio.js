@@ -103,7 +103,7 @@
 
         <section class="card instrument-panel">
           <div class="card-head"><h3>${icon(I.icon)} ${visual === 'keys' ? 'Keyboard' : visual === 'brass' ? 'Valves' : visual === 'voice' ? 'Pitch trail' : visual === 'drums' ? 'Drum lane' : 'Fretboard'}</h3>
-            <div class="legend">${improv ? '<span><i style="background:#a855f7"></i>Chord tones</span><span><i style="background:#ddd6fe;border:1px solid #c4b5fd"></i>Scale tones</span><span><i style="background:#f0abfc"></i>You</span>' : visual === 'fret' ? (I.chordal ? '<span><i style="background:#a855f7"></i>Chord shape</span><span><i style="background:#10b981"></i>Heard</span><span><i style="background:#f43f5e"></i>Missing</span>' : '<span><i style="background:#10b981"></i>Target note</span><span><i style="background:#a855f7"></i>Chord tones</span><span><i style="background:#f0abfc"></i>You</span>') : visual === 'voice' ? '<span><i style="background:#ddd6fe"></i>Melody to sing</span><span><i style="background:#10b981"></i>In tune</span><span><i style="background:#f59e0b"></i>Close</span><span><i style="background:#f43f5e"></i>Off</span>' : visual === 'keys' ? '<span><i style="background:#ede9fe;border:1px solid #c4b5fd"></i>Expected</span><span><i style="background:#d946ef"></i>You played</span><span><i style="background:#10b981"></i>Correct</span>' : '<span>Written pitch for B♭ trumpet</span>'}</div></div>
+            <div class="legend">${improv ? '<span><i style="background:var(--v-500)"></i>Chord tones</span><span><i style="background:var(--v-200);border:1px solid var(--v-300)"></i>Scale tones</span><span><i style="background:var(--pink)"></i>You</span>' : visual === 'fret' ? (I.chordal ? '<span><i style="background:var(--v-500)"></i>Chord shape</span><span><i style="background:#10b981"></i>Heard</span><span><i style="background:#f43f5e"></i>Missing</span>' : '<span><i style="background:#10b981"></i>Target note</span><span><i style="background:var(--v-500)"></i>Chord tones</span><span><i style="background:var(--pink)"></i>You</span>') : visual === 'voice' ? '<span><i style="background:var(--v-200)"></i>Melody to sing</span><span><i style="background:#10b981"></i>In tune</span><span><i style="background:#f59e0b"></i>Close</span><span><i style="background:#f43f5e"></i>Off</span>' : visual === 'keys' ? '<span><i style="background:var(--v-100);border:1px solid var(--v-300)"></i>Expected</span><span><i style="background:var(--fuchsia)"></i>You played</span><span><i style="background:#10b981"></i>Correct</span>' : '<span>Written pitch for B♭ trumpet</span>'}</div></div>
           ${visual === 'drums' ? `<canvas class="drum-lane" id="drumLane"></canvas><p class="small muted" style="margin-top:8px">${a && a.part && a.part.notes && a.part.notes.length ? 'The song’s drum part scrolls past the line — your hits flash on the lane (green = in time).' : 'Load a song or backing track: the beat grid scrolls past the line and your hits flash on it.'} <a href="#/drums">Drum Studio →</a></p>` : ''}
           ${visual === 'fret' ? `<div class="inst-row"><div class="fret-wrap" id="fret"></div>${I.chordal ? '<div id="diagram" style="min-width:110px;display:grid;place-items:center"></div>' : ''}</div>
             ${a && a.strum && I.strum && !improv ? `<div class="card-head" style="margin:16px 0 6px"><h3>${icon('hand')} Strumming pattern <span class="muted small" style="font-weight:600">· ${esc(a.strum.gridLabel)} · ${Math.round(a.strum.consistency * 100)}% of bars</span></h3></div><div id="strum">${UI.strumLaneHtml(a.strum)}</div>` : ''}` :
@@ -493,18 +493,18 @@
           const now = a && player.playing ? t : performance.now() / 1000;
           if (frame && frame.onset && frame.time !== lastOnset) { lastOnset = frame.time; hitsLive.push({ t: now, ok: !beats.length || beats.some((b) => Math.abs(b - now) < 0.07) || partNotes.some((n) => Math.abs(n.start - now) < 0.07) }); if (hitsLive.length > 40) hitsLive.shift(); }
           const px = w / 4, x0 = w * 0.22, xOf = (tt) => x0 + (tt - now) * px, rh = (h - 20) / rows.length;
-          rows.forEach((id, i) => { g.fillStyle = i % 2 ? 'rgba(255,255,255,.03)' : 'rgba(255,255,255,.06)'; g.fillRect(0, i * rh, w, rh); g.fillStyle = 'rgba(237,233,254,.7)'; g.font = '700 10px system-ui'; g.fillText(PM.DrumCore.PIECE[id].short, 4, i * rh + rh / 2 + 3); });
+          rows.forEach((id, i) => { g.fillStyle = i % 2 ? 'rgba(255,255,255,.03)' : 'rgba(255,255,255,.06)'; g.fillRect(0, i * rh, w, rh); g.fillStyle = PM.UI.rgba('tint', .7); g.font = '700 10px system-ui'; g.fillText(PM.DrumCore.PIECE[id].short, 4, i * rh + rh / 2 + 3); });
           g.fillStyle = 'rgba(255,255,255,.12)';
           for (const b of beats) { const x = xOf(b); if (x > 0 && x < w) g.fillRect(x, 0, 1, h - 20); }
           for (const n of partNotes) {
             const x = xOf(n.start); if (x < -10 || x > w + 10) continue;
             const id = PM.Voices.GM_DRUM[n.midi] || 'snare', r = rows.indexOf(id === 'hhp' ? 'hhc' : id === 'rim' ? 'snare' : id);
             if (r < 0) continue;
-            g.fillStyle = PM.DrumCore.PIECE[id] ? PM.DrumCore.PIECE[id].color : '#a78bfa';
+            g.fillStyle = PM.DrumCore.PIECE[id] ? PM.DrumCore.PIECE[id].color : PM.UI.col('v-400');
             g.beginPath(); g.arc(x, r * rh + rh / 2, 6, 0, Math.PI * 2); g.fill();
           }
           for (const hl of hitsLive) { const x = xOf(hl.t); if (x < -10) continue; g.fillStyle = hl.ok ? 'rgba(52,211,153,.85)' : 'rgba(251,113,133,.85)'; g.fillRect(x - 2, h - 18, 4, 16); }
-          g.fillStyle = '#f0abfc'; g.fillRect(x0, 0, 2, h);
+          g.fillStyle = PM.UI.col('pink'); g.fillRect(x0, 0, 2, h);
         };
       })() : null;
 

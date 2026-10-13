@@ -113,7 +113,7 @@
         b += beats[i];
         if (x + wd < -10 || x > w + 10) return;
         const r = targets[i] && targets[i].result;
-        g.fillStyle = r ? COLORS[r] : i === (take ? take.cursor : -1) ? '#f0abfc' : 'rgba(196,181,253,0.85)';
+        g.fillStyle = r ? COLORS[r] : i === (take ? take.cursor : -1) ? PM.UI.col('pink') : PM.UI.rgba('soft', 0.85);
         UI.roundRect(g, x, y - 9, wd, 18, 9); g.fill();
         g.fillStyle = r ? '#fff' : '#2a0f5c';
         g.font = '700 11px system-ui, sans-serif';
@@ -134,11 +134,11 @@
           let m = s.m;
           if (tg && oct) m -= Math.round((s.m - tg.midi) / 12) * 12;
           const y = Math.max(4, Math.min(h - 26, yOf(m)));
-          if (prev) { g.strokeStyle = j ? { good: '#34d399', close: '#fbbf24', off: '#fb7185' }[j.grade] : 'rgba(240,171,252,0.8)'; g.beginPath(); g.moveTo(prev.x, prev.y); g.lineTo(x, y); g.stroke(); }
+          if (prev) { g.strokeStyle = j ? { good: '#34d399', close: '#fbbf24', off: '#fb7185' }[j.grade] : PM.UI.rgba('accent2', 0.8); g.beginPath(); g.moveTo(prev.x, prev.y); g.lineTo(x, y); g.stroke(); }
           prev = { x, y };
         }
       }
-      g.fillStyle = '#f0abfc';
+      g.fillStyle = PM.UI.col('pink');
       g.fillRect(w * 0.22, 0, 2, h - 22);
       g.fillStyle = 'rgba(255,255,255,0.6)'; g.font = '11px system-ui'; g.fillText(running ? (curBeat < 0 ? 'count-in…' : 'play!') : 'ready', 8, h - 6);
     }

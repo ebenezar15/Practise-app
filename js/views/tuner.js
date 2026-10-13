@@ -12,20 +12,20 @@
     for (let c = -50; c <= 50; c += 5) {
       const ang = (c / 50) * (Math.PI / 2.4) - Math.PI / 2;
       const r0 = c % 25 === 0 ? R - 28 : c % 10 === 0 ? R - 20 : R - 12;
-      ticks += `<line x1="${cx + Math.cos(ang) * r0}" y1="${cy + Math.sin(ang) * r0}" x2="${cx + Math.cos(ang) * R}" y2="${cy + Math.sin(ang) * R}" stroke="${Math.abs(c) <= 5 ? '#34d399' : 'rgba(196,181,253,0.55)'}" stroke-width="${c % 25 === 0 ? 3 : 1.6}" stroke-linecap="round"/>`;
-      if (c % 25 === 0) ticks += `<text x="${cx + Math.cos(ang) * (R - 44)}" y="${cy + Math.sin(ang) * (R - 44) + 4}" text-anchor="middle" font-size="12" fill="#a78bfa" font-weight="700">${c > 0 ? '+' + c : c}</text>`;
+      ticks += `<line x1="${cx + Math.cos(ang) * r0}" y1="${cy + Math.sin(ang) * r0}" x2="${cx + Math.cos(ang) * R}" y2="${cy + Math.sin(ang) * R}" stroke="${Math.abs(c) <= 5 ? '#34d399' : PM.UI.rgba('soft', 0.55)}" stroke-width="${c % 25 === 0 ? 3 : 1.6}" stroke-linecap="round"/>`;
+      if (c % 25 === 0) ticks += `<text x="${cx + Math.cos(ang) * (R - 44)}" y="${cy + Math.sin(ang) * (R - 44) + 4}" text-anchor="middle" font-size="12" fill="${PM.UI.col('v-400')}" font-weight="700">${c > 0 ? '+' + c : c}</text>`;
     }
     const a0 = -Math.PI / 2 - Math.PI / 2.4, a1 = -Math.PI / 2 + Math.PI / 2.4;
     const arc = (r) => `M ${cx + Math.cos(a0) * r} ${cy + Math.sin(a0) * r} A ${r} ${r} 0 0 1 ${cx + Math.cos(a1) * r} ${cy + Math.sin(a1) * r}`;
     return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;display:block">
-      <defs><linearGradient id="tg" x1="0" x2="1"><stop offset="0" stop-color="#f43f5e"/><stop offset=".42" stop-color="#a855f7"/><stop offset=".5" stop-color="#34d399"/><stop offset=".58" stop-color="#a855f7"/><stop offset="1" stop-color="#f43f5e"/></linearGradient>
+      <defs><linearGradient id="tg" x1="0" x2="1"><stop offset="0" stop-color="#f43f5e"/><stop offset=".42" stop-color="${PM.UI.col('v-500')}"/><stop offset=".5" stop-color="#34d399"/><stop offset=".58" stop-color="${PM.UI.col('v-500')}"/><stop offset="1" stop-color="#f43f5e"/></linearGradient>
       <filter id="glow" filterUnits="userSpaceOnUse" x="0" y="0" width="${W}" height="${H}"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
       <path d="${arc(R + 14)}" fill="none" stroke="url(#tg)" stroke-width="6" stroke-linecap="round" opacity=".85"/>
       ${ticks}
       <g id="needle" style="transform-origin:${cx}px ${cy}px;transition:transform .12s ease-out;transform:rotate(${(Math.max(-50, Math.min(50, cents || 0)) / 50) * 75}deg)">
         <line x1="${cx}" y1="${cy}" x2="${cx}" y2="${cy - R + 6}" stroke="#fff" stroke-width="4" stroke-linecap="round" filter="url(#glow)"/>
       </g>
-      <circle cx="${cx}" cy="${cy}" r="12" fill="#d946ef" filter="url(#glow)"/>
+      <circle cx="${cx}" cy="${cy}" r="12" fill="${PM.UI.col('fuchsia')}" filter="url(#glow)"/>
     </svg>`;
   }
 

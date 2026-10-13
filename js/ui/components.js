@@ -111,7 +111,7 @@
     c.width = innerWidth * dpr; c.height = innerHeight * dpr;
     const g = c.getContext('2d');
     g.scale(dpr, dpr);
-    const colors = ['#7c3aed', '#a855f7', '#d946ef', '#f0abfc', '#ffffff', '#c4b5fd', '#fde68a'];
+    const colors = [PM.UI.col('v-600'), PM.UI.col('v-500'), PM.UI.col('fuchsia'), PM.UI.col('pink'), '#ffffff', PM.UI.col('v-300'), '#fde68a'];
     const parts = Array.from({ length: 160 }, () => ({
       x: innerWidth / 2 + (Math.random() - 0.5) * 200, y: innerHeight * 0.35, vx: (Math.random() - 0.5) * 14, vy: -Math.random() * 14 - 4,
       s: 4 + Math.random() * 6, r: Math.random() * 6, vr: (Math.random() - 0.5) * 0.3, c: colors[(Math.random() * colors.length) | 0],
@@ -131,7 +131,7 @@
     const r = (size - stroke) / 2, c = 2 * Math.PI * r;
     const id = 'rg' + Math.random().toString(36).slice(2, 8);
     return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
-      <defs><linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${colorA || '#a78bfa'}"/><stop offset="1" stop-color="${colorB || '#f0abfc'}"/></linearGradient></defs>
+      <defs><linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${colorA || PM.UI.col('v-400')}"/><stop offset="1" stop-color="${colorB || PM.UI.col('pink')}"/></linearGradient></defs>
       <circle cx="${size / 2}" cy="${size / 2}" r="${r}" fill="none" stroke="${track || 'rgba(255,255,255,0.12)'}" stroke-width="${stroke}"/>
       <circle cx="${size / 2}" cy="${size / 2}" r="${r}" fill="none" stroke="url(#${id})" stroke-width="${stroke}" stroke-linecap="round" stroke-dasharray="${c}" stroke-dashoffset="${c * (1 - Math.max(0, Math.min(1, pct)))}" style="transition: stroke-dashoffset .8s cubic-bezier(.2,.8,.2,1)"/>
     </svg>`;
@@ -158,7 +158,7 @@
       for (let m = this.lo; m <= this.hi; m++) if (!isBlack(m)) whites.push(m);
       const W = 24, H = 120, BW = 15, BH = 76;
       let svg = `<svg class="keyboard" viewBox="0 0 ${whites.length * W} ${H}" preserveAspectRatio="xMidYMid meet">
-        <defs><linearGradient id="gPlayed" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#a855f7"/><stop offset="1" stop-color="#d946ef"/></linearGradient>
+        <defs><linearGradient id="gPlayed" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${PM.UI.col('v-500')}"/><stop offset="1" stop-color="${PM.UI.col('fuchsia')}"/></linearGradient>
         <linearGradient id="gHit" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#34d399"/><stop offset="1" stop-color="#10b981"/></linearGradient></defs>`;
       const xOf = {};
       whites.forEach((m, i) => {
@@ -213,17 +213,17 @@
       const fx = (f) => left + (W - left - 10) * (1 - Math.pow(2, -f / 12)) / (1 - Math.pow(2, -this.frets / 12));
       this.fx = fx;
       const mid = top + sh * (ns - 1) / 2;
-      let svg = `<svg class="fretboard" viewBox="0 0 ${W} ${H}"><defs><linearGradient id="fbWood" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2a1052"/><stop offset="1" stop-color="#1a0838"/></linearGradient></defs>`;
+      let svg = `<svg class="fretboard" viewBox="0 0 ${W} ${H}"><defs><linearGradient id="fbWood" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${PM.UI.col('v-850')}"/><stop offset="1" stop-color="#1a0838"/></linearGradient></defs>`;
       svg += `<rect x="${left}" y="${top - 8}" width="${W - left - 10}" height="${sh * (ns - 1) + 16}" rx="8" fill="url(#fbWood)"/>`;
-      for (const f of [3, 5, 7, 9, 15, 17]) if (f <= this.frets) svg += `<circle cx="${(fx(f - 1) + fx(f)) / 2}" cy="${mid}" r="6" fill="rgba(196,181,253,0.25)"/>`;
-      if (this.frets >= 12) { const x = (fx(11) + fx(12)) / 2; svg += `<circle cx="${x}" cy="${mid - sh}" r="6" fill="rgba(196,181,253,0.25)"/><circle cx="${x}" cy="${mid + sh}" r="6" fill="rgba(196,181,253,0.25)"/>`; }
-      for (let f = 0; f <= this.frets; f++) svg += `<line x1="${fx(f)}" y1="${top - 8}" x2="${fx(f)}" y2="${top + sh * (ns - 1) + 8}" stroke="${f === 0 ? '#ede9fe' : 'rgba(196,181,253,0.45)'}" stroke-width="${f === 0 ? 5 : 2}"/>`;
+      for (const f of [3, 5, 7, 9, 15, 17]) if (f <= this.frets) svg += `<circle cx="${(fx(f - 1) + fx(f)) / 2}" cy="${mid}" r="6" fill="${PM.UI.rgba('soft', 0.25)}"/>`;
+      if (this.frets >= 12) { const x = (fx(11) + fx(12)) / 2; svg += `<circle cx="${x}" cy="${mid - sh}" r="6" fill="${PM.UI.rgba('soft', 0.25)}"/><circle cx="${x}" cy="${mid + sh}" r="6" fill="${PM.UI.rgba('soft', 0.25)}"/>`; }
+      for (let f = 0; f <= this.frets; f++) svg += `<line x1="${fx(f)}" y1="${top - 8}" x2="${fx(f)}" y2="${top + sh * (ns - 1) + 8}" stroke="${f === 0 ? PM.UI.col('v-100') : PM.UI.rgba('soft', 0.45)}" stroke-width="${f === 0 ? 5 : 2}"/>`;
       for (let f = 1; f <= this.frets; f++) svg += `<text x="${(fx(f - 1) + fx(f)) / 2}" y="${H - 1}" text-anchor="middle" font-size="10" fill="#8a7fa8" font-weight="700">${f}</text>`;
       for (let s = 0; s < ns; s++) {
         const y = this.yOf(s);
         const thick = ns === 4 ? 3.4 - s * 0.45 : 2.6 - s * 0.32;
-        svg += `<line x1="${left}" y1="${y}" x2="${W - 10}" y2="${y}" stroke="rgba(237,233,254,${0.45 + s * 0.06})" stroke-width="${thick}"/>`;
-        svg += `<text x="${left - 44}" y="${y + 4}" text-anchor="middle" font-size="12" font-weight="800" fill="#a78bfa">${this.names[s]}</text>`;
+        svg += `<line x1="${left}" y1="${y}" x2="${W - 10}" y2="${y}" stroke="${PM.UI.rgba('tint', 0.45 + s * 0.06)}" stroke-width="${thick}"/>`;
+        svg += `<text x="${left - 44}" y="${y + 4}" text-anchor="middle" font-size="12" font-weight="800" fill="${PM.UI.col('v-400')}">${this.names[s]}</text>`;
       }
       svg += '<g class="dots"></g></svg>';
       container.innerHTML = svg;
@@ -235,7 +235,7 @@
     ring(midi) {
       for (let s = this.geo.ns - 1; s >= 0; s--) {
         const f = midi - this.tuning[s];
-        if (f >= 0 && f <= this.frets) return `<circle cx="${this.xOf(f)}" cy="${this.yOf(s)}" r="13" fill="none" stroke="#f0abfc" stroke-width="3" style="filter:drop-shadow(0 0 10px #d946ef)"/>`;
+        if (f >= 0 && f <= this.frets) return `<circle cx="${this.xOf(f)}" cy="${this.yOf(s)}" r="13" fill="none" stroke="${PM.UI.col('pink')}" stroke-width="3" style="filter:drop-shadow(0 0 10px var(--fuchsia))"/>`;
       }
       return '';
     }
@@ -252,7 +252,7 @@
           const midi = this.tuning[s] + f;
           const ok = livePcs && livePcs.has(midi % 12);
           const x = this.xOf(f);
-          const fill = livePcs && livePcs.size ? (ok ? '#10b981' : '#f43f5e') : '#a855f7';
+          const fill = livePcs && livePcs.size ? (ok ? '#10b981' : '#f43f5e') : PM.UI.col('v-500');
           html += `<circle cx="${x}" cy="${y}" r="${f === 0 ? 7 : 11}" fill="${f === 0 ? 'none' : fill}" stroke="${fill}" stroke-width="${f === 0 ? 3 : 0}" style="filter:drop-shadow(0 0 8px ${fill})"/>`;
           if (f > 0) html += `<text x="${x}" y="${y + 4}" text-anchor="middle" font-size="10.5" font-weight="800" fill="#fff">${Theory.spell(midi % 12)}</text>`;
         });
@@ -273,9 +273,9 @@
           if (m === targetMidi) {
             html += `<circle cx="${x}" cy="${y}" r="12" fill="#10b981" style="filter:drop-shadow(0 0 8px #10b981)"/><text x="${x}" y="${y + 4}" text-anchor="middle" font-size="10.5" font-weight="800" fill="#fff">${Theory.spell(pc)}</text>`;
           } else if (cs.has(pc)) {
-            html += `<circle cx="${x}" cy="${y}" r="10" fill="#a855f7"/><text x="${x}" y="${y + 4}" text-anchor="middle" font-size="9.5" font-weight="800" fill="#fff">${Theory.spell(pc)}</text>`;
+            html += `<circle cx="${x}" cy="${y}" r="10" fill="${PM.UI.col('v-500')}"/><text x="${x}" y="${y + 4}" text-anchor="middle" font-size="9.5" font-weight="800" fill="#fff">${Theory.spell(pc)}</text>`;
           } else if (ss.has(pc)) {
-            html += `<circle cx="${x}" cy="${y}" r="7" fill="rgba(196,181,253,0.18)" stroke="#c4b5fd" stroke-width="1.5"/>`;
+            html += `<circle cx="${x}" cy="${y}" r="7" fill="${PM.UI.rgba('soft', 0.18)}" stroke="${PM.UI.col('v-300')}" stroke-width="1.5"/>`;
           }
         }
       }
@@ -318,20 +318,20 @@
     const W = 92, H = 112, l = 16, t = 22, sw = (W - l * 2) / 5, fh = 18;
     let s = `<svg class="chord-diagram" viewBox="0 0 ${W} ${H}">`;
     if (base === 1) s += `<rect x="${l}" y="${t - 3}" width="${sw * 5}" height="4" fill="#3b1479" rx="1"/>`;
-    else s += `<text x="${l - 10}" y="${t + fh / 2 + 4}" font-size="10" fill="#7c3aed" font-weight="800" text-anchor="middle">${base}</text>`;
+    else s += `<text x="${l - 10}" y="${t + fh / 2 + 4}" font-size="10" fill="${PM.UI.col('v-600')}" font-weight="800" text-anchor="middle">${base}</text>`;
     for (let f = 0; f <= 4; f++) s += `<line x1="${l}" y1="${t + f * fh}" x2="${l + sw * 5}" y2="${t + f * fh}" stroke="#cfc6ef" stroke-width="1.4"/>`;
     for (let i = 0; i < 6; i++) s += `<line x1="${l + i * sw}" y1="${t}" x2="${l + i * sw}" y2="${t + 4 * fh}" stroke="#8a7fa8" stroke-width="1.2"/>`;
     if (shape.barre && base > 1) {
       const strs = shape.frets.map((f, i) => (f === shape.barre ? i : -1)).filter((i) => i >= 0);
-      if (strs.length >= 2) s += `<rect x="${l + Math.min(...strs) * sw - 6}" y="${t + (shape.barre - base) * fh + fh / 2 - 6}" width="${(Math.max(...strs) - Math.min(...strs)) * sw + 12}" height="12" rx="6" fill="#7c3aed"/>`;
+      if (strs.length >= 2) s += `<rect x="${l + Math.min(...strs) * sw - 6}" y="${t + (shape.barre - base) * fh + fh / 2 - 6}" width="${(Math.max(...strs) - Math.min(...strs)) * sw + 12}" height="12" rx="6" fill="${PM.UI.col('v-600')}"/>`;
     }
     shape.frets.forEach((f, i) => {
       const x = l + i * sw;
       if (f < 0) s += `<text x="${x}" y="${t - 8}" font-size="10" text-anchor="middle" fill="#f43f5e" font-weight="800">×</text>`;
-      else if (f === 0) s += `<circle cx="${x}" cy="${t - 11}" r="3.6" fill="none" stroke="#7c3aed" stroke-width="1.6"/>`;
+      else if (f === 0) s += `<circle cx="${x}" cy="${t - 11}" r="3.6" fill="none" stroke="${PM.UI.col('v-600')}" stroke-width="1.6"/>`;
       else s += `<circle cx="${x}" cy="${t + (f - base) * fh + fh / 2}" r="6" fill="url(#cdg)"/>`;
     });
-    s += `<defs><linearGradient id="cdg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7c3aed"/><stop offset="1" stop-color="#d946ef"/></linearGradient></defs></svg>`;
+    s += `<defs><linearGradient id="cdg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${PM.UI.col('v-600')}"/><stop offset="1" stop-color="${PM.UI.col('fuchsia')}"/></linearGradient></defs></svg>`;
     return `<div class="diagram"><b>${esc(name)}</b>${s}</div>`;
   }
 
@@ -372,26 +372,26 @@
       g.fillStyle = bg; g.fillRect(0, 0, w, h);
       const laneH = 34, waveTop = laneH + 6, waveH = h - waveTop - 18;
       // loop region
-      if (this.loop) { g.fillStyle = 'rgba(240,171,252,0.14)'; g.fillRect(X(this.loop.a), 0, X(this.loop.b) - X(this.loop.a), h); }
+      if (this.loop) { g.fillStyle = PM.UI.rgba('accent2', 0.14); g.fillRect(X(this.loop.a), 0, X(this.loop.b) - X(this.loop.a), h); }
       // bars & beats
       const downs = new Set(a.downbeats.map((x) => x.toFixed(3)));
       for (const b of a.beats) {
         if (b < v.start - 1 || b > v.start + v.len) continue;
         const isDown = downs.has(b.toFixed(3));
-        g.fillStyle = isDown ? 'rgba(196,181,253,0.35)' : 'rgba(196,181,253,0.1)';
+        g.fillStyle = isDown ? PM.UI.rgba('soft', 0.35) : PM.UI.rgba('soft', 0.1);
         g.fillRect(X(b), waveTop, isDown ? 1.5 : 1, waveH);
       }
       // waveform
       const wf = a.waveform, n = wf.length / 2;
       const mid = waveTop + waveH / 2;
       const grad = g.createLinearGradient(0, waveTop, 0, waveTop + waveH);
-      grad.addColorStop(0, '#d946ef'); grad.addColorStop(0.5, '#a78bfa'); grad.addColorStop(1, '#7c3aed');
+      grad.addColorStop(0, PM.UI.col('fuchsia')); grad.addColorStop(0.5, PM.UI.col('v-400')); grad.addColorStop(1, PM.UI.col('v-600'));
       for (let px = 0; px < w; px += 2) {
         const t = v.start + (px / w) * v.len;
         const i = Math.floor((t / a.duration) * n);
         if (i < 0 || i >= n) continue;
         const mn = wf[i * 2], mx = wf[i * 2 + 1];
-        g.fillStyle = t <= this.time ? grad : 'rgba(196,181,253,0.35)';
+        g.fillStyle = t <= this.time ? grad : PM.UI.rgba('soft', 0.35);
         g.fillRect(px, mid - mx * waveH * 0.5, 1.4, Math.max(1, (mx - mn) * waveH * 0.5));
       }
       // chord lane
@@ -406,13 +406,13 @@
         if (x1 - x0 > 26) { g.fillStyle = '#fff'; g.fillText(c.name, x0 + 8, 4 + (laneH - 6) / 2); }
       }
       // time ticks
-      g.fillStyle = 'rgba(196,181,253,0.5)'; g.font = '600 10px ' + getComputedStyle(document.body).fontFamily;
+      g.fillStyle = PM.UI.rgba('soft', 0.5); g.font = '600 10px ' + getComputedStyle(document.body).fontFamily;
       const step = v.len > 60 ? 15 : v.len > 20 ? 5 : 2;
       for (let t = Math.ceil(v.start / step) * step; t < v.start + v.len; t += step) g.fillText(fmtTime(t), X(t) + 3, h - 8);
       // playhead
       const px = X(this.time);
       g.fillStyle = '#fff'; g.fillRect(px - 1, 0, 2, h);
-      g.shadowColor = '#f0abfc'; g.shadowBlur = 14; g.beginPath(); g.arc(px, waveTop - 2, 5, 0, Math.PI * 2); g.fill(); g.shadowBlur = 0;
+      g.shadowColor = PM.UI.col('pink'); g.shadowBlur = 14; g.beginPath(); g.arc(px, waveTop - 2, 5, 0, Math.PI * 2); g.fill(); g.shadowBlur = 0;
     }
   }
   function roundRect(g, x, y, w, h, r) {
@@ -445,7 +445,7 @@
         g.fillStyle = gr; g.fill();
         if (isExp) { g.strokeStyle = 'rgba(255,255,255,0.85)'; g.lineWidth = 2; g.stroke(); }
         const am = (a0 + a1) / 2, lr = R * 0.38;
-        g.fillStyle = isExp ? '#fff' : 'rgba(237,233,254,0.55)';
+        g.fillStyle = isExp ? '#fff' : PM.UI.rgba('tint', 0.55);
         g.font = `${isExp ? 800 : 600} 11px ` + getComputedStyle(document.body).fontFamily;
         g.textAlign = 'center'; g.textBaseline = 'middle';
         g.fillText(Theory.spell(pc), cx + Math.cos(am) * lr, cy + Math.sin(am) * lr);
@@ -454,7 +454,7 @@
       g.font = '850 30px ' + getComputedStyle(document.body).fontFamily;
       g.fillText(label || '—', cx, cy - 4);
       g.font = '600 11px ' + getComputedStyle(document.body).fontFamily;
-      g.fillStyle = 'rgba(196,181,253,0.8)';
+      g.fillStyle = PM.UI.rgba('soft', 0.8);
       g.fillText(sub || '', cx, cy + 20);
     }
   }
@@ -483,15 +483,15 @@
     const font = getComputedStyle(document.body).fontFamily;
     if (opts.goal) {
       const y = h - 26 - (opts.goal / max) * (h - 46);
-      g.setLineDash([5, 5]); g.strokeStyle = '#d946ef'; g.beginPath(); g.moveTo(10, y); g.lineTo(w - 10, y); g.stroke(); g.setLineDash([]);
-      g.fillStyle = '#d946ef'; g.font = '700 10px ' + font; g.fillText('goal', w - 34, y - 5);
+      g.setLineDash([5, 5]); g.strokeStyle = PM.UI.col('fuchsia'); g.beginPath(); g.moveTo(10, y); g.lineTo(w - 10, y); g.stroke(); g.setLineDash([]);
+      g.fillStyle = PM.UI.col('fuchsia'); g.font = '700 10px ' + font; g.fillText('goal', w - 34, y - 5);
     }
     data.forEach((d, i) => {
       const bh = (d.value / max) * (h - 46);
       const x = 10 + i * bw + bw * 0.18, y = h - 26 - bh;
       const gr = g.createLinearGradient(0, y, 0, h - 26);
-      gr.addColorStop(0, '#d946ef'); gr.addColorStop(1, '#7c3aed');
-      g.fillStyle = d.value ? gr : '#ede9fe';
+      gr.addColorStop(0, PM.UI.col('fuchsia')); gr.addColorStop(1, PM.UI.col('v-600'));
+      g.fillStyle = d.value ? gr : PM.UI.col('v-100');
       roundRect(g, x, d.value ? y : h - 30, bw * 0.64, d.value ? Math.max(4, bh) : 4, 6); g.fill();
       g.fillStyle = '#8a7fa8'; g.font = '600 10.5px ' + font; g.textAlign = 'center';
       g.fillText(d.label, x + bw * 0.32, h - 9);
@@ -507,8 +507,8 @@
     const Y = (rel) => bot - Math.max(0, Math.min(1, (rel + 30) / 30)) * (bot - top);
     const X = (t) => (t / duration) * w;
     const marks = [['ff', -2], ['f', -6], ['mf', -10], ['mp', -15], ['p', -20], ['pp', -27]];
-    g.font = '700 10px ' + font; g.fillStyle = '#c4b5fd';
-    for (const [m, r] of marks) { g.fillStyle = 'rgba(196,181,253,0.18)'; g.fillRect(0, Y(r), w, 1); g.fillStyle = '#a78bfa'; g.fillText(m, 4, Y(r) - 3); }
+    g.font = '700 10px ' + font; g.fillStyle = PM.UI.col('v-300');
+    for (const [m, r] of marks) { g.fillStyle = PM.UI.rgba('soft', 0.18); g.fillRect(0, Y(r), w, 1); g.fillStyle = PM.UI.col('v-400'); g.fillText(m, 4, Y(r) - 3); }
     const grad = g.createLinearGradient(0, top, 0, bot);
     grad.addColorStop(0, 'rgba(217,70,239,0.55)'); grad.addColorStop(1, 'rgba(124,58,237,0.03)');
     g.beginPath(); g.moveTo(0, bot);
@@ -516,7 +516,7 @@
     g.lineTo(w, bot); g.closePath(); g.fillStyle = grad; g.fill();
     g.beginPath();
     dyn.curve.forEach((p, i) => (i ? g.lineTo(X(p.t), Y(p.rel)) : g.moveTo(X(p.t), Y(p.rel))));
-    g.strokeStyle = '#7c3aed'; g.lineWidth = 2; g.stroke();
+    g.strokeStyle = PM.UI.col('v-600'); g.lineWidth = 2; g.stroke();
     for (const e of dyn.events.slice(0, 12)) {
       g.fillStyle = e.type === 'crescendo' ? '#10b981' : '#f43f5e';
       g.font = '800 11px ' + font;
@@ -524,5 +524,17 @@
     }
   }
 
-  PM.UI = { icon, el, $, $$, esc, fmtTime, toast, modal, closeAllModals, bump, confetti, ringSvg, setupCanvas, PianoKeyboard, Fretboard, valvesHtml, setValves, chordDiagram, Timeline, ChromaRing, gaugeHtml, setGauge, strumLaneHtml, barChart, dynamicsChart, roundRect };
+  // ---- brand colours from the active theme (for SVG attributes and canvas drawing)
+  const FALLBACK = { 'v-50': '#f3f7ff', 'v-100': '#e4ecfd', 'v-200': '#c9d8fa', 'v-300': '#9db9f4', 'v-400': '#6b95ea', 'v-500': '#3b6fd8', 'v-600': '#2456b8', 'v-850': '#10244a', fuchsia: '#f5a524', pink: '#fcd581', 'rgb-tint': '228, 236, 253', 'rgb-accent': '36, 86, 184', 'rgb-accent2': '245, 165, 36', 'rgb-soft': '107, 149, 234' };
+  let colKey = '', colCache = {};
+  function col(name) {
+    if (typeof document === 'undefined') return FALLBACK[name] || '#888';
+    const el = document.documentElement, key = el.dataset.theme + '|' + el.dataset.mode;
+    if (key !== colKey) { colKey = key; colCache = {}; }
+    if (!(name in colCache)) colCache[name] = getComputedStyle(el).getPropertyValue('--' + name).trim() || FALLBACK[name] || '#888';
+    return colCache[name];
+  }
+  const rgba = (name, a) => `rgba(${col('rgb-' + name)}, ${a})`;
+
+  PM.UI = { icon, el, $, $$, esc, fmtTime, toast, modal, closeAllModals, bump, confetti, ringSvg, setupCanvas, PianoKeyboard, Fretboard, valvesHtml, setValves, chordDiagram, Timeline, ChromaRing, gaugeHtml, setGauge, strumLaneHtml, barChart, dynamicsChart, roundRect, col, rgba };
 })(typeof self !== 'undefined' ? self : globalThis);

@@ -159,6 +159,12 @@ jobs:
           name: Overture ${{ steps.tag.outputs.name }}
           make_latest: true
           body: |
+            ## What's new in 3.1
+            * **New look:** a new Overture logo and colour design — midnight navy, royal blue, gold and teal (the old violet look is still under Theme & fonts).
+            * **Academy levels work properly:** choosing Beginner, Intermediate or Advanced now changes the lessons you see, your next lesson and every course and subject page, and **137 new lessons** give every subject and instrument course at least four lessons at each level (262 in all).
+            * **Practice made for your instrument:** strumming patterns for guitar (31 patterns in 2/4, 3/4, 4/4, 5/4, 5/8, 6/8, 7/8, 9/8, 12/8, swing and 16ths), piano comping, bass grooves and trumpet/voice articulation and long tones — with a metronome, chord progressions and dynamics plans (p/f, crescendo, diminuendo, swell) and live AI feedback on timing, strum direction, loudness, accents and sustain.
+            * **Tidier menu:** every page appears once, grouped as Learn, Play, Tools and You; the Practice Room puts your instrument's practice first; Home shows quick starts for your instrument instead of repeating the menu.
+
             ## Cadenza is now **Overture** 🎼
             New name, new logo — and updating keeps all your progress, songs and classroom data.
 
