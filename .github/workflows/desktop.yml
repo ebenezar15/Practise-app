@@ -159,6 +159,14 @@ jobs:
           name: Cadenza ${{ steps.tag.outputs.name }}
           make_latest: true
           body: |
+            ## What's new in 2.7
+            * **Fingering guide:** a piano roll plus fretboard, keyboard or valves for every exercise and for the song melody in the Play-Along Studio — piano finger numbers (either hand), guitar/bass string, fret and finger, trumpet valves — with the recommended fingering and alternatives, following playback.
+            * **Click patterns:** build your own metronome loop on a step grid (accent, click, soft, rest), with presets (clave, 6/8, 7/8, gap trainers), swing, tempo ramp, silent loops, saved patterns and shareable codes.
+            * **Instrument courses:** 60 interactive lessons for piano, guitar, bass, trumpet and singing at all three levels, with play-it-now drills, fretboard/keyboard explorers and a valve simulator.
+            * **Challenge Arena:** 66 creative challenges (22 per level) — ear duels, sprints, survival, rhythm tap-backs, melody memory, key and fretboard hunts, puzzles — with new questions every time.
+            * **5-string bass:** choose 4 or 5 strings; fretboards, tuner, exercises and fingerings follow (low B included).
+            * Songs now reopen reliably after Safari/iPad reloads the tab.
+
             ## What's new in 2.6
             * **Academy:** 53 self-paced lessons in 12 subjects — fundamentals, reading music, rhythm & groove, scales & keys, intervals, chords & harmony, ear training, songwriting, improvisation, worship band & arranging, how to practise, and your instrument. Each lesson explains the idea, gives real-world uses and examples to hear, shows it on your instrument, and has unlimited auto-generated practice questions (43 kinds) with stars and mastery, plus a placement quiz that tells you where to start.
             * **Music Toolkit:** chord dictionary (any root and type, guitar and piano, the keys it belongs to), scale finder with fret positions, interactive circle of fifths with playable progressions, chord-chart transposer and capo calculator, and an 80-term glossary (including Tamil/Carnatic terms).

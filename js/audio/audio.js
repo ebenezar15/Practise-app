@@ -76,6 +76,7 @@
     }
     load(blob) {
       if (this.url) URL.revokeObjectURL(this.url);
+      this.blob = blob;
       this.url = URL.createObjectURL(blob);
       this.el.src = this.url;
       this.loop = null;
@@ -83,7 +84,21 @@
     }
     unload() { this.pause(); if (this.url) URL.revokeObjectURL(this.url); this.url = null; this.el.removeAttribute('src'); }
     get loaded() { return !!this.url; }
-    async play() { this.connect(); getCtx(); try { await this.el.play(); } catch (e) { console.warn(e); } }
+    async play() {
+      this.connect(); getCtx();
+      try { await this.el.play(); } catch (e) {
+        // WebKit can reject a blob URL it has dropped ("NotSupportedError"): reload the source once and retry
+        if (e && e.name === 'NotSupportedError' && this.blob) {
+          const t = this.el.currentTime || 0;
+          if (this.url) URL.revokeObjectURL(this.url);
+          this.url = URL.createObjectURL(this.blob);
+          this.el.src = this.url; this.el.load();
+          try { this.el.currentTime = t; } catch (e2) { /* not seekable yet */ }
+          try { await this.el.play(); return; } catch (e3) { console.warn(e3); return; }
+        }
+        console.warn(e);
+      }
+    }
     /** Call synchronously inside a tap: lets a later, delayed play() work on iOS (e.g. after a count-in). */
     prime() {
       if (!this.url) return;
@@ -123,25 +138,31 @@
       const store = t.objectStore(STORE);
       const r = fn(store);
       t.oncomplete = () => resolve(r && r.result !== undefined ? r.result : r);
-      t.onerror = () => reject(t.error);
+      t.onerror = () => reject(t.error || new Error('IndexedDB transaction failed'));
+      t.onabort = () => reject(t.error || new Error('IndexedDB transaction aborted'));
     });
   }
   const Library = {
     async save(entry) {
-      // keep only what is needed to re-open offline (stems & decoded audio are rebuilt on demand)
-      const clean = { id: entry.id, name: entry.name, kind: entry.kind, instrument: entry.instrument, blob: entry.blob, createdAt: entry.createdAt, backing: !!entry.backing, assignmentId: entry.assignmentId || null,
-        analysis: Object.assign({}, entry.analysis, { rendered: undefined, part: undefined }) };
+      // keep only what is needed to re-open offline (stems & decoded audio are rebuilt on demand).
+      // Audio is stored as raw bytes, not a Blob: some WebKit builds can't put Blobs in IndexedDB.
+      const b = entry.blob;
+      const bytes = b && b.arrayBuffer ? await b.arrayBuffer() : null;
+      const analysis = Object.assign({}, entry.analysis, { rendered: undefined, part: undefined });
+      const clean = { id: entry.id, name: entry.name, kind: entry.kind, instrument: entry.instrument, bytes, type: (b && b.type) || '', createdAt: entry.createdAt, backing: !!entry.backing, assignmentId: entry.assignmentId || null, analysis };
       return tx('readwrite', (s) => s.put(clean));
     },
     async list() {
       try {
         const all = await tx('readonly', (s) => s.getAll());
-        return (all || []).sort((a, b) => b.createdAt - a.createdAt);
+        return (all || []).map(revive).sort((a, b) => b.createdAt - a.createdAt);
       } catch (e) { return []; }
     },
     async remove(id) { return tx('readwrite', (s) => s.delete(id)); },
-    async get(id) { try { const r = await tx('readonly', (s) => s.get(id)); return r && r.id ? r : null; } catch (e) { return null; } },
+    async get(id) { try { const r = await tx('readonly', (s) => s.get(id)); return r && r.id ? revive(r) : null; } catch (e) { return null; } },
   };
+  /** Rebuild the Blob from stored bytes (older entries kept the Blob itself). */
+  function revive(r) { if (r && !r.blob && r.bytes) r.blob = new Blob([r.bytes], { type: r.type || 'audio/wav' }); return r; }
 
   PM.Audio = { getCtx, setSessionType, unlockAudio, decodeAudioFile, isMidiFile, Player, Library };
 })(typeof self !== 'undefined' ? self : globalThis);
