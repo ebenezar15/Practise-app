@@ -293,6 +293,7 @@
       else if (voice === 'trumpet' || voice === 'strings' || voice === 'organ' || voice === 'voice') sustained(out, start, f, held, sr, vel, voice);
       else additivePiano(out, start, f, held, sr, vel);
     }
+    if (PM.Voices && PM.Voices.clearCache) PM.Voices.clearCache(); // free rendered notes (memory on phones/iPad)
     if (opts.normalize !== false) {
       let peak = 0;
       for (let i = 0; i < out.length; i++) { const a = Math.abs(out[i]); if (a > peak) peak = a; }

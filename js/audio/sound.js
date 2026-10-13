@@ -13,7 +13,7 @@
   const SR_DECAY = 32000, SR_SUSTAIN = 24000;
 
   const cache = new Map();
-  const MAX = 140;
+  const MAX = 56; // ~20 MB of rendered notes at most (iPad/iPhone memory)
   function remember(key, val) { cache.set(key, val); if (cache.size > MAX) cache.delete(cache.keys().next().value); return val; }
   function get(key) { const v = cache.get(key); if (v) { cache.delete(key); cache.set(key, v); } return v; }
 
@@ -63,7 +63,7 @@
     let e = get(key);
     if (e) return e;
     if (V().DECAYING[voice]) {
-      const data = V().render(voice, midi, { sr: SR_DECAY, vel: v });
+      const data = V().render(voice, midi, { sr: SR_DECAY, vel: v, maxLen: voice === 'piano' ? 2.6 : voice === 'bass' ? 3 : 2.6 });
       const b = ctx.createBuffer(1, data.length, SR_DECAY); b.copyToChannel ? b.copyToChannel(data, 0) : b.getChannelData(0).set(data);
       e = { b, vel: v };
     } else {

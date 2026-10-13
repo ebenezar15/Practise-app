@@ -415,19 +415,25 @@
     pill();
     if (PM.Cadi) PM.Cadi.init(App);
     if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
-    // after a reload, quietly reopen the song that was open in this tab
-    let lastTrack = null;
+    // after a reload, quietly reopen the song that was open in this tab — lazily, on the first
+    // page that uses it, so other pages open instantly (rendering a song takes a moment)
+    let lastTrack = null, restoring = false;
     try { lastTrack = sessionStorage.getItem('cadenza.lastTrack'); } catch (e) { /* private mode */ }
-    if (lastTrack && !App.track) {
+    const TRACK_PAGES = ['studio', 'insights', 'songs'];
+    const maybeRestore = () => {
+      if (!lastTrack || restoring || App.track || !TRACK_PAGES.includes(App.currentView)) return;
+      restoring = true;
       PM.Audio.Library.get(lastTrack).then(async (item) => {
         if (!item || App.track) return;
         await App.openFromLibrary(item);
         if (['studio', 'insights'].includes(App.currentView)) App.rerender();
         UI.toast(`Reopened “${item.name}”`, { icon: '📂' });
       }).catch((e) => console.warn('Could not reopen the last song', e));
-    }
+    };
+    addEventListener('hashchange', () => setTimeout(maybeRestore, 0));
     addEventListener('hashchange', () => App.route());
     App.route();
+    setTimeout(maybeRestore, 0);
     if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
       navigator.serviceWorker.register('sw.js').catch((e) => console.warn('SW registration failed', e));
     }

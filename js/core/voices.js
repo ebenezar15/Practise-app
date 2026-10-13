@@ -350,7 +350,7 @@
       const vb = Math.round(clamp(vel, 0.1, 1) * 4) / 4;
       const key = voice + ':' + midi + ':' + vb + ':' + sr;
       buf = cache.get(key);
-      if (!buf) { buf = render(voice, midi, { sr, vel: vb }); cache.set(key, buf); if (cache.size > 160) cache.delete(cache.keys().next().value); }
+      if (!buf) { buf = render(voice, midi, { sr, vel: vb }); cache.set(key, buf); if (cache.size > 48) cache.delete(cache.keys().next().value); }
       const k = vel / vb, hs = Math.floor(held * sr), rt = releaseTime(voice, midi) * sr;
       const end = voice === 'drums' ? buf.length : Math.min(buf.length, hs + Math.floor(rt * 5));
       for (let i = 0; i < end && start + i < out.length; i++) out[start + i] += buf[i] * k * (voice !== 'drums' && i > hs ? Math.exp(-(i - hs) / rt) : 1);
@@ -358,10 +358,10 @@
     }
     const vb = Math.round(clamp(vel, 0.1, 1) * 4) / 4, key = 'L' + voice + ':' + midi + ':' + vb + ':' + sr;
     let L = cache.get(key);
-    if (!L) { L = looped(voice, midi, { sr, vel: vb }); cache.set(key, L); if (cache.size > 160) cache.delete(cache.keys().next().value); }
+    if (!L) { L = looped(voice, midi, { sr, vel: vb }); cache.set(key, L); if (cache.size > 48) cache.delete(cache.keys().next().value); }
     addLooped(out, start, L, held * sr, (voice === 'strings' ? 0.35 : voice === 'voice' ? 0.16 : 0.08) * sr, vel / vb);
   }
 
-  PM.Voices = { render, looped, addNote, SUSTAIN_LEN, voiceOf, releaseTime, DECAYING, GM_DRUM, drum: (id, o) => drum(id, Object.assign({ sr: 32000, vel: 0.8 }, o || {})), VOWELS, biquad, bq, mtof };
+  PM.Voices = { render, looped, addNote, clearCache: () => cache.clear(), SUSTAIN_LEN, voiceOf, releaseTime, DECAYING, GM_DRUM, drum: (id, o) => drum(id, Object.assign({ sr: 32000, vel: 0.8 }, o || {})), VOWELS, biquad, bq, mtof };
   if (typeof module !== 'undefined' && module.exports) module.exports = PM.Voices;
 })(typeof self !== 'undefined' ? self : globalThis);
