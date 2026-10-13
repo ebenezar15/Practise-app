@@ -1,4 +1,4 @@
-/* Cadenza — play-along trainer with live feedback and playback revisions.
+/* Overture — play-along trainer with live feedback and playback revisions.
  * Count-in + click, a scrolling note lane, every note judged for pitch and timing
  * (hit / early / late / wrong / missed), each take recorded so the student can play it
  * back, hear it against the reference, compare takes and send the best one to the teacher.

@@ -1,4 +1,4 @@
-/* Cadenza — appearance: colour themes, light/dark mode, fonts (Avenir Next by default), text
+/* Overture — appearance: colour themes, light/dark mode, fonts (Avenir Next by default), text
  * size, letter spacing and calm mode. Settings live in App.settings and are applied as
  * data-* attributes on <html>; index.html applies them before first paint to avoid a flash. */
 (function (root) {

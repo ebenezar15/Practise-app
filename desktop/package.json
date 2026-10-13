@@ -1,10 +1,10 @@
 {
   "name": "cadenza-desktop",
-  "productName": "Cadenza",
-  "version": "2.7.0",
-  "description": "Cadenza \u2014 offline AI practice coach for piano, guitar, bass & trumpet, with a built-in classroom server",
+  "productName": "Overture",
+  "version": "3.0.0",
+  "description": "Overture \u2014 offline AI practice coach for piano, guitar, bass & trumpet, with a built-in classroom server",
   "main": "main.js",
-  "author": "Cadenza",
+  "author": "Overture",
   "license": "MIT",
   "private": true,
   "scripts": {
@@ -21,7 +21,7 @@
   },
   "build": {
     "appId": "app.cadenza.practice",
-    "productName": "Cadenza",
+    "productName": "Overture",
     "directories": {
       "output": "dist",
       "buildResources": "build"
@@ -32,7 +32,7 @@
       "tunnel.js",
       "app/**/*"
     ],
-    "artifactName": "Cadenza-${version}-${os}-${arch}.${ext}",
+    "artifactName": "Overture-${version}-${os}-${arch}.${ext}",
     "win": {
       "target": [
         {
@@ -56,11 +56,11 @@
       "perMachine": false,
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
-      "shortcutName": "Cadenza",
-      "artifactName": "Cadenza-${version}-windows-setup.${ext}"
+      "shortcutName": "Overture",
+      "artifactName": "Overture-${version}-windows-setup.${ext}"
     },
     "portable": {
-      "artifactName": "Cadenza-${version}-windows-portable.exe"
+      "artifactName": "Overture-${version}-windows-portable.exe"
     },
     "mac": {
       "target": [
@@ -82,7 +82,7 @@
       "hardenedRuntime": false,
       "gatekeeperAssess": false,
       "extendInfo": {
-        "NSMicrophoneUsageDescription": "Cadenza listens to your instrument to coach you in real time. Audio never leaves your computer.",
+        "NSMicrophoneUsageDescription": "Overture listens to your instrument to coach you in real time. Audio never leaves your computer.",
         "LSMinimumSystemVersion": "10.15"
       }
     },
@@ -103,12 +103,12 @@
       ],
       "category": "Audio",
       "icon": "build/icon.png",
-      "maintainer": "Cadenza <hello@cadenza.app>"
+      "maintainer": "Overture <hello@cadenza.app>"
     },
     "publish": null,
     "afterPack": "build/after-pack.js",
     "dmg": {
-      "title": "Cadenza ${version}",
+      "title": "Overture ${version}",
       "contents": [
         {
           "x": 150,

@@ -1,4 +1,4 @@
-/* Cadenza — chromatic tuner with guitar string targets and reference tones. */
+/* Overture — chromatic tuner with guitar string targets and reference tones. */
 (function (root) {
   'use strict';
   const PM = root.PM;
@@ -39,7 +39,7 @@
       const tr = I.transpose || 0;
       let a4 = 440, target = null;
       host.innerHTML = `
-        <div class="page-head"><div><div class="eyebrow">Tuner</div><h1>${fretted ? 'Tune your ' + esc(I.label.toLowerCase()) : I.family === 'drums' ? 'Tune your drums' : I.family === 'brass' ? 'Trumpet tuner' : I.family === 'voice' ? 'Sing in tune' : 'Check your pitch'}</h1><p>A precise chromatic tuner running on-device. ${I.family === 'drums' ? 'Tap a drum about 3 cm in from each tension rod and match the pitch all the way round — then compare drums to each other. Toms often sound good a 4th or 5th apart.' : fretted ? 'Pluck one string at a time — Cadenza finds the nearest string automatically, or pick one.' : I.family === 'brass' ? 'Notes are shown at <b>written pitch</b> for B♭ trumpet (concert pitch underneath). Tune on written C (concert B♭), then adjust the main slide.' : I.family === 'voice' ? 'Play a reference tone, then sing it on "ah" and hold it — try to keep the needle in the green for 3 seconds. Great for pitch-matching practice.' : 'Digital pianos are always in tune — use this to check an acoustic piano, your voice, or another instrument.'}</p></div></div>
+        <div class="page-head"><div><div class="eyebrow">Tuner</div><h1>${fretted ? 'Tune your ' + esc(I.label.toLowerCase()) : I.family === 'drums' ? 'Tune your drums' : I.family === 'brass' ? 'Trumpet tuner' : I.family === 'voice' ? 'Sing in tune' : 'Check your pitch'}</h1><p>A precise chromatic tuner running on-device. ${I.family === 'drums' ? 'Tap a drum about 3 cm in from each tension rod and match the pitch all the way round — then compare drums to each other. Toms often sound good a 4th or 5th apart.' : fretted ? 'Pluck one string at a time — Overture finds the nearest string automatically, or pick one.' : I.family === 'brass' ? 'Notes are shown at <b>written pitch</b> for B♭ trumpet (concert pitch underneath). Tune on written C (concert B♭), then adjust the main slide.' : I.family === 'voice' ? 'Play a reference tone, then sing it on "ah" and hold it — try to keep the needle in the green for 3 seconds. Great for pitch-matching practice.' : 'Digital pianos are always in tune — use this to check an acoustic piano, your voice, or another instrument.'}</p></div></div>
         <div class="tuner">
           <section class="card stage">
             <div class="tuner-dial" id="dial">${dial(0)}</div>

@@ -68,7 +68,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   const part = await fetch(base + '/api/files/' + file.id, { headers: { Authorization: 'Bearer ' + token, Range: 'bytes=0-99' } });
   if (part.status !== 206 || (await part.arrayBuffer()).byteLength !== 100) throw new Error('range request failed: ' + part.status);
   const app = await (await fetch(base + '/')).text();
-  if (!/<title>Cadenza/.test(app)) throw new Error('app page not served');
+  if (!/<title>Overture/.test(app)) throw new Error('app page not served');
   const pdfjs = await fetch(base + '/vendor/pdfjs/pdf.min.js');
   if (!pdfjs.ok) throw new Error('pdf viewer not served');
   console.log(`TUNNEL_OK ${base} — app, sign-up, 2 MB upload and ranged download work over https`);

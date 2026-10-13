@@ -1,4 +1,4 @@
-/* Cadenza — conflict-free merge of practice progress between devices and the classroom
+/* Overture — conflict-free merge of practice progress between devices and the classroom
  * server. Used by the browser/desktop app and by server/server.js. Merging is commutative
  * and idempotent: counters take the max, badges/history/days are unions. */
 (function (root) {

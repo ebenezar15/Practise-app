@@ -1,4 +1,4 @@
-/* Cadenza — performance recorder. Records the microphone (optionally mixed with the
+/* Overture — performance recorder. Records the microphone (optionally mixed with the
  * backing track that is playing) so a student can send their playing to the teacher.
  * Uses MediaRecorder (Opus/WebM on Chrome/Edge/desktop app, AAC/MP4 on Safari/iPad) and
  * falls back to an uncompressed WAV capture where MediaRecorder is missing. */
@@ -23,7 +23,7 @@
     async start(opts) {
       opts = opts || {};
       const App = PM.App, ctx = PM.Audio.getCtx();
-      if (!Recorder.supported()) throw new Error(root.isSecureContext === false ? 'Recording only works when Cadenza is opened over https:// (or installed as an app).' : 'This browser cannot record audio.');
+      if (!Recorder.supported()) throw new Error(root.isSecureContext === false ? 'Recording only works when Overture is opened over https:// (or installed as an app).' : 'This browser cannot record audio.');
       // Re-use the coach's microphone if it is already open (iOS allows one capture at a time)
       if (App.live.running && App.live.stream) { this.stream = App.live.stream; this.ownStream = false; }
       else {

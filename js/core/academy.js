@@ -1,4 +1,4 @@
-/* Cadenza — Academy: self-paced courses from first notes to advanced harmony. Every lesson
+/* Overture — Academy: self-paced courses from first notes to advanced harmony. Every lesson
  * has a clear explanation, real-world uses, examples you can hear, an "on your instrument"
  * panel, endless generated practice questions, and links to practise it for real.
  * Pure data + question generators (unit-tested); screens are in js/views/academy.js. */
@@ -243,7 +243,7 @@
       body: [p('A **motif** is a short musical idea (3–6 notes) that you repeat and vary. A **phrase** is a musical sentence, usually 2 or 4 bars, often answered by a second phrase (**question and answer**).'), ex('Motif, then a varied answer', { notes: [64, 64, 65, 67, 67, 65, 64, 62, 60, 60, 62, 64, 62, 60] }), use('Strong choruses repeat one memorable motif — that\'s the "hook".')],
       practice: [{ gen: 'form', n: 4 }], try: [{ label: 'Call & response', go: 'learn', activity: 'callresp' }] },
     { id: 'w2', subject: 'songwriting', level: 2, title: 'Song form: verse, chorus, bridge', minutes: 6,
-      body: [p('**Verse** tells the story (new words), **pre-chorus** builds, **chorus** repeats the main message and hook, **bridge** contrasts once before the final chorus. A **tag** repeats the last line.'), list('Common worship form: Intro – V1 – C – V2 – C – Bridge – C – Tag', 'Hymns: verses only (strophic), sometimes a refrain'), use('Cadenza\'s Song Map in the Studio finds verses and choruses automatically.')],
+      body: [p('**Verse** tells the story (new words), **pre-chorus** builds, **chorus** repeats the main message and hook, **bridge** contrasts once before the final chorus. A **tag** repeats the last line.'), list('Common worship form: Intro – V1 – C – V2 – C – Bridge – C – Tag', 'Hymns: verses only (strophic), sometimes a refrain'), use('Overture\'s Song Map in the Studio finds verses and choruses automatically.')],
       practice: [{ gen: 'form', n: 6 }] },
     { id: 'w3', subject: 'songwriting', level: 2, title: 'Write your first song', minutes: 10,
       body: [list('Pick a key and 4 chords (try I–V–vi–IV).', 'Speak one line of lyrics in rhythm, then sing it on chord tones.', 'Write a chorus line with a higher, repeated hook.', 'Verse low and calm; chorus higher and fuller.', 'Record it with the progression builder, then share it with your teacher.'), use('Songwriting uses everything in the Academy: rhythm, scales, chords and form.')],

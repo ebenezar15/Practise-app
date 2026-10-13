@@ -1,4 +1,4 @@
-/* Cadenza — Click patterns: a step-sequencer model for custom metronome loops.
+/* Overture — Click patterns: a step-sequencer model for custom metronome loops.
  * A pattern is a grid of steps (beats × steps-per-beat × bars). Each step has a level:
  * 0 rest · 1 soft · 2 click · 3 accent. Pure model + presets here; ClickLoop plays it
  * sample-accurately with a look-ahead scheduler (browser only). */

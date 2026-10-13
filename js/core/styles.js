@@ -1,4 +1,4 @@
-/* Cadenza — rhythm style library (inspired by the style banks of arranger keyboards):
+/* Overture — rhythm style library (inspired by the style banks of arranger keyboards):
  * drum patterns with Main A / Main B / Fill / Intro / Ending variations, plus bass and
  * chord-comping lines for auto-accompaniment. Pure data + helpers (unit-tested).
  *

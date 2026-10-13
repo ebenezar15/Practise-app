@@ -1,4 +1,4 @@
-/* Cadenza — Fingering engine. Suggests fingerings for a melody, plus alternatives:
+/* Overture — Fingering engine. Suggests fingerings for a melody, plus alternatives:
  *  • piano: finger numbers 1–5 for right or left hand (dynamic programming over hand
  *    stretch, thumb-under / finger-over crossings and black-key comfort);
  *  • guitar & bass: string, fret and finger (1-finger-per-fret on guitar, 1-2-4 on low

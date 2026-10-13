@@ -1,6 +1,6 @@
 /* electron-builder afterPack hook.
  * macOS refuses to run an Apple-Silicon app whose code signature is missing or broken
- * ("Cadenza is damaged and can't be opened"). Without a paid Apple Developer ID we still
+ * ("Overture is damaged and can't be opened"). Without a paid Apple Developer ID we still
  * ad-hoc sign the whole bundle so the signature is valid; Gatekeeper then only asks the
  * user to confirm opening it once. With a real identity (CSC_LINK) electron-builder signs. */
 'use strict';

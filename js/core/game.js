@@ -1,4 +1,4 @@
-/* Cadenza — gamification: XP, levels, streaks, badges and daily challenges.
+/* Overture — gamification: XP, levels, streaks, badges and daily challenges.
  * Persists to localStorage (or any injected storage with getItem/setItem). */
 (function (root) {
   'use strict';

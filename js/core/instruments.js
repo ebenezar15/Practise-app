@@ -1,4 +1,4 @@
-/* Cadenza — instrument registry: ranges, tunings, transposition, synth voice,
+/* Overture — instrument registry: ranges, tunings, transposition, synth voice,
  * which separated stem is "your part", coaching focus and tips. */
 (function (root) {
   'use strict';
@@ -42,7 +42,7 @@
       transpose: 0, synth: 'electric', part: 'guitar', strum: true, bends: true,
       tips: [
         'Mute unused strings with the side of your picking hand and the pads of your fretting fingers — distortion amplifies every stray string.',
-        'For bends, push with three fingers together and listen for the target pitch; Cadenza shows how far you bent in cents.',
+        'For bends, push with three fingers together and listen for the target pitch; Overture shows how far you bent in cents.',
         'Palm-mute by resting the edge of your picking hand right where the strings meet the bridge saddles.',
         'Use alternate picking (down-up) for fast passages; keep the pick motion small.',
         'Power chords: keep the 5th locked with your ring finger and move the shape as one unit.',
@@ -71,7 +71,7 @@
       chordal: false, mono: true, range: [52, 84], viewRange: [52, 86], transpose: 2, synth: 'trumpet', part: 'lead', minFreq: 150, maxFreq: 1200,
       tips: [
         'Breathe low and deep before every phrase — the air does the work, not the lips.',
-        'Long tones every day: hold a note steady for 8 counts. Cadenza scores how stable your pitch is.',
+        'Long tones every day: hold a note steady for 8 counts. Overture scores how stable your pitch is.',
         'Keep the mouthpiece pressure light; let the air speed change the partials.',
         'Tongue with "tah" on the attack; for softer entries try "dah".',
         'Lip slurs between partials (same fingering) build flexibility and range.',

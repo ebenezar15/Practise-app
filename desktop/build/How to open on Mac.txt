@@ -1,23 +1,23 @@
 HOW TO OPEN CADENZA ON A MAC
 ============================
 
-1. Drag "Cadenza" onto the "Applications" folder in this window.
+1. Drag "Overture" onto the "Applications" folder in this window.
 
-2. Open your Applications folder and double-click Cadenza.
-   macOS will say it "cannot verify the developer" (Cadenza is not yet registered with Apple).
+2. Open your Applications folder and double-click Overture.
+   macOS will say it "cannot verify the developer" (Overture is not yet registered with Apple).
    Click "Done" (or "Cancel").
 
 3. Open  System Settings  >  Privacy & Security, scroll down, and click
-   "Open Anyway" next to the message about Cadenza. Confirm with your password.
-   (On older macOS you can instead right-click Cadenza > Open > Open.)
+   "Open Anyway" next to the message about Overture. Confirm with your password.
+   (On older macOS you can instead right-click Overture > Open > Open.)
 
    You only need to do this once.
 
 If macOS still says the app is "damaged", open Terminal and run:
 
-   xattr -dr com.apple.quarantine /Applications/Cadenza.app
+   xattr -dr com.apple.quarantine /Applications/Overture.app
 
-then open Cadenza again.
+then open Overture again.
 
-When Cadenza asks to use the microphone, click "Allow" — that is how it hears your instrument.
+When Overture asks to use the microphone, click "Allow" — that is how it hears your instrument.
 Works on Apple Silicon (M1/M2/M3/M4) and Intel Macs, macOS 10.15 or newer.

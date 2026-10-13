@@ -1,4 +1,4 @@
-/* Cadenza — Progress: levels, stats, practice chart, badges, history & settings. */
+/* Overture — Progress: levels, stats, practice chart, badges, history & settings. */
 (function (root) {
   'use strict';
   const PM = root.PM;

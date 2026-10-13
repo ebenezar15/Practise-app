@@ -1,4 +1,4 @@
-/* Cadenza — Cadi, the on-screen practice coach: a floating chat panel that comments live
+/* Overture — Cadi, the on-screen practice coach: a floating chat panel that comments live
  * while you practise (PM.App.emit('practice', event)), reviews takes, plans practice and
  * answers questions. Optional spoken tips (speech synthesis). Works offline. */
 (function (root) {

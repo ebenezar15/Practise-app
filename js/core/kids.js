@@ -1,4 +1,4 @@
-/* Cadenza — Kids & Focus: short, predictable micro-lessons for children and teens, designed
+/* Overture — Kids & Focus: short, predictable micro-lessons for children and teens, designed
  * with ADHD and autistic learners in mind — one instruction at a time, 2–5 minute lessons,
  * visual timers, choices, movement & breathing breaks, sensory-friendly feedback (no red
  * crosses, no time pressure unless chosen) and a sticker reward book.

@@ -1,4 +1,4 @@
-/* Cadenza — Challenge Arena: 22 creative challenges at each level (Easy, Medium, Hard).
+/* Overture — Challenge Arena: 22 creative challenges at each level (Easy, Medium, Hard).
  * Every challenge has its own idea and mechanic — ear duels, beat-the-clock sprints,
  * three-lives survival, tap-back rhythms, Simon-style melody memory, key and fretboard
  * hunts, puzzle ordering — and its questions are generated fresh every time you play.

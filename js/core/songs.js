@@ -1,4 +1,4 @@
-/* Cadenza — song charts: ChordPro parsing, transposition, capo, bar extraction for backing
+/* Overture — song charts: ChordPro parsing, transposition, capo, bar extraction for backing
  * tracks, and a starter library of public-domain hymns & spirituals. Teachers add more
  * (English, Tamil or any language) with chord PDFs from the Classroom server. */
 (function (root) {

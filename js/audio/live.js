@@ -1,4 +1,4 @@
-/* Cadenza — real-time input engines.
+/* Overture — real-time input engines.
  *  LiveEngine: microphone / audio interface (line-in) analysis at display rate.
  *  MidiInputEngine: Web MIDI keyboards & guitar controllers.
  * Both emit identical "frames": {time, active, db, pitch, chord, chroma, notes, onset}. */
@@ -33,7 +33,7 @@
       const ctx = PM.Audio.getCtx();
       this.stop();
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        throw new Error(root.isSecureContext === false ? 'The microphone only works when Cadenza is opened over https:// (or installed as an app).' : 'This browser cannot access a microphone.');
+        throw new Error(root.isSecureContext === false ? 'The microphone only works when Overture is opened over https:// (or installed as an app).' : 'This browser cannot access a microphone.');
       }
       const constraints = { audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } };
       if (deviceId) constraints.audio.deviceId = { exact: deviceId };

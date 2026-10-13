@@ -1,4 +1,4 @@
-/* Cadenza — improvisation coach: judges note choices against the current chord & key,
+/* Overture — improvisation coach: judges note choices against the current chord & key,
  * suggests chord-scales, rewards targeting chord tones on changes, and tracks
  * range, rhythmic variety and phrasing (use of space). */
 (function (root) {

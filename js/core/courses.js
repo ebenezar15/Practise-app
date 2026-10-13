@@ -1,4 +1,4 @@
-/* Cadenza — Instrument courses for the Academy: piano, guitar, bass, trumpet and voice, each
+/* Overture — Instrument courses for the Academy: piano, guitar, bass, trumpet and voice, each
  * with Beginner, Intermediate and Advanced lessons. Lessons use interactive blocks:
  *   fing  — fingering guide (piano roll + keyboard/fretboard/valves, with alternatives)
  *   fretx — tap-to-hear fretboard explorer (follows the 4/5-string bass setting)

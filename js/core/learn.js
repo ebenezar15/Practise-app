@@ -1,4 +1,4 @@
-/* Cadenza — Learn: generators for scales, arpeggios, technique exercises, sight-reading,
+/* Overture — Learn: generators for scales, arpeggios, technique exercises, sight-reading,
  * intervals, call-and-response phrases and chord palettes, per instrument. Pure functions
  * (no DOM) so they are unit-tested in Node. Notes are concert-pitch MIDI numbers. */
 (function (root) {

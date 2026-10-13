@@ -1,4 +1,4 @@
-/* Cadenza — application shell: shared state, router, track loading, game events. */
+/* Overture — application shell: shared state, router, track loading, game events. */
 (function (root) {
   'use strict';
   const PM = root.PM;
@@ -78,7 +78,7 @@
         const more = $('#navMore');
         if (more) more.classList.toggle('active', !!$('.nav a.extra.active'));
         this.currentView = view.id;
-        document.title = view.title + ' · Cadenza';
+        document.title = view.title + ' · Overture';
         try { this.cleanup = view.render(host, this) || null; }
         catch (e) {
           console.error(e);
@@ -350,8 +350,8 @@
     $('#app').innerHTML = `
       <aside class="sidebar">
         <div class="brand">
-          <div class="brand-logo">${icon('music')}</div>
-          <div><div class="brand-name">Cadenza</div><div class="brand-sub">AI Practice Coach</div></div>
+          <div class="brand-logo"><img src="icons/icon.svg" alt="" width="42" height="42"></div>
+          <div><div class="brand-name">Overture</div><div class="brand-sub">Learn · Practise · Play</div></div>
         </div>
         <nav class="nav">${nav}</nav>
         <div class="sidebar-foot">

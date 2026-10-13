@@ -1,4 +1,4 @@
-/* Cadenza — real-time drum kit, step sequencer and auto-accompaniment (bass + chords).
+/* Overture — real-time drum kit, step sequencer and auto-accompaniment (bass + chords).
  * All sounds are synthesized with Web Audio (works offline, no samples). The sequencer
  * uses the same look-ahead scheduling as the metronome, so it is sample-accurate. */
 (function (root) {

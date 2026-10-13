@@ -1,4 +1,4 @@
-/* Cadenza — Fingering guide panel: a piano roll plus the instrument view (fretboard,
+/* Overture — Fingering guide panel: a piano roll plus the instrument view (fretboard,
  * keyboard or valves) showing which finger / string / fret / valves to use for each note,
  * with alternative fingerings to choose from and "other places to play this note".
  * Used in Practice (exercise play-along) and the Play-Along studio. */

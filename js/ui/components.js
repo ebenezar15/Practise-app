@@ -1,4 +1,4 @@
-/* Cadenza — UI building blocks (vanilla JS + SVG/canvas, no dependencies). */
+/* Overture — UI building blocks (vanilla JS + SVG/canvas, no dependencies). */
 (function (root) {
   'use strict';
   const PM = (root.PM = root.PM || {});

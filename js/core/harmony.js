@@ -1,8 +1,8 @@
-/* Cadenza — harmony & part singing. Public-domain hymn melodies are harmonised into four
+/* Overture — harmony & part singing. Public-domain hymn melodies are harmonised into four
  * parts (soprano, alto, tenor, bass) by a small rule-based arranger: functional chord choice
  * per strong beat (I–IV–V first, V before the cadence, I at the end), passing notes on weak
  * beats keep the chord, and voices are led smoothly within their ranges while avoiding
- * parallel fifths and octaves. These are Cadenza's own teaching arrangements (not the
+ * parallel fifths and octaves. These are Overture's own teaching arrangements (not the
  * hymnal harmonisations). Also: rounds and two-part "thirds" exercises. Pure + unit-tested. */
 (function (root) {
   'use strict';

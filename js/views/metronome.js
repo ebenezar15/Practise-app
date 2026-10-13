@@ -1,4 +1,4 @@
-/* Cadenza — Metronome with speed trainer, gap trainer and live timing check. */
+/* Overture — Metronome with speed trainer, gap trainer and live timing check. */
 (function (root) {
   'use strict';
   const PM = root.PM;
@@ -83,7 +83,7 @@
             <div><div class="now-label">Tightness</div><div class="meter-val" id="tcTight">—</div></div>
           </div>
           <div id="tcGauge" style="margin-top:6px">${UI.gaugeHtml(['early', '−50 ms', 'on the beat', '+50 ms', 'late'])}</div>
-          <p class="small" style="margin-top:6px" id="tcMsg">Start the metronome, then play single notes or strums on each click. Cadenza measures how far each hit lands from the beat.</p>
+          <p class="small" style="margin-top:6px" id="tcMsg">Start the metronome, then play single notes or strums on each click. Overture measures how far each hit lands from the beat.</p>
         </section>`;
 
       const bpmEl = $('#bpm', host), slider = $('#bpmSlider', host);

@@ -1,6 +1,6 @@
 name: Publish web app (GitHub Pages)
 
-# Publishes the Cadenza web app at https://<owner>.github.io/<repo>/ — open it in any browser,
+# Publishes the Overture web app at https://<owner>.github.io/<repo>/ — open it in any browser,
 # install it from there (Chrome/Edge: install icon; iPad/iPhone: Share → Add to Home Screen).
 # Everything runs on the device; sign in to a classroom server (e.g. the desktop app's
 # "Put online" https address) from Classroom to sync with a teacher.

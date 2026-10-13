@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-/* Cadenza Classroom Server — zero-dependency Node.js server that
- *   • hosts the Cadenza web app (so students can open/install it from the teacher's machine)
+/* Overture Classroom Server — zero-dependency Node.js server that
+ *   • hosts the Overture web app (so students can open/install it from the teacher's machine)
  *   • stores user accounts (master/admin, teachers, students), invite codes,
  *     assignments with attached songs, submissions and synced practice progress.
  *
@@ -16,14 +16,14 @@ const path = require('path');
 const crypto = require('crypto');
 const { mergeProgress } = require('../js/core/syncmerge.js');
 
-const VERSION = '2.7.0';
+const VERSION = '3.0.0';
 const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.svg': 'image/svg+xml', '.json': 'application/json', '.webmanifest': 'application/manifest+json', '.png': 'image/png', '.wav': 'audio/wav', '.mid': 'audio/midi', '.mp3': 'audio/mpeg' };
 
 // ---------------- storage ----------------
 function createStore(dir) {
   fs.mkdirSync(path.join(dir, 'files'), { recursive: true });
   const file = path.join(dir, 'db.json');
-  let db = { users: [], tokens: [], invites: [], assignments: [], submissions: [], songs: [], files: [], progress: {}, settings: { schoolName: 'Cadenza Studio' } };
+  let db = { users: [], tokens: [], invites: [], assignments: [], submissions: [], songs: [], files: [], progress: {}, settings: { schoolName: 'Overture Studio' } };
   if (fs.existsSync(file)) db = Object.assign(db, JSON.parse(fs.readFileSync(file, 'utf8')));
   let timer = null;
   const flush = () => {
@@ -547,7 +547,7 @@ if (require.main === module) {
   const server = createServer();
   server.listen(port, host, () => {
     const proto = server.secure ? 'https' : 'http';
-    console.log(`\n🎵 Cadenza Classroom Server ${VERSION}`);
+    console.log(`\n🎵 Overture Classroom Server ${VERSION}`);
     console.log(`   This computer:  ${proto}://localhost:${port}`);
     for (const ip of lanAddresses()) console.log(`   Students (LAN): ${proto}://${ip}:${port}`);
     console.log(`   Data folder:    ${path.resolve(process.env.DATA_DIR || 'server-data')}\n`);

@@ -1,4 +1,4 @@
-/* Cadenza — "Cadi", the built-in practice coach. Runs fully offline: it reacts to what the
+/* Overture — "Cadi", the built-in practice coach. Runs fully offline: it reacts to what the
  * student is doing (notes, timing, takes, grooves), compares takes, plans practice from the
  * student's history, and answers music questions from a built-in knowledge base (chords,
  * scales, intervals, tempo terms, time signatures, technique and app help).
@@ -59,7 +59,7 @@
     { keys: /\b(memori[sz]e|memory|remember)\b/i, all: ['Memorise in small chunks: two bars at a time, then join them.', 'Learn the chord progression or the "shape" of the melody first — the notes stick to the structure.', 'Play it from memory away from the instrument, in your head, before sleep.'] },
     { keys: /\b(sight[- ]?read|reading music|read notes|staff)\b/i, all: ['Sight-read something easy every day — the Sight-reading mode in Learn gives you fresh melodies.', 'Look ahead: your eyes should be at least one note ahead of your fingers.', 'Learn the lines (E G B D F) and spaces (F A C E) of the treble staff; for bass clef: G B D F A and A C E G.'] },
     { keys: /\b(improvi[sz]|solo|jam|ad lib)\b/i, all: ['Start with three notes from the pentatonic scale and make rhythms with them.', 'Target chord tones (especially the 3rd) when the chord changes.', 'Leave space! Short phrases with rests sound more musical than non-stop notes.', 'Use the Beat maker or a style with auto-accompaniment, and jam over its chords.'] },
-    { keys: /\b(ear|by ear|listen|transcribe)\b/i, all: ['Sing what you hear before you look for it on your instrument.', 'Practise intervals in the Ear training mode — link each one to a song you know.', 'Try the Call & response mode: Cadenza plays a phrase, you echo it back.'] },
+    { keys: /\b(ear|by ear|listen|transcribe)\b/i, all: ['Sing what you hear before you look for it on your instrument.', 'Practise intervals in the Ear training mode — link each one to a song you know.', 'Try the Call & response mode: Overture plays a phrase, you echo it back.'] },
     { keys: /\b(strum|strumming)\b/i, all: ['Keep your strumming hand moving down-up constantly, like a pendulum, and only hit the strings where the pattern says.', 'Down-strums on the beats, up-strums on the "&".', 'Mute the strings with your fretting hand and practise just the rhythm first.'] },
     { keys: /\b(barre|bar chord|f chord)\b/i, all: ['Roll your index finger slightly onto its bony side and keep it close to the fret.', 'Pull back gently with your arm instead of squeezing with your thumb.', 'Practise a partial barre first (just the top 2–3 strings), then the full shape.'] },
     { keys: /\b(sore|fingertip|calluses|callus)\b/i, all: ['Sore fingertips are normal in the first weeks — practise in several short sessions and they will toughen up.', 'Press just enough to get a clean note; pressing harder only hurts more.'] },
@@ -132,7 +132,7 @@
     const named = /\b(sing|singing|singer|vocal|vocals|voice)\b/i.test(q) ? 'voice' : /\b(piano|keyboard|keys)\b/i.test(q) ? 'piano' : /\bbass\b/i.test(q) ? 'bass' : /\btrumpet\b/i.test(q) ? 'trumpet' : /\belectric\b/i.test(q) ? 'electric' : /\bguitar\b/i.test(q) ? 'guitar' : null;
     const inst = named || ctx.instrument || 'guitar';
     const I = PM.Instruments.get(inst);
-    if (!q) return { text: 'Ask me anything about practising, chords, scales, rhythm or how to use Cadenza!' };
+    if (!q) return { text: 'Ask me anything about practising, chords, scales, rhythm or how to use Overture!' };
     if (/^(hi|hello|hey|vanakkam|good (morning|evening|afternoon))\b/i.test(q)) return { text: `Hi${ctx.name ? ' ' + ctx.name : ''}! I'm Cadi, your practice buddy. I listen while you practise, give tips, compare your takes, and answer questions. Try: *"What should I practise?"*, *"How do I play Bm?"* or *"Notes in D major"*.` };
     if (/\b(what can you do|help me|who are you|what are you)\b/i.test(q)) return { text: 'I can: give live feedback while you play exercises; compare your takes ("Did I improve?"); plan your practice ("What should I practise?"); explain chords, scales, intervals, time signatures and tempo words; and help with the app (recording, beat maker, styles, songs). I run fully on your device.' };
     if (/\b(what should i (practi[cs]e|do|play)|what next|next exercise|practice plan|plan my)\b/i.test(q)) return planAnswer(ctx);
@@ -164,8 +164,8 @@
     // tempo & dynamics words
     for (const [w, d] of Object.entries(TEMPO_TERMS)) if (new RegExp('\\b' + w.replace('.', '\\.') + '\\b', 'i').test(q)) return { text: `**${w[0].toUpperCase() + w.slice(1)}** means ${d}.` };
     for (const [w, d] of Object.entries(DYNAMICS)) if (new RegExp('\\b' + w + '\\b', w.length <= 2 ? '' : 'i').test(q) && /\b(mean|what|is)\b/i.test(q)) return { text: `**${w}** = ${d}.` };
-    if (/\b(transpose|capo)\b/i.test(q)) return { text: 'A **capo** raises every string: with a capo on fret 2, a G shape sounds as A. In **Songs**, set the capo and Cadenza shows the shapes to play. **Transpose** moves a whole song up or down to suit your voice.' };
-    if (/\b(key signature|which key|what key)\b/i.test(q)) return { text: 'The key is the "home" note and scale of a song. Look at the key signature (sharps/flats) and the last chord — songs usually end on the home chord. Cadenza\'s **Insights** detects the key of any song you load.' };
+    if (/\b(transpose|capo)\b/i.test(q)) return { text: 'A **capo** raises every string: with a capo on fret 2, a G shape sounds as A. In **Songs**, set the capo and Overture shows the shapes to play. **Transpose** moves a whole song up or down to suit your voice.' };
+    if (/\b(key signature|which key|what key)\b/i.test(q)) return { text: 'The key is the "home" note and scale of a song. Look at the key signature (sharps/flats) and the last chord — songs usually end on the home chord. Overture\'s **Insights** detects the key of any song you load.' };
     // app help
     for (const h of APP_HELP) if (h.keys.test(q) && /\b(how|where|what|can|use|open|find)\b/i.test(q)) return { text: h.text };
     // practice topics

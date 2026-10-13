@@ -1,4 +1,4 @@
-/* Cadenza — classroom account & cloud sync client.
+/* Overture — classroom account & cloud sync client.
  * Offline-first: practice data lives on the device; when a server is configured and reachable,
  * progress is merged both ways, assignment results are uploaded from an outbox, and assignments
  * (with their songs) are cached for offline practice. */

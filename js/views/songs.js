@@ -1,4 +1,4 @@
-/* Cadenza — Songs: a gospel & hymn library (English, Tamil and any language). Chord charts
+/* Overture — Songs: a gospel & hymn library (English, Tamil and any language). Chord charts
  * with transpose / capo / auto-scroll, chord diagrams for your instrument, the teacher's
  * chord PDFs, a generated backing band, and "record & send for review". */
 (function (root) {

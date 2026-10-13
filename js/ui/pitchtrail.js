@@ -1,4 +1,4 @@
-/* Cadenza — pitch trail: a scrolling picture of the sung (or played) pitch against the
+/* Overture — pitch trail: a scrolling picture of the sung (or played) pitch against the
  * target melody. Notes to sing are bars, your voice is a line coloured by how close it is
  * (green ≤ 35¢, amber ≤ 80¢, red beyond). Octave-free: a tenor singing a soprano tune is
  * compared an octave down. `judge` is pure so it is unit-tested in Node. */

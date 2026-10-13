@@ -1,4 +1,4 @@
-/* Cadenza desktop — put the classroom server online for free with Cloudflare Tunnel.
+/* Overture desktop — put the classroom server online for free with Cloudflare Tunnel.
  * Downloads Cloudflare's `cloudflared` program on first use (into the app's data folder),
  * then runs either a quick tunnel (random https://….trycloudflare.com address, no account)
  * or a named tunnel from a token (your own permanent address, free Cloudflare account).
@@ -21,7 +21,7 @@ function assetFor(platform, arch) {
 function download(url, dest, onProgress, redirects) {
   redirects = redirects || 0;
   return new Promise((resolve, reject) => {
-    const req = https.get(url, { headers: { 'User-Agent': 'Cadenza-desktop' } }, (res) => {
+    const req = https.get(url, { headers: { 'User-Agent': 'Overture-desktop' } }, (res) => {
       if ([301, 302, 303, 307, 308].includes(res.statusCode) && res.headers.location) {
         res.resume();
         if (redirects > 8) return reject(new Error('Too many redirects'));

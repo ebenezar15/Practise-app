@@ -1,5 +1,5 @@
-/* Cadenza — Harmony & parts: learn to sing harmony step by step, then sing your part
- * (soprano, alto, tenor or bass) of famous hymns while Cadenza plays the other three.
+/* Overture — Harmony & parts: learn to sing harmony step by step, then sing your part
+ * (soprano, alto, tenor or bass) of famous hymns while Overture plays the other three.
  * A scrolling four-lane score shows every part in its colour, the chord and which chord
  * tone each voice sings, the words, and your live pitch line against your part. */
 (function (root) {
@@ -113,7 +113,7 @@
       const prog = () => (App.game.state.harmony = App.game.state.harmony || { lessons: {}, best: {} });
       host.innerHTML = `
         <div class="page-head"><div><a href="#/learn" class="eyebrow" style="text-decoration:none">${icon('back')} Learn</a><h1>Harmony & part singing</h1>
-          <p>Learn to hold your own line, then sing soprano, alto, tenor or bass in famous hymns while Cadenza sings the other parts.</p></div></div>
+          <p>Learn to hold your own line, then sing soprano, alto, tenor or bass in famous hymns while Overture sings the other parts.</p></div></div>
         <section class="card"><div class="card-head"><h3>🪜 Harmony path</h3><span class="muted small">Six short steps — from "what is harmony?" to four-part hymns</span></div>
           <div class="h-path" id="hPath"></div><div id="hLesson" class="h-lesson hidden"></div></section>
         <section class="card" style="margin-top:18px" id="hTrainer"></section>`;
@@ -164,14 +164,14 @@
         } else if (id === 'thirds') {
           const low = ['tenor', 'baritone', 'bass'].includes(voiceType);
           const tp = Harmony.thirdsPiece(low ? 48 : 60);
-          trainer(tp, 'S', 'Cadenza sings the scale (do-re-mi…). You sing the higher line, a third above. Hear the sweet sound when you lock in.', () => markDone('thirds'));
+          trainer(tp, 'S', 'Overture sings the scale (do-re-mi…). You sing the higher line, a third above. Hear the sweet sound when you lock in.', () => markDone('thirds'));
           box.innerHTML = '<h3>🎶 Sing in thirds</h3><p>Thirds are the most common harmony in hymns and worship songs. First listen with both parts, then sing the top line.</p>';
         } else if (id === 'round') {
           trainer(all.find((p) => p.id.startsWith('round-') && p.parts.B == null), 'A', 'You come in second: start when the first voice reaches "Brother John". Don\'t let the other part pull you off!', () => markDone('round'));
           box.innerHTML = '<h3>🔁 Sing a round</h3><p>A round is the same tune started at different times. Your part (orange) starts two bars after the first voice.</p>';
         } else if (id === 'part') {
           const VT = PM.Instruments.VOICE_TYPES;
-          box.innerHTML = `<h3>🧭 Find your part</h3><p>Choose your voice type — Cadenza suggests the part that suits your range. Tap a part to hear its range.</p>
+          box.innerHTML = `<h3>🧭 Find your part</h3><p>Choose your voice type — Overture suggests the part that suits your range. Tap a part to hear its range.</p>
             <div class="seg voice-types" id="hVt">${Object.entries(VT).map(([k, v]) => `<button data-v="${k}" class="${voiceType === k ? 'on' : ''}">${esc(v.label)}</button>`).join('')}</div>
             <div class="h-parts">${Harmony.PARTS.map((p) => `<button class="h-part ${Harmony.partForVoice(voiceType) === p.id ? 'rec' : ''}" data-p="${p.id}" style="--pc:${p.color}"><b>${p.name}</b><span>${DSP.midiName(p.range[0])}–${DSP.midiName(p.range[1])}</span>${Harmony.partForVoice(voiceType) === p.id ? '<i>suggested for you</i>' : ''}</button>`).join('')}</div>`;
           $$('#hVt [data-v]', box).forEach((b) => (b.onclick = () => {

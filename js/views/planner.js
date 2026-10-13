@@ -1,4 +1,4 @@
-/* Cadenza — Practice Planner: builds a balanced daily routine (warm-up → technique → songs →
+/* Overture — Practice Planner: builds a balanced daily routine (warm-up → technique → songs →
  * theory/ear → fun) for your time, focus and level, then runs it with a visual timer per
  * block and links into the right page for each block. */
 (function (root) {
@@ -51,7 +51,7 @@
       const draw = () => {
         const plan = buildPlan({ minutes: P.minutes, focus: P.focus, instrument: App.instrument, nextExercise: nextEx && nextEx.title, nextLesson: nextL && nextL.title });
         const week = weekDays(App);
-        host.innerHTML = `<div class="page-head"><div><div class="eyebrow">Practice Planner</div><h1>Today's routine</h1><p>A balanced plan for your time and focus. Press <b>Start</b> and Cadenza times each block and opens the right page for it.</p></div></div>
+        host.innerHTML = `<div class="page-head"><div><div class="eyebrow">Practice Planner</div><h1>Today's routine</h1><p>A balanced plan for your time and focus. Press <b>Start</b> and Overture times each block and opens the right page for it.</p></div></div>
           <section class="card"><div class="row" style="gap:16px;flex-wrap:wrap;align-items:flex-end">
             <div><div class="small muted" style="margin-bottom:6px">Time today</div><div class="seg" id="plMin">${[10, 20, 30, 45, 60].map((m) => `<button data-m="${m}" class="${P.minutes === m ? 'on' : ''}">${m} min</button>`).join('')}</div></div>
             <div><div class="small muted" style="margin-bottom:6px">Focus</div><div class="seg seg-wrap" id="plFocus">${FOCUS.map(([k, l]) => `<button data-f="${k}" class="${P.focus === k ? 'on' : ''}">${l}</button>`).join('')}</div></div></div></section>

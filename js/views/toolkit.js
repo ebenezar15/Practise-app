@@ -1,4 +1,4 @@
-/* Cadenza — Music Toolkit: quick reference tools for students and worship teams.
+/* Overture — Music Toolkit: quick reference tools for students and worship teams.
  * Chord dictionary · scale finder · interactive circle of fifths · transposer & capo
  * calculator · glossary of musical terms. */
 (function (root) {

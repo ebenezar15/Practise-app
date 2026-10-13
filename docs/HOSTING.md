@@ -1,6 +1,6 @@
-# Putting Cadenza online (for iPads, phones and students at home)
+# Putting Overture online (for iPads, phones and students at home)
 
-Your classroom server does two jobs: it **hosts the Cadenza app** (so iPads, iPhones, Android
+Your classroom server does two jobs: it **hosts the Overture app** (so iPads, iPhones, Android
 devices and any browser can install it from a link) and it **stores accounts, assignments,
 results and synced progress**.
 
@@ -76,13 +76,13 @@ Restore by extracting that file back into the volume while the app is stopped.
 
 Everything stays on your computer (accounts, recordings, chord PDFs) and Cloudflare gives it a
 free public `https://` address, so students at home and iPads can use it. Your computer must be
-**on and awake** while students use Cadenza.
+**on and awake** while students use Overture.
 
 ### C1. Quick address — no account, two clicks
-1. Install the **Cadenza desktop app** on the computer that will be the server.
+1. Install the **Overture desktop app** on the computer that will be the server.
 2. Open **Classroom → Host classroom on this computer → Start classroom server**.
 3. In the same box, under **🌍 Students at home (free)**, choose **Quick address → Put online**.
-   The first time, Cadenza downloads Cloudflare's small `cloudflared` program (20–40 MB).
+   The first time, Overture downloads Cloudflare's small `cloudflared` program (20–40 MB).
 4. After a few seconds an address like **`https://happy-river-tone-music.trycloudflare.com`**
    appears. Click **Copy** and send it to your students (iPads: open it in Safari →
    Share → *Add to Home Screen*).
@@ -100,8 +100,8 @@ for a class that uses it every week, set up C2 once.
    `--token`). You don't need to run the install command it shows.
 3. Still in the tunnel, add a **Public hostname**: subdomain `music`, your domain, service
    **HTTP** → `localhost:8787` (use the port you start the classroom server on).
-4. In Cadenza: **Classroom → Host classroom → Start**, then **My own address**, enter
-   `music.yourschool.com`, paste the token and click **Put online**. Cadenza remembers the token —
+4. In Overture: **Classroom → Host classroom → Start**, then **My own address**, enter
+   `music.yourschool.com`, paste the token and click **Put online**. Overture remembers the token —
    next time just click **Put online**.
 5. Students always use **`https://music.yourschool.com`**.
 
@@ -136,7 +136,7 @@ System → Power*; Mac: *System Settings → Battery/Energy → Prevent automati
 
 ### What to send your students
 > Open **https://music.yourschool.com** on your iPad in **Safari** → tap **Share** → **Add to Home Screen** → **Add**.
-> Open Cadenza from the new icon → **Classroom** → sign in with the username and password I gave you
+> Open Overture from the new icon → **Classroom** → sign in with the username and password I gave you
 > (or choose *I have an invite code*). Allow the microphone when asked.
 
 Students on Windows, Mac or Linux can use the desktop installers instead, and enter the same
@@ -161,7 +161,7 @@ address in **Classroom**.
 | Problem | Fix |
 |---|---|
 | "Microphone only works over https" | You opened an `http://` address. Use the `https://` one. |
-| iPad: progress missing / signed out | Open Cadenza from the **Home Screen icon**, not a Safari tab, and sign in there once. |
+| iPad: progress missing / signed out | Open Overture from the **Home Screen icon**, not a Safari tab, and sign in there once. |
 | iPad: no sound from the speaker | Turn the volume up; with the mic on, iPhones play quietly — use headphones. |
 | iPad: MIDI keyboard not detected | Safari on iPad doesn't support MIDI. Use the microphone, or the desktop app on a computer. |
 | Students can't reach the server | Check the address in a normal browser; on Option C make sure your computer is awake and *Students at home* says **online**. |

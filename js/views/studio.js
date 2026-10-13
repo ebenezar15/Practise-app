@@ -1,4 +1,4 @@
-/* Cadenza — Live Studio: play the part or improvise over a track (full mix, backing track
+/* Overture — Live Studio: play the part or improvise over a track (full mix, backing track
  * or your isolated part) with real-time AI coaching for piano, guitars, bass and trumpet. */
 (function (root) {
   'use strict';
@@ -108,7 +108,7 @@
           ${visual === 'fret' ? `<div class="inst-row"><div class="fret-wrap" id="fret"></div>${I.chordal ? '<div id="diagram" style="min-width:110px;display:grid;place-items:center"></div>' : ''}</div>
             ${a && a.strum && I.strum && !improv ? `<div class="card-head" style="margin:16px 0 6px"><h3>${icon('hand')} Strumming pattern <span class="muted small" style="font-weight:600">· ${esc(a.strum.gridLabel)} · ${Math.round(a.strum.consistency * 100)}% of bars</span></h3></div><div id="strum">${UI.strumLaneHtml(a.strum)}</div>` : ''}` :
             visual === 'voice' ? `<canvas class="pitch-trail" id="trail"></canvas>
-            <div class="row small" style="margin-top:10px;gap:14px;flex-wrap:wrap"><span class="muted" id="trailSrc">${a ? (a.part && a.part.notes && a.part.notes.length ? 'Target: the vocal part' : a.melody && a.melody.length ? 'Target: the melody Cadenza heard in the song' : 'No melody found — free singing') : 'Free singing — load a song or use the Exercise path for a melody to follow'}</span><span>In tune <b id="trailAcc">—</b></span>${a ? '<button class="btn sm ghost" id="karaoke">🎤 Sing-along mix (mute vocals)</button>' : ''}</div>` :
+            <div class="row small" style="margin-top:10px;gap:14px;flex-wrap:wrap"><span class="muted" id="trailSrc">${a ? (a.part && a.part.notes && a.part.notes.length ? 'Target: the vocal part' : a.melody && a.melody.length ? 'Target: the melody Overture heard in the song' : 'No melody found — free singing') : 'Free singing — load a song or use the Exercise path for a melody to follow'}</span><span>In tune <b id="trailAcc">—</b></span>${a ? '<button class="btn sm ghost" id="karaoke">🎤 Sing-along mix (mute vocals)</button>' : ''}</div>` :
             visual === 'keys' ? '<div class="keyboard-wrap" id="kbd"></div>' : visual === 'drums' ? '' : `<div id="valves">${UI.valvesHtml()}</div>`}
         </section>
         ${a && visual !== 'voice' && visual !== 'drums' && !improv ? '<section class="card stage fp-card" id="fpCard"></section>' : ''}`;

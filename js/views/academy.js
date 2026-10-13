@@ -1,4 +1,4 @@
-/* Cadenza — Academy: self-paced courses. Subjects → lessons; each lesson has an explanation,
+/* Overture — Academy: self-paced courses. Subjects → lessons; each lesson has an explanation,
  * examples to hear, real-world uses, an "on your instrument" panel, unlimited generated
  * practice with instant feedback and stars, and links to practise it in the app. */
 (function (root) {
@@ -124,7 +124,7 @@
           <p style="color:rgba(255,255,255,.8)">${esc(SUBJ[nx.subject].name)} · ${Academy.LEVELS[nx.level]} · ${nx.minutes} min</p>
           <a class="btn white" href="#/academy?l=${nx.id}">${icon('play')} Open lesson</a></section>
         <section class="card"><div class="card-head"><h3>🧭 Where should I start?</h3></div>
-          <p>${st.placement ? `Your placement: <b>${esc(st.placement.label)}</b>. Suggested subjects: ${st.placement.start.map((s) => esc(SUBJ[s].name)).join(', ')}.` : 'Take the 2-minute placement quiz — Cadenza suggests your level and the best first subjects.'}</p>
+          <p>${st.placement ? `Your placement: <b>${esc(st.placement.label)}</b>. Suggested subjects: ${st.placement.start.map((s) => esc(SUBJ[s].name)).join(', ')}.` : 'Take the 2-minute placement quiz — Overture suggests your level and the best first subjects.'}</p>
           <a class="btn ${st.placement ? 'ghost' : 'primary'}" href="#/academy?placement=1">${st.placement ? 'Retake the quiz' : 'Take the placement quiz'}</a></section>
       </div>
       <div class="row" style="margin:18px 0 12px;gap:10px;flex-wrap:wrap"><div class="seg" id="akLvl">${['All levels', ...Academy.LEVELS.slice(1)].map((n, i) => `<button data-l="${i}" class="${i === level ? 'on' : ''}">${n}</button>`).join('')}</div>
@@ -283,7 +283,7 @@
       case 'inst': return `<div class="ak-instwrap"><div class="small muted">${icon(I.icon)} On your ${esc(I.short.toLowerCase())}</div>${instPanel(b, App)}</div>`;
       case 'drumx': return `<div class="ak-int stage"><div class="ak-int-head"><b>🥁 ${esc(b.title)}</b></div><div data-drumx="${k}"></div></div>`;
       case 'fing': return `<div class="ak-int stage"><div class="ak-int-head"><b>🖐️ ${esc(b.title)}</b><button class="btn sm glass" data-fhear="${k}">▶ Hear & follow</button></div><div data-fing="${k}"></div></div>`;
-      case 'drill': return `<div class="ak-drill pop-in"><span class="ak-drill-em">🎤</span><div><b>${esc(b.title)}</b><span class="small muted">Play it now — Cadenza listens and scores every note.</span></div><button class="btn primary sm" data-drill="${k}">Play it now</button></div>`;
+      case 'drill': return `<div class="ak-drill pop-in"><span class="ak-drill-em">🎤</span><div><b>${esc(b.title)}</b><span class="small muted">Play it now — Overture listens and scores every note.</span></div><button class="btn primary sm" data-drill="${k}">Play it now</button></div>`;
       case 'fretx': return `<div class="ak-int stage"><div class="ak-int-head"><b>👆 ${esc(b.title)}</b></div><div class="fret-wrap" data-fretx="${k}"></div><div class="small ak-out" data-fxo="${k}">Tap any string and fret.</div></div>`;
       case 'keyx': return `<div class="ak-int"><div class="ak-int-head"><b>👆 ${esc(b.title)}</b></div><div data-keyx="${k}">${playKeys(b.highlight, 48, 83)}</div><div class="small ak-out" data-kxo="${k}">Tap any key.</div></div>`;
       case 'valvex': return `<div class="ak-int stage" data-valvex="${k}"><div class="ak-int-head"><b>🎺 ${esc(b.title)}</b></div>

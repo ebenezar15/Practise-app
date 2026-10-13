@@ -1,4 +1,4 @@
-/* Cadenza — music theory: chord & key detection, spelling, roman numerals,
+/* Overture — music theory: chord & key detection, spelling, roman numerals,
  * scales, guitar chord shapes and piano voicings. */
 (function (root) {
   'use strict';

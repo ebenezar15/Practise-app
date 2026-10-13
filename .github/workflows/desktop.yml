@@ -1,6 +1,6 @@
 name: Build desktop apps
 
-# Builds Cadenza for Windows (installer + portable .exe), macOS (universal .dmg/.zip for Apple
+# Builds Overture for Windows (installer + portable .exe), macOS (universal .dmg/.zip for Apple
 # Silicon and Intel) and Linux (.AppImage/.deb). Every build is launched on its own OS before it
 # is uploaded. Run from the Actions tab ("Run workflow"), or push a tag like v2.0.1 to publish a
 # GitHub Release with direct download links.
@@ -82,12 +82,12 @@ jobs:
         if: runner.os == 'macOS'
         working-directory: desktop/dist
         run: |
-          APP="mac-universal/Cadenza.app"
+          APP="mac-universal/Overture.app"
           codesign --verify --deep --strict --verbose=2 "$APP"
-          lipo -archs "$APP/Contents/MacOS/Cadenza" | tee /dev/stderr | grep -q "x86_64 arm64"
+          lipo -archs "$APP/Contents/MacOS/Overture" | tee /dev/stderr | grep -q "x86_64 arm64"
           DMG=$(ls *.dmg | head -1)
           hdiutil attach -nobrowse -readonly -mountpoint /tmp/cadenza-dmg "$DMG"
-          codesign --verify --deep --strict "/tmp/cadenza-dmg/Cadenza.app"
+          codesign --verify --deep --strict "/tmp/cadenza-dmg/Overture.app"
           ls "/tmp/cadenza-dmg"
           hdiutil detach /tmp/cadenza-dmg
 
@@ -97,14 +97,14 @@ jobs:
         run: |
           # simulate a browser download (quarantine flag) is not possible for the runner itself,
           # so launch the exact bundle that ships and require it to render the UI and run audio code
-          CADENZA_SMOKE_TEST=1 "mac-universal/Cadenza.app/Contents/MacOS/Cadenza" 2>&1 | tee smoke.log
+          CADENZA_SMOKE_TEST=1 "mac-universal/Overture.app/Contents/MacOS/Overture" 2>&1 | tee smoke.log
           grep -q SMOKE_OK smoke.log
 
       - name: Launch test (Windows)
         if: runner.os == 'Windows'
         working-directory: desktop/dist
         run: |
-          CADENZA_SMOKE_TEST=1 timeout 180 ./win-unpacked/Cadenza.exe > smoke.log 2>&1 || (cat smoke.log; exit 1)
+          CADENZA_SMOKE_TEST=1 timeout 180 ./win-unpacked/Overture.exe > smoke.log 2>&1 || (cat smoke.log; exit 1)
           cat smoke.log
           echo "Windows app exited cleanly"
 
@@ -156,9 +156,18 @@ jobs:
         with:
           tag_name: ${{ steps.tag.outputs.name }}
           target_commitish: ${{ github.sha }}
-          name: Cadenza ${{ steps.tag.outputs.name }}
+          name: Overture ${{ steps.tag.outputs.name }}
           make_latest: true
           body: |
+            ## Cadenza is now **Overture** 🎼
+            New name, new logo — and updating keeps all your progress, songs and classroom data.
+
+            ## What's new in 3.0
+            * **Real instrument sounds:** physically modelled piano, acoustic and electric guitar, bass, trumpet, a four-part choir, strings, organ and a full drum kit replace the old synth tones everywhere — exercises, play-along, lessons, harmony, challenges, the backing band, the tuner reference and the metronome (now with woodblock, sticks, cowbell and kit sounds).
+            * **Drums:** a new instrument with the Drum Studio — playable kit with loop recorder, grooves, rudiments, fills, a fresh-fill generator and groove remixes — timing scored hit by hit with a microphone or tap pads, a 56-exercise drum path, a drums course in the Academy and a drum lane in the Play-Along Studio.
+            * **Note-length exercises** for every instrument: whole notes to sixteenths, dotted notes, triplets and syncopation.
+            * **Tip of the day** and **Did you know?** music facts on Home.
+
             ## What's new in 2.7
             * **Fingering guide:** a piano roll plus fretboard, keyboard or valves for every exercise and for the song melody in the Play-Along Studio — piano finger numbers (either hand), guitar/bass string, fret and finger, trumpet valves — with the recommended fingering and alternatives, following playback.
             * **Click patterns:** build your own metronome loop on a step grid (accent, click, soft, rest), with presets (clave, 6/8, 7/8, gap trainers), swing, tempo ramp, silent loops, saved patterns and shareable codes.
@@ -174,7 +183,7 @@ jobs:
             * **Clearer pages:** Academy, Practice Room, Kids Zone, Play-Along Studio, Song Library, Rhythm & Metronome, Song Analyzer, Music Toolkit, Practice Planner, My Progress — grouped in the sidebar, with a "More" menu on phones. Home is now a learning hub.
 
             ## What's new in 2.5
-            * **Harmony & part singing:** a six-step harmony path (what harmony is, holding a drone, singing in thirds, rounds, finding your part) and a part trainer for hymns — Doxology, Amazing Grace, Joyful Joyful, Silent Night, When the Saints, plus rounds — in four parts. Listen, hear your part alone, or sing it while Cadenza sings the others, with a scrolling four-colour score, the chord and each voice's chord tone, words, your live pitch line and an in-tune score.
+            * **Harmony & part singing:** a six-step harmony path (what harmony is, holding a drone, singing in thirds, rounds, finding your part) and a part trainer for hymns — Doxology, Amazing Grace, Joyful Joyful, Silent Night, When the Saints, plus rounds — in four parts. Listen, hear your part alone, or sing it while Overture sings the others, with a scrolling four-colour score, the chord and each voice's chord tone, words, your live pitch line and an in-tune score.
             * **Smoother app:** page transitions that follow the direction you travel, cascading cards, tactile buttons and live chord-change pulses (all switched off by calm mode).
             * **Back & forward without glitches:** an in-app back/forward bar (and edge swipes in the installed app), scroll position remembered for every page, dialogs closed cleanly when you go back, a floating band control on song pages, and a friendly recovery card if a page ever fails.
 
@@ -196,17 +205,17 @@ jobs:
             ### Also in 2.1
             * Custom assignments with PDFs, record & send for review, teacher listening review, gospel/hymn song library (English, Tamil & any language), Learn modes, free Cloudflare Tunnel hosting.
 
-            ## Download Cadenza
+            ## Download Overture
 
             | Your computer | File |
             | --- | --- |
-            | **Windows** (installer) | `Cadenza-*-windows-setup.exe` |
-            | **Windows** (no install) | `Cadenza-*-windows-portable.exe` |
-            | **Mac** (Apple Silicon & Intel) | `Cadenza-*-mac-universal.dmg` |
-            | **Linux** | `Cadenza-*-linux-x86_64.AppImage` or `.deb` |
-            | **Any computer, no install** | `Cadenza-web-*.zip` (open `index.html` in Chrome/Edge) |
+            | **Windows** (installer) | `Overture-*-windows-setup.exe` |
+            | **Windows** (no install) | `Overture-*-windows-portable.exe` |
+            | **Mac** (Apple Silicon & Intel) | `Overture-*-mac-universal.dmg` |
+            | **Linux** | `Overture-*-linux-x86_64.AppImage` or `.deb` |
+            | **Any computer, no install** | `Overture-web-*.zip` (open `index.html` in Chrome/Edge) |
 
-            **Mac, first launch:** drag Cadenza to Applications and open it. If macOS says it can't verify the developer,
+            **Mac, first launch:** drag Overture to Applications and open it. If macOS says it can't verify the developer,
             go to *System Settings → Privacy & Security* and click **Open Anyway** (once). Full steps are in the DMG.
 
             **Windows, first launch:** if SmartScreen appears, click **More info → Run anyway**.

@@ -1,4 +1,4 @@
-/* Cadenza — shared AudioContext, file decoding, reference-track player, IndexedDB library. */
+/* Overture — shared AudioContext, file decoding, reference-track player, IndexedDB library. */
 (function (root) {
   'use strict';
   const PM = (root.PM = root.PM || {});

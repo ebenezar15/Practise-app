@@ -1,4 +1,4 @@
-/* Cadenza — attachment viewer: chord-chart PDFs (rendered with the bundled pdf.js, so it
+/* Overture — attachment viewer: chord-chart PDFs (rendered with the bundled pdf.js, so it
  * works offline and on iPad), images and audio. Files come from the classroom server or
  * from this device. */
 (function (root) {

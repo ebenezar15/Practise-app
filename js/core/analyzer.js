@@ -1,4 +1,4 @@
-/* Cadenza — offline song analysis for uploaded audio and MIDI.
+/* Overture — offline song analysis for uploaded audio and MIDI.
  * Produces: tempo, beats, meter, key, beat-synchronous chords, notes,
  * dynamics curve and (for guitar) the strumming pattern. */
 (function (root) {

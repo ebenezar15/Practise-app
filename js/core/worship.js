@@ -1,4 +1,4 @@
-/* Cadenza — worship song library: public-domain hymns (with words) and practice arrangements
+/* Overture — worship song library: public-domain hymns (with words) and practice arrangements
  * of well-known contemporary worship songs (Bethel Music, Hillsong and others) plus Tamil
  * worship practice patterns. Every song gets a generated tutorial for guitar and piano:
  * capo options, the hardest chord change, a strumming / picking pattern, smooth piano

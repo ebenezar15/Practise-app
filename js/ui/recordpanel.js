@@ -1,4 +1,4 @@
-/* Cadenza — "Record & send to teacher" panel: record (optionally with the backing track),
+/* Overture — "Record & send to teacher" panel: record (optionally with the backing track),
  * listen back, re-record, add a note and send. Sending works offline: the recording waits
  * on this device and uploads when the classroom server is reachable. */
 (function (root) {

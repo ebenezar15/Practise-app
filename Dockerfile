@@ -1,4 +1,4 @@
-# Cadenza Classroom Server: hosts the app (for iPad/Android/browser installs) + accounts,
+# Overture Classroom Server: hosts the app (for iPad/Android/browser installs) + accounts,
 # assignments, results and progress sync. No dependencies beyond Node.js.
 FROM node:22-alpine
 WORKDIR /app

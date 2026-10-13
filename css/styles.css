@@ -1,4 +1,4 @@
-/* Cadenza — design system: deep violet & white */
+/* Overture — design system: deep violet & white */
 :root {
   --v-950: #14072b;
   --v-900: #1f0b44;
@@ -80,9 +80,10 @@ p { margin: 0; line-height: 1.55; color: var(--ink-2); }
   background: radial-gradient(circle, rgba(168, 85, 247, 0.35), transparent 65%); pointer-events: none;
 }
 .brand { display: flex; align-items: center; gap: 12px; padding: 4px 8px 22px; }
-.brand-logo { width: 42px; height: 42px; border-radius: 14px; background: var(--grad); display: grid; place-items: center; box-shadow: 0 8px 24px -6px rgba(217, 70, 239, 0.7); }
-.brand-name { font-weight: 800; font-size: 21px; letter-spacing: -0.03em; }
-.brand-sub { font-size: 11px; color: var(--v-300); letter-spacing: 0.12em; text-transform: uppercase; }
+.brand-logo { width: 42px; height: 42px; border-radius: 12px; display: grid; place-items: center; box-shadow: 0 8px 24px -6px rgba(251, 113, 133, 0.6); flex: none; }
+.brand-logo img { width: 42px; height: 42px; display: block; }
+.brand-name { font-weight: 800; font-size: 22px; letter-spacing: -0.02em; background: linear-gradient(90deg, #fff, #fde68a 55%, #f5d0fe); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.brand-sub { font-size: 10px; color: var(--v-300); letter-spacing: 0.08em; text-transform: uppercase; white-space: nowrap; }
 .nav { display: flex; flex-direction: column; gap: 4px; position: relative; }
 .nav a {
   display: flex; align-items: center; gap: 12px; padding: 11px 14px; border-radius: 14px;

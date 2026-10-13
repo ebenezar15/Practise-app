@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/* End-to-end check of Cadenza on an emulated iPad (WebKit = Safari's engine) or iPhone.
+/* End-to-end check of Overture on an emulated iPad (WebKit = Safari's engine) or iPhone.
  *   node scripts/ipad-smoke.js [webkit|chromium] [outDir]
  * Starts the classroom server (which also serves the app), then walks every screen, plays a
  * demo with a count-in, runs a game, uses the classroom, and reloads the app while offline.

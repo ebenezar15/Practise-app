@@ -1,4 +1,4 @@
-/* Cadenza — on-device source separation.
+/* Overture — on-device source separation.
  *
  * Audio: STFT soft-mask separation into seven stems that always sum back to the original:
  *   kick      – percussive energy below ~150 Hz            ┐

@@ -1,4 +1,4 @@
-/* Cadenza — Learn: guided practice modes that listen to you. Scales, arpeggios, technique
+/* Overture — Learn: guided practice modes that listen to you. Scales, arpeggios, technique
  * exercises, sight-reading, note names, chord library & one-minute changes, interval ear
  * training, call & response, and a progression builder for creative jamming. */
 (function (root) {
@@ -9,7 +9,7 @@
 
   const ACTIVITIES = [
     { id: 'path', art: '🧭', name: 'Exercise path (50+)', desc: 'Step-by-step exercises from your first notes to advanced technique. Play along with the click, get live feedback on every note and compare your takes.', input: true },
-    { id: 'scales', art: '🪜', name: 'Scales', desc: 'Major, minor, pentatonic, blues and modes in every key. Cadenza listens and moves on with you.', input: true },
+    { id: 'scales', art: '🪜', name: 'Scales', desc: 'Major, minor, pentatonic, blues and modes in every key. Overture listens and moves on with you.', input: true },
     { id: 'arpeggios', art: '🌈', name: 'Arpeggios', desc: 'Chord tones one at a time — the bridge between scales and chords.', input: true },
     { id: 'technique', art: '💪', name: 'Technique exercises', desc: 'Warm-ups made for your instrument: finger patterns, chromatic drills, lip slurs, root–fifth grooves.', input: true },
     { id: 'sight', art: '👀', name: 'Sight-reading', desc: 'Read a fresh melody on the staff and play it. New music every time.', input: true },
@@ -17,7 +17,7 @@
     { id: 'chords', art: '🎼', name: 'Chord library & changes', desc: 'Every chord in a key with shapes for your instrument, plus the one-minute chord-change drill.', input: true },
     { id: 'intervals', art: '👂', name: 'Interval ear training', desc: 'Hear two notes and name the distance — with a famous song to remember each one.', input: false },
     { id: 'callresp', art: '🗣️', name: 'Call & response', desc: 'Echo short phrases by ear, then invent your own answers. Creative ear training.', input: true },
-    { id: 'harmony', art: '🎶', name: 'Harmony & part singing', desc: 'Sing soprano, alto, tenor or bass in famous hymns while Cadenza sings the other parts. Rounds, thirds and drones too.', input: true, link: 'harmony' },
+    { id: 'harmony', art: '🎶', name: 'Harmony & part singing', desc: 'Sing soprano, alto, tenor or bass in famous hymns while Overture sings the other parts. Rounds, thirds and drones too.', input: true, link: 'harmony' },
     { id: 'builder', art: '🧱', name: 'Progression builder', desc: 'Build your own chord progression, hear it with a band and improvise over it. Save it as a song.', input: false },
   ];
   // activities a drummer gets (rhythm-only); pitched activities are hidden for drums
@@ -520,7 +520,7 @@
     const ctl = { stop() { if (unsub) unsub(); unsub = null; closeEngines(App); } };
     const draw = () => {
       stage.innerHTML = head(stage, 'callresp') + asgNote(p) + `<div class="learn-form"><label class="field">Key${keySel('rKey', tonic)}</label><label class="field">Mode<select id="rMode"><option value="echo">Echo — copy the phrase</option><option value="answer">Answer — make up a reply</option></select></label></div>
-        <div class="seq-now"><div class="seq-target" id="rBig">Ready?</div><div class="muted small" id="rTxt">${mode === 'echo' ? 'Cadenza plays a short phrase in the pentatonic scale — play it back.' : 'Cadenza plays a question — answer with your own phrase and end on the home note.'}</div></div>
+        <div class="seq-now"><div class="seq-target" id="rBig">Ready?</div><div class="muted small" id="rTxt">${mode === 'echo' ? 'Overture plays a short phrase in the pentatonic scale — play it back.' : 'Overture plays a question — answer with your own phrase and end on the home note.'}</div></div>
         <div class="seq-notes" id="rNotes"></div>
         <div class="row" style="justify-content:center"><button class="btn primary" id="rGo">${icon('play')} ${rounds ? 'Next phrase' : 'Start'}</button><button class="btn glass" id="rAgain">${icon('headphones')} Hear again</button><span class="chip">Round <b>${rounds}</b>/${ROUNDS}</span></div>
         <p class="small" id="rPrompt" style="text-align:center;color:rgba(255,255,255,.75)"></p>`;

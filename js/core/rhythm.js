@@ -1,4 +1,4 @@
-/* Cadenza — rhythm analysis: onset envelope, tempo estimation, beat tracking,
+/* Overture — rhythm analysis: onset envelope, tempo estimation, beat tracking,
  * meter (time signature) inference and strumming-pattern transcription. */
 (function (root) {
   'use strict';

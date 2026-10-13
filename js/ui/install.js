@@ -1,4 +1,4 @@
-/* Cadenza — "install the app" guidance: Add to Home Screen on iPad/iPhone, the browser install
+/* Overture — "install the app" guidance: Add to Home Screen on iPad/iPhone, the browser install
  * prompt on Android/Chrome/Edge, and an https warning when the mic/offline mode can't work. */
 (function (root) {
   'use strict';
@@ -34,7 +34,7 @@
       ? `Tap the <b>Share</b> button ${shareIcon} ${isIPad ? 'at the top right of Safari' : 'at the bottom of Safari'}.`
       : iosBrowser === 'chrome' ? `Tap the <b>Share</b> button ${shareIcon} in the address bar.`
         : `Open this page in <b>Safari</b> (best on ${device}), then tap <b>Share</b> ${shareIcon}.`;
-    return [first, `Scroll down and tap <b>Add to Home Screen</b> ${addIcon}.`, 'Tap <b>Add</b>. Then open Cadenza from its new icon on your Home Screen.'];
+    return [first, `Scroll down and tap <b>Add to Home Screen</b> ${addIcon}.`, 'Tap <b>Add</b>. Then open Overture from its new icon on your Home Screen.'];
   }
 
   function needsHint() {
@@ -51,14 +51,14 @@
     host.classList.remove('hidden');
     let body;
     if (insecure()) {
-      body = `<div class="assign-card"><div class="a-ic">🔒</div><div style="flex:1"><b>Open Cadenza over a secure https:// address</b>
+      body = `<div class="assign-card"><div class="a-ic">🔒</div><div style="flex:1"><b>Open Overture over a secure https:// address</b>
         <p class="small" style="margin-top:4px">This address starts with <span class="code">http://</span>, so the browser blocks the microphone and offline mode. Ask your teacher for the https:// link${isIOS ? ', then add it to your Home Screen' : ''}.</p></div></div>`;
     } else if (isIOS) {
-      body = `<div class="assign-card"><div class="a-ic">📲</div><div style="flex:1"><b>Install Cadenza on your ${isIPad ? 'iPad' : 'iPhone'}</b>
+      body = `<div class="assign-card"><div class="a-ic">📲</div><div style="flex:1"><b>Install Overture on your ${isIPad ? 'iPad' : 'iPhone'}</b>
         <p class="small" style="margin-top:4px">Add it to your Home Screen: it opens full-screen like an app, works offline, and keeps you signed in.</p>
         <div class="row" style="margin-top:10px"><button class="btn primary sm" data-guide>${icon('download')} Show me how</button><button class="btn ghost sm" data-later>Later</button></div></div></div>`;
     } else {
-      body = `<div class="assign-card"><div class="a-ic">💻</div><div style="flex:1"><b>Install Cadenza as an app</b>
+      body = `<div class="assign-card"><div class="a-ic">💻</div><div style="flex:1"><b>Install Overture as an app</b>
         <p class="small" style="margin-top:4px">One click: it gets its own icon and window, works offline and keeps you signed in.</p>
         <div class="row" style="margin-top:10px"><button class="btn primary sm" data-install>${icon('download')} Install app</button><button class="btn ghost sm" data-later>Later</button></div></div></div>`;
     }
@@ -73,13 +73,13 @@
 
   function showGuide() {
     UI.modal(`
-      <div class="modal-top"><div style="font-size:44px">📲</div><h2 style="color:#fff;margin-top:6px">Add Cadenza to your ${isIPad ? 'iPad' : isIOS ? 'iPhone' : 'device'}</h2>
+      <div class="modal-top"><div style="font-size:44px">📲</div><h2 style="color:#fff;margin-top:6px">Add Overture to your ${isIPad ? 'iPad' : isIOS ? 'iPhone' : 'device'}</h2>
         <p style="margin-top:6px">Takes 10 seconds. You only do it once.</p></div>
       <div class="modal-body">
         <ol class="install-steps">${steps().map((s) => `<li>${s}</li>`).join('')}</ol>
         <div class="notice" style="margin-top:14px">${icon('info')}<div>
           <b>Good to know</b><br>
-          • Always open Cadenza from the <b>Home Screen icon</b> — that copy keeps your login and practice safely. (Safari may clear website data that isn't used for a week; the Home Screen app is exempt.)<br>
+          • Always open Overture from the <b>Home Screen icon</b> — that copy keeps your login and practice safely. (Safari may clear website data that isn't used for a week; the Home Screen app is exempt.)<br>
           • Sign in once inside the Home Screen app (Classroom tab). Your progress then syncs automatically.<br>
           • Allow the <b>microphone</b> when asked. Headphones give the best results.<br>
           • USB MIDI keyboards are not supported on ${isIPad ? 'iPad' : 'iPhone'} — use the microphone or an audio interface.

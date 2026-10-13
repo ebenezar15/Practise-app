@@ -1,6 +1,12 @@
-# Cadenza — AI practice coach for piano, guitar, electric guitar, bass & trumpet
+<p align="center"><img src="icons/icon.svg" width="120" alt="Overture logo"></p>
 
-Cadenza **listens while you play** and coaches you in real time: chords, notes, timing, strumming,
+# Overture — learn, practise & play music
+
+*Formerly **Cadenza**. Updating keeps all your progress, songs and classroom data.*
+
+For piano, acoustic & electric guitar, bass (4 or 5 strings), **drums**, trumpet and singing.
+
+Overture **listens while you play** and coaches you in real time: chords, notes, timing, strumming,
 intonation, bends, tone steadiness and dynamics. Load a song (audio or MIDI), **separate the
 instruments**, and play along with the full mix, a **backing track without your instrument**, or
 your part on its own — or **improvise** over any track or a generated backing band. Learn with
@@ -16,19 +22,19 @@ Get the latest version from the repository's **Releases** page:
 
 | Your computer | File |
 | --- | --- |
-| **Windows** | `Cadenza-<version>-windows-setup.exe` (installer) or `Cadenza-<version>-windows-portable.exe` (no install) |
-| **Mac** (Apple Silicon M1–M4 *and* Intel) | `Cadenza-<version>-mac-universal.dmg` |
-| **Linux** | `Cadenza-<version>-linux-x86_64.AppImage` (`chmod +x`, run) or `.deb` |
-| **Any computer, no install** | `Cadenza-web-<version>.zip` — open `index.html` in Chrome/Edge |
+| **Windows** | `Overture-<version>-windows-setup.exe` (installer) or `Overture-<version>-windows-portable.exe` (no install) |
+| **Mac** (Apple Silicon M1–M4 *and* Intel) | `Overture-<version>-mac-universal.dmg` |
+| **Linux** | `Overture-<version>-linux-x86_64.AppImage` (`chmod +x`, run) or `.deb` |
+| **Any computer, no install** | `Overture-web-<version>.zip` — open `index.html` in Chrome/Edge |
 
-**First launch on a Mac:** drag Cadenza into Applications and open it. Because Cadenza isn't registered with
+**First launch on a Mac:** drag Overture into Applications and open it. Because Overture isn't registered with
 Apple yet, macOS says it can't verify the developer — click *Done*, then go to **System Settings → Privacy &
 Security** and click **Open Anyway** (only needed once; on older macOS: right-click → Open). If macOS ever says
-the app is "damaged", run `xattr -dr com.apple.quarantine /Applications/Cadenza.app` in Terminal. To remove the
+the app is "damaged", run `xattr -dr com.apple.quarantine /Applications/Overture.app` in Terminal. To remove the
 prompt entirely, add an Apple Developer ID certificate as repository secrets (see `.github/workflows/desktop.yml`)
 and the build signs and notarizes automatically.
 
-**iPad & iPhone:** there's no App Store app; Cadenza installs from your classroom server's
+**iPad & iPhone:** there's no App Store app; Overture installs from your classroom server's
 `https://` address in Safari → **Share → Add to Home Screen**. It then runs full-screen, offline,
 stays signed in and syncs. The app shows these steps itself. See **[docs/HOSTING.md](docs/HOSTING.md)**
 to put your server online (Render.com, your own server with Docker, or your computer + Cloudflare Tunnel).
@@ -44,7 +50,11 @@ Local builds: `cd desktop && npm install && npm run dist:mac` (or `dist:win`, `d
 
 | Area | What it does |
 | --- | --- |
-| **6 instruments** | Piano, acoustic guitar, electric guitar, bass guitar (**4- or 5-string**, down to low B 31 Hz — fretboards, tuner and exercises follow your choice), B♭ trumpet (written pitch, valve fingerings) and **voice** (soprano, mezzo, alto, tenor, baritone, bass). Each has its own fretboard/keyboard/valve/pitch-trail view, tuner, tips and coaching focus. |
+| **Real instrument sounds** | Every note you hear is a physically modelled instrument, not a beep: hammered piano strings (inharmonic partials, 1–3 detuned strings, hammer noise), plucked acoustic guitar with a wooden body, electric guitar through an amp, finger-style bass, trumpet (lip scoop, bell, breath, vibrato), a four-part choir (formant singers), bowed strings, drawbar organ and a full acoustic drum kit — with room reverb. Rendered on the device, offline. |
+| **Drums** | A new instrument and **Drum Studio**: a playable kit (touch, mouse or keyboard) with a loop recorder, groove library (rock to odd meters), rudiments with sticking, classic fills, a fresh-fill generator and groove remixes, drum-grid notation with counts, and timing scored per hit — from a microphone on a real kit, or with tap pads that also check the right drum. A 56-exercise drum path, a 12-lesson drums course and a drum lane in the Play-Along Studio. |
+| **Note lengths** | Every instrument's path has a *Note lengths* track: whole, half, quarter, eighth and sixteenth notes, dotted notes, triplets, syncopation and a mixed rhythm study. |
+| **Tip of the day & Did you know?** | A new practice tip (mixed with tips for your instrument) and a music fact on Home every day. |
+| **7 instruments** | Piano, acoustic guitar, electric guitar, **drums**, bass guitar (**4- or 5-string**, down to low B 31 Hz — fretboards, tuner and exercises follow your choice), B♭ trumpet (written pitch, valve fingerings) and **voice** (soprano, mezzo, alto, tenor, baritone, bass). Each has its own fretboard/keyboard/valve/pitch-trail view, tuner, tips and coaching focus. |
 | **Fingering guide** | A piano roll plus fretboard, keyboard or valve view for every exercise and for the song melody in the Play-Along Studio: piano finger numbers for either hand (thumb-under, finger-over), guitar/bass string-fret-finger (open position, up the neck, 1-2-4 bass fingering), trumpet valves with alternate fingerings — recommended fingering first, alternatives one tap away, following playback. |
 | **Click patterns** | A step-sequencer for custom metronome loops: tap steps for accent / click / soft / rest, any beats, steps per beat (up to sextuplets) and bars, swing, 21 presets (clave, tresillo, 6/8, 5/4, 7/8, gap trainers), random patterns by level, tempo ramp, silent-loop trainer, saved patterns and shareable codes. |
 | **Instrument courses** | 60 interactive Academy lessons — piano, guitar, bass, trumpet and singing at Beginner, Intermediate and Advanced — with fingering guides, tap-to-hear fretboards and keyboards, a valve simulator, play-it-now mic drills and instrument questions (fretboard, tab, finger numbers, inversions, valves, partials, bass lines, voice types) that change every time. |
@@ -64,7 +74,7 @@ Local builds: `cd desktop && npm install && npm run dist:mac` (or `dist:win`, `d
 | **Academy** | 53 self-paced lessons in 12 subjects (fundamentals, reading, rhythm, scales & keys, intervals, chords & harmony, ear training, songwriting, improvisation, worship band & arranging, practice skills, your instrument), Beginner → Advanced. Each lesson: explanation, real-world uses, examples to hear, "on your instrument" panel, unlimited generated practice (43 question types) with mastery stars, links to practise it — plus a placement quiz. |
 | **Music Toolkit** | Chord dictionary, scale finder (with fret positions), interactive circle of fifths, chord-chart transposer & capo calculator, and a glossary of 80 terms. |
 | **Practice Planner** | Balanced daily routines for your time and focus with a guided timer per block and a weekly tracker. |
-| **Harmony & parts** | A six-step harmony path and a **SATB part trainer** for public-domain hymns and rounds: listen to all parts, your part alone, or sing your part while Cadenza sings the rest — scrolling four-colour score, chord and chord-tone of every voice, words, live pitch line and in-tune score. Cadenza's own four-part arrangements (rule-based voice leading). |
+| **Harmony & parts** | A six-step harmony path and a **SATB part trainer** for public-domain hymns and rounds: listen to all parts, your part alone, or sing your part while Overture sings the rest — scrolling four-colour score, chord and chord-tone of every voice, words, live pitch line and in-tune score. Overture's own four-part arrangements (rule-based voice leading). |
 | **Kids & Focus** | Designed with **ADHD and autistic** children and teens in mind: 48 two-to-four-minute lessons (rhythm, piano, guitar, singing), one instruction at a time with progress dots and read-aloud, colour-coded notes, tap-along and echo rhythms, ear games, chord shapes, microphone checks with an "I did it" fallback, **visual timers**, a first-then daily plan, an always-available **break button** (breathing bubble, wiggle and squeeze breaks), gentle never-red feedback, relaxed timing, a buddy and a **sticker book**. |
 | **Appearance** | 8 colour themes (violet, ocean, forest, sunset, rose, sunshine, slate, high contrast), light / dark / auto, **Avenir Next** (bundled open-licence Nunito Sans on devices without it), **Atkinson Hyperlegible** and **Lexend** reading fonts, text size, letter spacing and **calm mode** (no motion or confetti). |
 | **Songs** | Public-domain hymns & spirituals built in; teachers add songs in **English, Tamil or any language** (ChordPro or chords-over-lyrics) with **chord PDFs**, images and audio. Transpose, capo, text size, auto-scroll, chord diagrams for your instrument (B♭ chords for trumpet), a generated **backing band in the song's meter** whose lyrics highlight as it plays, and **record & send for review**. |
@@ -86,18 +96,18 @@ Pick one:
 
 * **Desktop app** — *Classroom → Host classroom on this computer → Start*. It shows the address students use, e.g. `http://192.168.1.20:8787`.
 * **Any computer with Node.js 18+** — `node server/server.js` (or `Start Classroom Server` in the web zip). Data is stored in `server-data/` (`DATA_DIR` to change, `PORT` to change the port).
-* **Online for free (students at home & iPads)** — in the desktop app, after *Start*, click **Put online** under *Students at home*: Cadenza opens a Cloudflare Tunnel and shows an `https://` address to share (see [docs/HOSTING.md](docs/HOSTING.md), option C).
+* **Online for free (students at home & iPads)** — in the desktop app, after *Start*, click **Put online** under *Students at home*: Overture opens a Cloudflare Tunnel and shows an `https://` address to share (see [docs/HOSTING.md](docs/HOSTING.md), option C).
 * **Online on a server** — deploy `server/server.js` to any Node host with a persistent disk (a small VPS, Render, Railway, Fly.io…) and put it behind HTTPS (e.g. Caddy: `music.example.com { reverse_proxy localhost:8787 }`, or set `TLS_CERT`/`TLS_KEY`). Students then use `https://music.example.com`.
 
 ### 2. Become the master teacher
 
-Open Cadenza → **Classroom**, enter the server address. On a brand-new server you'll see
+Open Overture → **Classroom**, enter the server address. On a brand-new server you'll see
 *Set up as master teacher*: choose your school name, username and password. The master teacher can
 add other teachers (and other master teachers); teachers manage students.
 
 ### 3. Add students (two ways)
 
-* **Create the account yourself**: *Students → Add a student* (name, username, instrument). Cadenza shows a
+* **Create the account yourself**: *Students → Add a student* (name, username, instrument). Overture shows a
   temporary password — give it to the student with the server address. They choose their own password at first sign-in.
 * **Invite codes**: *Invite codes → Generate*. Send each student a code; they pick *I have an invite code*,
   enter the server address and code, and choose their own username & password.
@@ -113,7 +123,7 @@ own part only · drums & bass*), speed, targets (accuracy %, minutes, stars), du
 for (everyone or chosen students). Attach a **song file**, the **current Studio track**, or a
 **generated backing track** (each student gets it without their own instrument).
 
-Students see assignments in **Classroom**, press **Start**, and Cadenza opens the Studio (or the
+Students see assignments in **Classroom**, press **Start**, and Overture opens the Studio (or the
 challenge) with everything set up. When they finish a session the result — accuracy, minutes,
 stars and the coach's insights — is sent to the teacher. Recordings appear in **Results** with a
 *Listen* button; the teacher gives stars, rubric scores and comments, or sends it back to try
@@ -137,7 +147,7 @@ npm start        # app at http://localhost:5173 (static server, zero dependencie
 npm run server   # classroom server at http://localhost:8787 (also serves the app)
 npm test         # unit + integration tests (incl. an analyser accuracy floor)
 node scripts/bench-analyzer.js 30 [--midi]   # analyser accuracy report on synthetic songs with ground truth
-npm run package:web   # dist/Cadenza-web-<version>.zip
+npm run package:web   # dist/Overture-web-<version>.zip
 cd desktop && npm install && npm start   # desktop app in development
 ```
 

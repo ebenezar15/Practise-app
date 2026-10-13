@@ -1,4 +1,4 @@
-/* Cadenza — Kids & Focus: micro-lessons for children and teens (ADHD- and autism-friendly).
+/* Overture — Kids & Focus: micro-lessons for children and teens (ADHD- and autism-friendly).
  * Predictable structure (today's plan: warm-up → lesson → movement), one instruction at a
  * time with progress dots, big touch targets, visual timers, an always-available break
  * button, gentle feedback (never red crosses), optional read-aloud, calm mode, and a

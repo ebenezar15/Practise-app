@@ -1,4 +1,4 @@
-/* Cadenza — Home dashboard */
+/* Overture — Home dashboard */
 (function (root) {
   'use strict';
   const PM = root.PM;

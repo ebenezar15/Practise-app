@@ -1,4 +1,4 @@
-/* Cadenza — Standard MIDI File parser, lightweight offline synthesiser
+/* Overture — Standard MIDI File parser, lightweight offline synthesiser
  * (piano, acoustic/electric guitar, bass, trumpet, strings, organ, drums) and WAV encoder. */
 (function (root) {
   'use strict';

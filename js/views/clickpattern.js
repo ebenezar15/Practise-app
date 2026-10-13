@@ -1,4 +1,4 @@
-/* Cadenza — Click patterns tab (Rhythm & Metronome): a step-sequencer editor for custom
+/* Overture — Click patterns tab (Rhythm & Metronome): a step-sequencer editor for custom
  * click loops. Tap steps to cycle rest → click → accent → soft, pick beats, steps per beat
  * and bars, load presets (clave, 6/8, gap trainers…), save your own, and loop them with
  * an optional tempo ramp and "silent loop" trainer. */
@@ -198,11 +198,11 @@
       p.name = name; save(); App.saveSettings(); drawMine(); drawGrid();
       UI.toast('Pattern saved', { icon: '💾' });
     };
-    const code = () => `cadenza-click:${p.beats}/${p.sub}/${loop.bpm}/${Math.round((p.swing || 0) * 100)}:${CP().encode(p)}`;
+    const code = () => `overture-click:${p.beats}/${p.sub}/${loop.bpm}/${Math.round((p.swing || 0) * 100)}:${CP().encode(p)}`;
     $('#cpShare', host).onclick = async () => { try { await navigator.clipboard.writeText(code()); UI.toast('Pattern code copied — paste it to a friend or student', { icon: '📋' }); } catch (e) { prompt('Copy this code', code()); } };
     $('#cpImport', host).onclick = () => {
-      const s = (prompt('Paste a Cadenza click code') || '').trim();
-      const m = /^cadenza-click:(\d+)\/(\d+)\/(\d+)\/(\d+):([.sxX|]+)$/.exec(s);
+      const s = (prompt('Paste a Overture click code') || '').trim();
+      const m = /^(?:overture|cadenza)-click:(\d+)\/(\d+)\/(\d+)\/(\d+):([.sxX|]+)$/.exec(s);
       if (!m) { if (s) UI.toast('That code doesn’t look right.', { icon: '⚠️' }); return; }
       const np = CP().parse(m[5], { sub: +m[2] });
       if (np.beats !== +m[1] || !Number.isInteger(np.beats)) { UI.toast('That code doesn’t look right.', { icon: '⚠️' }); return; }

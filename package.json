@@ -1,7 +1,7 @@
 {
   "name": "cadenza-practice",
-  "version": "2.7.0",
-  "description": "Cadenza \u2014 offline AI music practice coach for piano, guitar, electric guitar, bass and trumpet, with a classroom server",
+  "version": "3.0.0",
+  "description": "Overture \u2014 offline AI music practice coach for piano, guitar, electric guitar, bass and trumpet, with a classroom server",
   "private": true,
   "scripts": {
     "start": "node serve.js",

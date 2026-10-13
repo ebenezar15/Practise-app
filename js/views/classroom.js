@@ -1,5 +1,5 @@
-/* Cadenza — Classroom: accounts, assignments and teacher dashboard (synced via the
- * Cadenza Classroom Server; everything keeps working offline). */
+/* Overture — Classroom: accounts, assignments and teacher dashboard (synced via the
+ * Overture Classroom Server; everything keeps working offline). */
 (function (root) {
   'use strict';
   const PM = root.PM;
@@ -87,7 +87,7 @@
     const guess = localStorage.getItem('cadenza.lastServer') || (location.protocol.startsWith('http') && !staticHost ? location.origin : '');
     host.innerHTML = `
       <div class="page-head"><div><div class="eyebrow">Classroom</div><h1>Connect with your teacher</h1>
-        <p>Sign in to your music school's Cadenza server to receive assignments, send your results and keep your progress synced across devices. Practising always works offline — results upload when you're back online.</p></div></div>
+        <p>Sign in to your music school's Overture server to receive assignments, send your results and keep your progress synced across devices. Practising always works offline — results upload when you're back online.</p></div></div>
       <div id="installHint" class="hidden"></div>
       <div class="grid g2">
         <section class="card">
@@ -100,12 +100,12 @@
         <section class="card">
           <div class="card-head"><h3>${icon('info')} How it works</h3></div>
           <ol style="color:var(--ink-2);line-height:1.75;margin:0;padding-left:20px">
-            <li><b>The teacher</b> runs the Cadenza Classroom Server — from the desktop app (<i>Host classroom</i>, below) or on any computer/cloud host with <span class="code">node server/server.js</span>.</li>
+            <li><b>The teacher</b> runs the Overture Classroom Server — from the desktop app (<i>Host classroom</i>, below) or on any computer/cloud host with <span class="code">node server/server.js</span>.</li>
             <li>The first person to connect becomes the <b>master teacher</b> and can add students, other teachers and assignments.</li>
-            <li><b>Students</b> install Cadenza, enter the server address and sign in with the username & password the teacher gives them — or register with an <b>invite code</b>.</li>
+            <li><b>Students</b> install Overture, enter the server address and sign in with the username & password the teacher gives them — or register with an <b>invite code</b>.</li>
             <li>Assignments (with songs, backing tracks, targets and due dates) appear here. Results and progress sync automatically.</li>
           </ol>
-          ${d ? `<div id="hostBox" style="margin-top:16px"></div>` : `<div class="notice" style="margin-top:16px">${icon('download')}<div>Want to host a class from this computer? Use the <b>Cadenza desktop app</b> and click <i>Host classroom</i> — or run the server from the project folder.</div></div>`}
+          ${d ? `<div id="hostBox" style="margin-top:16px"></div>` : `<div class="notice" style="margin-top:16px">${icon('download')}<div>Want to host a class from this computer? Use the <b>Overture desktop app</b> and click <i>Host classroom</i> — or run the server from the project folder.</div></div>`}
         </section>
       </div>`;
     if (d) renderHostBox($('#hostBox', host), App);
@@ -135,7 +135,7 @@
       st.textContent = 'checking…'; st.className = 'tag';
       try {
         health = await Sync.probe(srv.value);
-        st.textContent = `✓ ${health.schoolName || 'Cadenza server'}`; st.className = 'tag ok';
+        st.textContent = `✓ ${health.schoolName || 'Overture server'}`; st.className = 'tag ok';
         const setupBtn = $('#joinSeg [data-t="setup"]', host);
         setupBtn.classList.toggle('hidden', !health.needsSetup);
         if (health.needsSetup) { tab = 'setup'; draw(); }
@@ -203,7 +203,7 @@
         ${st.url ? `<p class="small" style="margin-top:8px">Students and iPads use:</p><div class="row" style="margin-top:4px"><span class="code" style="font-size:15px">${esc(st.url)}</span><button class="mini-btn" id="tCopy">${icon('clipboard')} Copy</button></div>` : ''}
         ${st.message && st.state !== 'stopped' ? `<p class="small" style="margin-top:6px;${st.state === 'error' ? 'color:var(--bad)' : ''}">${esc(st.message)}</p>` : ''}
         <div class="row" style="margin-top:10px">${on ? `<button class="btn sm danger" id="tStop">${icon('stop')} Take offline</button>` : `<button class="btn sm primary" id="tStart">${icon('cloud')} Put online</button>`}</div>
-        <p class="small muted" style="margin-top:6px">Keep this computer on and awake while students use Cadenza.</p>`;
+        <p class="small muted" style="margin-top:6px">Keep this computer on and awake while students use Overture.</p>`;
       $$('#tMode button', box).forEach((b) => (b.onclick = () => { mode = b.dataset.m; draw(); }));
       const sb = $('#tStart', box);
       if (sb) sb.onclick = async () => {
@@ -223,7 +223,7 @@
   function accountHeader(App) {
     const u = Sync.account.user;
     return `
-      <div class="page-head"><div><div class="eyebrow">Classroom · ${esc(Sync.account.schoolName || 'Cadenza')}</div><h1>${Sync.isStaff ? 'Teacher dashboard' : 'My assignments'}</h1>
+      <div class="page-head"><div><div class="eyebrow">Classroom · ${esc(Sync.account.schoolName || 'Overture')}</div><h1>${Sync.isStaff ? 'Teacher dashboard' : 'My assignments'}</h1>
         <p>Signed in as <b>${esc(u.name)}</b> (${esc(u.username)} · ${u.role === 'admin' ? 'master teacher' : u.role}) on <span class="code">${esc(Sync.account.server)}</span></p></div>
         <div class="row"><span id="syncPill">${syncPill()}</span><button class="btn sm ghost" id="syncNow">${icon('loop')} Sync now</button><button class="btn sm ghost" id="signOut">Sign out</button></div></div>
       ${u.mustChangePassword ? `<section class="card" style="margin-bottom:18px;border-color:var(--warn)"><div class="card-head"><h3>🔑 Choose your own password</h3></div>
@@ -362,7 +362,7 @@
 
   function credentialsModal(user, password) {
     const server = Sync.account.server;
-    const text = `Cadenza classroom login\nServer: ${server}\nUsername: ${user.username}\nPassword: ${password}\n(Install Cadenza, open Classroom, enter these details. You'll choose your own password after signing in.)`;
+    const text = `Overture classroom login\nServer: ${server}\nUsername: ${user.username}\nPassword: ${password}\n(Install Overture, open Classroom, enter these details. You'll choose your own password after signing in.)`;
     const m = UI.modal(`<div class="modal-top"><div style="font-size:42px">🎓</div><h2 style="color:#fff;margin-top:6px">Login for ${esc(user.name)}</h2><p style="margin-top:6px">Give these details to your student. The password is shown only once.</p></div>
       <div class="modal-body"><div class="stack">
         <div>Server: <span class="code">${esc(server)}</span></div><div>Username: <span class="code">${esc(user.username)}</span></div><div>Temporary password: <span class="code">${esc(password)}</span></div></div>
@@ -558,7 +558,7 @@
     const shareServer = tun && tun.url && tun.state === 'online' ? tun.url : Sync.account.server;
     const admin = Sync.account.user.role === 'admin';
     body.innerHTML = `<section class="card"><div class="card-head"><h3>${icon('plus')} Invite codes</h3></div>
-        <p>Share a code with each student: they install Cadenza, open <b>Classroom → I have an invite code</b>, enter the server address <span class="code">${esc(shareServer)}</span> and the code, then choose their own username & password. Codes work once and expire after 30 days.</p>
+        <p>Share a code with each student: they install Overture, open <b>Classroom → I have an invite code</b>, enter the server address <span class="code">${esc(shareServer)}</span> and the code, then choose their own username & password. Codes work once and expire after 30 days.</p>
         <div class="row" style="margin-top:12px"><label class="field" style="flex-direction:row;align-items:center;gap:8px">How many<input type="number" id="iCount" value="5" min="1" max="50" style="width:80px"></label>
           <select id="iInst"><option value="">Student picks instrument</option>${Instruments.list().map((I) => `<option value="${I.id}">${I.emoji} ${esc(I.label)}</option>`).join('')}</select>
           ${admin ? '<select id="iRole"><option value="student">Students</option><option value="teacher">Teachers</option></select>' : ''}
@@ -573,7 +573,7 @@
       catch (e) { UI.toast(e.message, { icon: '⚠️' }); }
     };
     const cp = $('#iCopy', body);
-    if (cp) cp.onclick = () => { navigator.clipboard && navigator.clipboard.writeText(`Join my Cadenza class!\nServer: ${shareServer}\nCodes:\n` + invites.map((i) => i.code).join('\n')); UI.toast('Copied', { icon: '📋' }); };
+    if (cp) cp.onclick = () => { navigator.clipboard && navigator.clipboard.writeText(`Join my Overture class!\nServer: ${shareServer}\nCodes:\n` + invites.map((i) => i.code).join('\n')); UI.toast('Copied', { icon: '📋' }); };
     $$('[data-del]', body).forEach((b) => (b.onclick = async () => { await Sync.request('DELETE', '/invites/' + b.dataset.del); tInvites(body, App); }));
   }
 

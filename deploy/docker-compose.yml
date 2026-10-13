@@ -1,4 +1,4 @@
-# Cadenza on your own server with automatic HTTPS (Let's Encrypt via Caddy).
+# Overture on your own server with automatic HTTPS (Let's Encrypt via Caddy).
 #   1. Point a domain (e.g. music.yourschool.com) at this server's IP address.
 #   2. cd deploy && DOMAIN=music.yourschool.com docker compose up -d
 services:

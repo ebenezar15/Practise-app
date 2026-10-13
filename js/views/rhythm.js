@@ -1,4 +1,4 @@
-/* Cadenza — rhythm workstation inside the Metronome page:
+/* Overture — rhythm workstation inside the Metronome page:
  *  • Styles: 40+ keyboard-style rhythms with Intro / Main A / Main B / Fill / Ending and
  *    auto-accompaniment (bass + chords) that follows the chords you type.
  *  • Beat maker: step sequencer & pattern builder (16ths, triplets, 3/4, swing, accents,
@@ -36,7 +36,7 @@
     }
     let cleanup = [];
     host.innerHTML = `<div class="page-head"><div><div class="eyebrow">Metronome & rhythm</div><h1>${tab === 'styles' ? 'Practise with real grooves' : 'Build your own beats'}</h1>
-      <p>${tab === 'styles' ? 'Keyboard-style rhythms with Intro, Main A/B, Fill and Ending. Type chords and the bass and piano/guitar follow you.' : 'Tap the grid to program drums. Click once for a hit, again for an accent, again for a ghost note. Then practise along — Cadenza scores every hit.'}</p></div></div>
+      <p>${tab === 'styles' ? 'Keyboard-style rhythms with Intro, Main A/B, Fill and Ending. Type chords and the bass and piano/guitar follow you.' : 'Tap the grid to program drums. Click once for a hit, again for an accent, again for a ghost note. Then practise along — Overture scores every hit.'}</p></div></div>
       ${tabsHtml}<div id="rBody"></div>`;
     const body = $('#rBody', host);
 

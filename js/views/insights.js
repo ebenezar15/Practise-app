@@ -1,4 +1,4 @@
-/* Cadenza — Song Insights: full analysis report + offline song library. */
+/* Overture — Song Insights: full analysis report + offline song library. */
 (function (root) {
   'use strict';
   const PM = root.PM;
@@ -17,7 +17,7 @@
       host.innerHTML = `
         <div class="page-head">
           <div><div class="eyebrow">Song Insights</div><h1>${a ? esc(track.name) : 'Understand any song'}</h1>
-          <p>${a ? 'Everything Cadenza heard in this track — use it to learn the song, then practise it in the Studio.' : 'Upload audio or MIDI and get the key, chord progression, tempo, time signature, dynamics and strumming pattern — computed entirely on your device.'}</p></div>
+          <p>${a ? 'Everything Overture heard in this track — use it to learn the song, then practise it in the Studio.' : 'Upload audio or MIDI and get the key, chord progression, tempo, time signature, dynamics and strumming pattern — computed entirely on your device.'}</p></div>
           ${a ? `<div class="row"><button class="btn ghost" id="newTrack">${icon('upload')} Analyse another</button><a class="btn primary" href="#/studio">${icon('mic')} Practise this</a></div>` : ''}
         </div>
         <div id="body"></div>

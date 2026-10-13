@@ -1,9 +1,13 @@
-/* Cadenza desktop shell (Electron): runs the offline app from local files, grants microphone
- * & MIDI access, and can host the Cadenza Classroom Server for a teacher's LAN — and put it online for free
+/* Overture desktop shell (Electron): runs the offline app from local files, grants microphone
+ * & MIDI access, and can host the Overture Classroom Server for a teacher's LAN — and put it online for free
  * with Cloudflare Tunnel. */
 'use strict';
 const { app, BrowserWindow, ipcMain, session, shell, systemPreferences, Menu } = require('electron');
 const path = require('path');
+
+// The app was called Cadenza before it became Overture: keep using that data folder (practice
+// progress, songs and classroom data) if it exists, so nobody loses anything after updating.
+try { const legacy = path.join(app.getPath('appData'), 'Cadenza'); if (require('fs').existsSync(legacy)) app.setPath('userData', legacy); } catch (e) { /* first run */ }
 
 let win = null;
 let classroom = null; // { server, port }
@@ -15,7 +19,7 @@ const sendTunnel = (st) => { if (win && !win.isDestroyed()) win.webContents.send
 function createWindow() {
   win = new BrowserWindow({
     width: 1400, height: 920, minWidth: 380, minHeight: 600,
-    backgroundColor: '#f7f5ff', title: 'Cadenza', icon: path.join(__dirname, 'app', 'icons', 'icon.png'),
+    backgroundColor: '#f7f5ff', title: 'Overture', icon: path.join(__dirname, 'app', 'icons', 'icon.png'),
     webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, nodeIntegration: false, sandbox: true },
   });
   win.loadFile(path.join(__dirname, 'app', 'index.html'));

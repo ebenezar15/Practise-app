@@ -1,6 +1,6 @@
 name: iPad (Safari engine) & hosting checks
 
-# 1. Runs Cadenza in WebKit (Safari's engine) emulating iPad Pro 11 (portrait & landscape) and
+# 1. Runs Overture in WebKit (Safari's engine) emulating iPad Pro 11 (portrait & landscape) and
 #    iPhone 13: every screen, playback after count-in, games, metronome, classroom sign-in,
 #    service worker and offline reload. Screenshots are uploaded as an artifact.
 # 2. Builds the Docker image and runs the Caddy HTTPS stack from deploy/, then checks the app,
@@ -34,7 +34,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Start Cadenza + Caddy (HTTPS)
+      - name: Start Overture + Caddy (HTTPS)
         working-directory: deploy
         run: DOMAIN=localhost docker compose up -d --build
       - name: Check HTTPS app, API and redirect
@@ -42,7 +42,7 @@ jobs:
         run: |
           for i in $(seq 1 30); do curl -skf https://localhost/api/health && break; sleep 2; done
           curl -skf https://localhost/api/health | grep -q '"ok":true'
-          curl -skf https://localhost/ | grep -q '<title>Cadenza'
+          curl -skf https://localhost/ | grep -q '<title>Overture'
           curl -skf https://localhost/sw.js | grep -q 'cadenza-v'
           test "$(curl -s -o /dev/null -w '%{http_code}' http://localhost/)" = "308"
           test "$(curl -sk -o /dev/null -w '%{http_code}' https://localhost/server/server.js)" = "404"

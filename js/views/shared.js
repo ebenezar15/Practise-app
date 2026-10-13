@@ -1,4 +1,4 @@
-/* Cadenza — widgets shared by several views. */
+/* Overture — widgets shared by several views. */
 (function (root) {
   'use strict';
   const PM = root.PM;
@@ -13,7 +13,7 @@
       <div class="dropzone" tabindex="0" role="button" aria-label="Upload a song, audio or MIDI clip">
         <div class="dz-icon">${icon('upload')}</div>
         <h3>${esc(opts.title || 'Drop a song, audio clip or MIDI file')}</h3>
-        <p>${esc(opts.sub || 'Cadenza analyses it on your device — key, chords, tempo, time signature, dynamics' + (PM.Instruments.get(App.instrument).strum ? ' and strumming pattern' : '') + '. Nothing is uploaded.')}</p>
+        <p>${esc(opts.sub || 'Overture analyses it on your device — key, chords, tempo, time signature, dynamics' + (PM.Instruments.get(App.instrument).strum ? ' and strumming pattern' : '') + '. Nothing is uploaded.')}</p>
         <div class="formats"><span class="tag">MP3</span><span class="tag">WAV</span><span class="tag">M4A</span><span class="tag">OGG</span><span class="tag">FLAC</span><span class="tag">MIDI</span></div>
         <input type="file" accept="audio/*,.mid,.midi,.kar,.mp3,.wav,.m4a,.ogg,.flac,.aac,.webm" hidden>
       </div>

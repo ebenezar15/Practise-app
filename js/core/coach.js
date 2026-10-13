@@ -1,4 +1,4 @@
-/* Cadenza — the on-device AI practice coach. Compares the live performance against
+/* Overture — the on-device AI practice coach. Compares the live performance against
  * the reference analysis (or the metronome in free play) and produces scores,
  * corrections, instructions and encouragement in real time. */
 (function (root) {

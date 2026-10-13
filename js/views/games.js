@@ -1,4 +1,4 @@
-/* Cadenza — gamified challenges: Chord Quest, Rhythm Hero, Note Hunter, Ear Trainer. */
+/* Overture — gamified challenges: Chord Quest, Rhythm Hero, Note Hunter, Ear Trainer. */
 (function (root) {
   'use strict';
   const PM = root.PM;

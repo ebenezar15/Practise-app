@@ -1,4 +1,4 @@
-/* Cadenza — DSP primitives: FFT, windows, pitch (YIN), spectral peaks, chroma,
+/* Overture — DSP primitives: FFT, windows, pitch (YIN), spectral peaks, chroma,
  * polyphonic note salience, loudness. Pure functions, no DOM; usable in Node tests. */
 (function (root) {
   'use strict';

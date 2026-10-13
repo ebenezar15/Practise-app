@@ -1,4 +1,4 @@
-/* Cadenza — graded exercise path: 50+ exercises per instrument from first notes to advanced
+/* Overture — graded exercise path: 50+ exercises per instrument from first notes to advanced
  * technique. Each exercise has a level (1–5), category, notes (concert-pitch MIDI) with
  * rhythm (beats per note) or a chord sequence, a target tempo and a coaching tip.
  * Pure data generator — unit-tested for count, range and ordering. */

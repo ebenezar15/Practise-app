@@ -1,4 +1,4 @@
-/* Cadenza — sample-accurate metronome (look-ahead scheduler) with accents,
+/* Overture — sample-accurate metronome (look-ahead scheduler) with accents,
  * subdivisions, tap tempo, speed trainer and a timing grid for the coach. */
 (function (root) {
   'use strict';

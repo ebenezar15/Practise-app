@@ -1,4 +1,4 @@
-/* Cadenza — backing-track generator for improvisation & play-along practice.
+/* Overture — backing-track generator for improvisation & play-along practice.
  * Produces multi-instrument MIDI notes (drums, bass, comping) in any key, style and tempo.
  * The student's own instrument is left out so they get an "empty" track to play over. */
 (function (root) {
