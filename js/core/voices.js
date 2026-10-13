@@ -81,11 +81,22 @@
     return fadeOut(out, 0.25, sr);
   }
 
+  // ------------------------------------------------------------------ tone curves
+  // gains (dB) at half-octave centres, fitted to reference recordings (scripts: fit by rendering
+  // strums and matching the long-term average spectrum)
+  const TONE_BANDS = [63, 90, 125, 180, 250, 355, 500, 710, 1000, 1400, 2000, 2800, 4000, 5600, 8000];
+  const TONE = { guitar: [11.1, 16.3, 18, 17.5, 15.3, 10.5, 4.8, 2.6, 3.3, 2.4, -0.5, -2.4, -3, -5.1, -8.1], guitarAttack: 1.0 };
+  function toneCurve(out, gains, sr) {
+    const fs = [];
+    TONE_BANDS.forEach((f, k) => { if (Math.abs(gains[k]) > 0.05 && f < sr * 0.45) fs.push(biquad('peaking', f, 2.6, sr, gains[k])); });
+    for (const c of fs) for (let i = 0; i < out.length; i++) out[i] = bq(c, out[i]);
+  }
+
   // ------------------------------------------------------------------ plucked strings (KS)
   function pluck(midi, o, kind) {
     const sr = o.sr, vel = o.vel, f = mtof(midi), r = rng(midi * 104729 + (kind === 'bass' ? 3 : kind === 'electric' ? 2 : 1));
     const spec = {
-      guitar: { t60: 4.2 * Math.pow(2, -(midi - 40) / 24), S: 0.25 - 0.1 * vel, beta: 0.18, max: 3.4, gain: 0.55 },
+      guitar: { t60: 4.2 * Math.pow(2, -(midi - 40) / 24), S: 0.34 - 0.12 * vel, beta: 0.18, max: 3.4, gain: 0.55 },
       electric: { t60: 4.5 * Math.pow(2, -(midi - 40) / 30), S: 0.28 - 0.1 * vel, beta: 0.11, max: 4, gain: 0.5 },
       bass: { t60: 5.5 * Math.pow(2, -(midi - 28) / 30), S: 0.45, beta: 0.22, max: 4, gain: 0.8 },
     }[kind];
@@ -96,7 +107,7 @@
     const g = Math.pow(10, -3 / (spec.t60 * f));
     // excitation: velocity-filtered noise, pluck-position comb, no DC
     const buf = new Float32Array(N), ex = new Float32Array(N);
-    const a = kind === 'bass' ? 0.12 + 0.2 * vel : kind === 'guitar' ? 0.5 + 0.45 * vel : 0.35 + 0.55 * vel;
+    const a = kind === 'bass' ? 0.12 + 0.2 * vel : 0.35 + 0.55 * vel;
     let lpv = 0;
     for (let i = 0; i < N; i++) { lpv += a * (r() - lpv); ex[i] = lpv; }
     const pd = Math.max(1, Math.round(spec.beta * N));
@@ -114,13 +125,15 @@
       out[i] = x;
     }
     if (kind === 'guitar') {
-      // steel-string acoustic (spruce top, rosewood back): warm air resonance, a lean low-mid,
-      // clear presence and shimmering highs, plus the pick's brief brush on the string
+      // steel-string acoustic: body resonances, then a tone curve measured from a reference
+      // recording of a strummed grand-auditorium guitar (TONE.guitar, half-octave bands)
       const b1 = biquad('bandpass', 98, 5, sr), b2 = biquad('bandpass', 196, 4, sr), b3 = biquad('bandpass', 390, 3, sr);
-      const cut = biquad('peaking', 520, 1.1, sr, -1.5), pres = biquad('peaking', 2800, 0.9, sr, 4), air = biquad('peaking', 7500, 0.7, sr, 3.5);
-      for (let i = 0; i < len; i++) { const x = out[i]; out[i] = bq(air, bq(pres, bq(cut, x))) * 0.92 + bq(b1, x) * 0.40 + bq(b2, x) * 0.3 + bq(b3, x) * 0.1; }
-      const cl = Math.floor(0.004 * sr), hp = biquad('highpass', 3200, 0.7, sr);
-      for (let i = 0; i < cl; i++) out[i] += bq(hp, r()) * 0.16 * vel * (1 - i / cl);
+      for (let i = 0; i < len; i++) { const x = out[i]; out[i] = x * 0.9 + bq(b1, x) * 1.1 + bq(b2, x) * 0.6 + bq(b3, x) * 0.15; }
+      toneCurve(out, TONE.guitar, sr);
+      // the strum's bite: the first moments ring louder, then settle into the body's sustain
+      for (let i = 0, n = Math.floor(0.25 * sr); i < n && i < len; i++) out[i] *= 1 + TONE.guitarAttack * Math.exp(-i / (0.035 * sr));
+      const cl = Math.floor(0.003 * sr), hp = biquad('highpass', 2500, 0.7, sr);
+      for (let i = 0; i < cl; i++) out[i] += bq(hp, r()) * 0.05 * vel * (1 - i / cl);
     } else if (kind === 'electric') {
       const drive = 1.6 + vel, td = Math.tanh(drive), hp = biquad('highpass', 90, 0.7, sr), cab = biquad('lowpass', 4800, 0.9, sr), pk = biquad('peaking', 1600, 1, sr, 2.5);
       let peak = 0; for (let i = 0; i < len; i++) peak = Math.max(peak, Math.abs(out[i]));
@@ -367,6 +380,6 @@
     addLooped(out, start, L, held * sr, (voice === 'strings' ? 0.35 : voice === 'voice' ? 0.16 : 0.08) * sr, vel / vb);
   }
 
-  PM.Voices = { render, looped, addNote, clearCache: () => cache.clear(), SUSTAIN_LEN, voiceOf, releaseTime, DECAYING, GM_DRUM, drum: (id, o) => drum(id, Object.assign({ sr: 32000, vel: 0.8 }, o || {})), VOWELS, biquad, bq, mtof };
+  PM.Voices = { render, looped, addNote, clearCache: () => cache.clear(), SUSTAIN_LEN, voiceOf, releaseTime, DECAYING, GM_DRUM, drum: (id, o) => drum(id, Object.assign({ sr: 32000, vel: 0.8 }, o || {})), VOWELS, biquad, bq, mtof, TONE, TONE_BANDS };
   if (typeof module !== 'undefined' && module.exports) module.exports = PM.Voices;
 })(typeof self !== 'undefined' ? self : globalThis);
