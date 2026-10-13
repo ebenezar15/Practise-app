@@ -36,7 +36,9 @@ fs.mkdirSync(outDir, { recursive: true });
   const errors = [];
   let failed = false;
   let lastState = '';
+  let currentStep = 'start';
   const step = async (name, fn) => {
+    currentStep = name;
     try { const info = await fn(); results.push({ step: name, ok: true, info: info || '' }); console.log(`✓ ${name}${info ? ' — ' + info : ''}`); }
     catch (e) { failed = true; results.push({ step: name, ok: false, info: e.message }); console.log(`✗ ${name} — ${process.env.SMOKE_VERBOSE ? e.message : e.message.split("\n")[0]}`); }
     // trace page reloads and the loaded track between steps (diagnoses a lost track on WebKit)
@@ -52,6 +54,10 @@ fs.mkdirSync(outDir, { recursive: true });
     const ctx = await browser.newContext(Object.assign({}, device, engine === 'chromium' ? { defaultBrowserType: undefined } : {}));
     const page = await ctx.newPage();
     pageRef = page;
+    // diagnostics: full document loads and renderer crashes, tagged with the running step
+    page.on('load', () => console.log(`    ⟳ document load during “${currentStep}” (${page.url().replace(base, '')})`));
+    page.on('crash', () => console.log(`    💥 page crashed during “${currentStep}”`));
+    page.on('console', (m) => { if (m.type() === 'error' || m.type() === 'warning') console.log(`    · console.${m.type()} during “${currentStep}”: ${m.text().slice(0, 160)}`); });
     const tag = deviceName.replace(/\s+/g, '-');
     page.on('pageerror', (e) => errors.push(`[${deviceName}] ${e.message}`));
     page.on('console', (m) => { if (m.type() === 'error' && !/Failed to load resource|getUserMedia|NotAllowed|NotFound|NotSupported|Overconstrained/i.test(m.text())) errors.push(`[${deviceName}] console: ${m.text()}`); });
