@@ -170,7 +170,7 @@
     };
     draw();
     let player = null;
-    $('#sqHear', box).onclick = () => { if (player) player.stop(); player = playNotes(notes, { bpm: 100 }); };
+    UI.playToggle($('#sqHear', box), () => { if (player) player.stop(); player = playNotes(notes, { bpm: 100 }); return player.duration; });
     const done = () => {
       const secs = (performance.now() - started) / 1000;
       const acc = notes.length / (notes.length + mistakes);
@@ -542,7 +542,7 @@
       $('#rMode', stage).value = mode;
       $('#rMode', stage).onchange = (e) => { mode = e.target.value; draw(); };
       $('#rGo', stage).onclick = round;
-      $('#rAgain', stage).onclick = () => phrase && playPhrase();
+      UI.playToggle($('#rAgain', stage), () => phrase && playPhrase());
     };
     let phrase = null;
     const playPhrase = () => {

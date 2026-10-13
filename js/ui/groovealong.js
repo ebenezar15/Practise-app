@@ -82,6 +82,9 @@
       <div class="row" style="justify-content:center;margin-top:10px;gap:10px">
         <button class="btn glass" id="gvListen">${icon('headphones')} Listen</button>
         <button class="btn primary" id="gvGo">${icon('play')} Start take</button>
+        <button class="btn glass hidden" id="gvPause">⏸ Pause</button>
+        <button class="btn glass hidden" id="gvStop">${icon('stop')} Stop</button>
+        <label class="switch"><input type="checkbox" id="gvLoop" ${pref.loop ? 'checked' : ''}><span class="track"></span>Loop listening</label>
       </div>
       <p class="small" id="gvMsg" style="text-align:center;margin-top:8px"></p>
       <div id="gvResult"></div>
@@ -115,19 +118,21 @@
     q('gvGuide').onchange = (e) => { guide = e.target.checked; save(); };
     $$('#gvMode button', box).forEach((b) => (b.onclick = () => { mode = b.dataset.m; App.settings.grooveInput = mode; App.saveSettings(); $$('#gvMode button', box).forEach((x) => x.classList.toggle('on', x === b)); q('gvPads').classList.toggle('hidden', mode !== 'tap'); }));
 
-    const out = () => { const g = PM.Audio.getCtx().createGain(); g.connect(PM.Sound.master()); return g; };
-    /** Schedule metronome + guide for `nb` bars from t0 (plus a count-in bar before it). Returns the plan. */
-    function schedule(t0, nb, gain, withGuide, dest) {
-      const plan = G().events(pat, { bpm, bars: nb, chords: chords(), dynamics: dyn, lo: lo() });
-      const v = voice(), ck = G().clicks(pat, bpm);
-      const start = t0 + plan.barDur;
-      if (click || !withGuide) for (let b = -1; b < nb; b++) for (const c of ck) PM.Sound.drum(c.down ? 'woodhi' : 'wood', start + b * plan.barDur + c.time, (c.down ? 0.75 : 0.55) * (b < 0 ? 1 : click ? 0.8 : 0), dest);
-      if (withGuide) for (const e of plan.events) {
-        const vel = G().velocity(e) * gain;
-        const ns = kind === 'strum' && e.dir < 0 ? e.notes.slice(-4).reverse() : e.notes;
-        ns.forEach((m, i) => PM.Sound.note(v, m, start + e.time + (kind === 'strum' ? i * (e.mute ? 0.004 : 0.011) : 0), e.mute ? 0.05 : Math.max(0.08, e.dur * (kind === 'line' ? 0.96 : 0.92)), { vel: Math.max(0.12, vel * (kind === 'strum' && i ? 0.92 : 1)), dest }));
-      }
-      return Object.assign(plan, { start });
+    const out = () => { const g = PM.Audio.getCtx().createGain(); g.connect(PM.Sound.transient()); return g; };
+    const rnd = (k) => { const x = Math.sin(k * 12.9898) * 43758.5453; return x - Math.floor(x); };
+    /** One strum / chord / note of the guide part, made to sound like a person playing. */
+    function playEvent(e, t, gain, dest, v, seed) {
+      const vel = G().velocity(e) * gain;
+      if (kind !== 'strum') { e.notes.forEach((m) => PM.Sound.note(v, m, t, Math.max(0.08, e.dur * (kind === 'line' ? 0.96 : 0.92)), { vel: Math.max(0.12, vel), dest })); return; }
+      if (e.mute) { PM.Sound.drum('chuck', t, Math.min(1, vel * 1.1), dest); e.notes.slice(0, 4).forEach((m, i) => PM.Sound.note(v, m, t + i * 0.003, 0.03, { vel: vel * 0.35, dest })); return; }
+      // down-strums hit all the strings low → high; up-strums catch the top 3–4 strings high → low
+      const up = e.dir < 0, ns = up ? e.notes.slice(-(e.accent ? 4 : 3)).reverse() : e.notes;
+      const spread = Math.min(0.016, Math.max(0.007, G().stepTime(pat, bpm).sd * 0.06)) * (up ? 0.8 : 1);
+      PM.Sound.drum('pick', t - 0.002, Math.min(1, vel), dest);
+      ns.forEach((m, i) => {
+        const jitter = (rnd(seed * 7 + i) - 0.5) * 0.004, shape = up ? 1 - i * 0.07 : 0.88 + i * 0.03; // the pick digs into the first strings it meets
+        PM.Sound.note(v, m, t + i * spread + jitter, Math.max(0.1, e.dur * 0.98), { vel: Math.max(0.12, Math.min(1, vel * shape * (0.94 + rnd(seed + i) * 0.1))), dest, pan: (i / Math.max(1, ns.length - 1) - 0.5) * (up ? -0.35 : 0.35) });
+      });
     }
     function warmUp() {
       const plan = G().events(pat, { bpm, bars, chords: chords(), dynamics: dyn, lo: lo() }), v = voice();
@@ -135,15 +140,100 @@
       for (const e of plan.events) for (const m of e.notes) { const vel = Math.round(G().velocity(e) * 4) / 4, key = m + ':' + vel; if (!seen.has(key)) { seen.add(key); PM.Sound.prepare(v, m, vel); } }
     }
 
+    // ---- transport: schedules bar by bar so it can pause, resume, loop and stop cleanly
+    const tp = { on: false, paused: false, kind: null, plan: null, bar: 0, next: 0, marks: [], g: null, iv: 0, loop: false, gain: 1, guide: true, count: 0 };
+    function scheduleBar(b, t0) {
+      const plan = tp.plan, ck = G().clicks(pat, bpm), v = voice(), bb = b % bars;
+      for (const c of ck) if (click || !tp.guide) PM.Sound.drum(c.down ? 'woodhi' : 'wood', t0 + c.time, (c.down ? 0.75 : 0.55) * 0.8, tp.g);
+      for (const e of plan.events) {
+        if (e.bar !== bb) continue;
+        const t = t0 + e.time - bb * plan.barDur;
+        if (tp.guide) playEvent(e, t, tp.gain, tp.g, v, b * 64 + e.step);
+        if (tp.kind === 'take' && take) take.exp.push(Object.assign({}, e, { time: t }));
+      }
+      tp.marks.push({ bar: bb, abs: b, t0 });
+    }
+    function countIn(t0) { for (const c of G().clicks(pat, bpm)) PM.Sound.drum(c.down ? 'woodhi' : 'wood', t0 + c.time, c.down ? 0.8 : 0.6, tp.g); tp.marks.push({ bar: -1, abs: -1, t0 }); }
+    function pump() {
+      const now = PM.Audio.getCtx().currentTime;
+      while (tp.on && !tp.paused && tp.next < now + 0.35) {
+        if (tp.bar >= bars && !tp.loop) {
+          if (now > tp.next + 0.4) { if (tp.kind === 'take') finish(false); else stopTransport(); }
+          return;
+        }
+        scheduleBar(tp.bar, tp.next); tp.bar++; tp.next += tp.plan.barDur;
+      }
+    }
+    function startTransport(kindOf, withGuide, gain) {
+      warmUp();
+      const ctx = PM.Audio.getCtx();
+      tp.on = true; tp.paused = false; tp.kind = kindOf; tp.guide = withGuide; tp.gain = gain; tp.bar = 0; tp.marks = [];
+      tp.loop = kindOf === 'listen' && q('gvLoop').checked;
+      tp.plan = G().events(pat, { bpm, bars, chords: chords(), dynamics: dyn, lo: lo() });
+      tp.g = out();
+      const t0 = ctx.currentTime + 0.3;
+      countIn(t0); tp.next = t0 + tp.plan.barDur;
+      clearInterval(tp.iv); tp.iv = setInterval(pump, 40); pump();
+      showTransport();
+      return tp.next;
+    }
+    function silence() { const g = tp.g; tp.g = null; if (!g) return; const t = PM.Audio.getCtx().currentTime; try { g.gain.setTargetAtTime(0, t, 0.015); } catch (e) { /* ignore */ } setTimeout(() => { try { g.disconnect(); } catch (e) { /* ignore */ } }, 300); }
+    function pauseTransport() {
+      if (!tp.on || tp.paused) return;
+      const now = PM.Audio.getCtx().currentTime;
+      tp.paused = true; clearInterval(tp.iv); silence();
+      // resume from the start of the bar that was interrupted (or the first bar if still counting in)
+      const cur = tp.marks.filter((m) => m.t0 <= now).pop();
+      const bars0 = tp.marks.filter((m) => m.abs >= 0);
+      const resume = cur && cur.abs >= 0 ? cur : bars0.find((m) => m.t0 > now);
+      if (resume) tp.bar = resume.abs;
+      const cut = resume ? Math.min(resume.t0, now) : now;
+      tp.marks = [];
+      if (take) { take.exp = take.exp.filter((e) => e.time < cut); take.played = take.played.filter((x) => x.time < cut - 0.05); take.paused = true; }
+      showTransport();
+      q('gvMsg').textContent = 'Paused — press Resume for a one-bar count-in and carry on from this bar.';
+    }
+    function resumeTransport() {
+      if (!tp.on || !tp.paused) return;
+      const ctx = PM.Audio.getCtx();
+      tp.paused = false; tp.g = out();
+      const t0 = ctx.currentTime + 0.25;
+      countIn(t0); tp.next = t0 + tp.plan.barDur;
+      if (take) take.paused = false;
+      tp.iv = setInterval(pump, 40); pump();
+      showTransport();
+      q('gvMsg').textContent = '';
+    }
+    function stopTransport() {
+      if (!tp.on) return;
+      tp.on = false; tp.paused = false; clearInterval(tp.iv); silence(); tp.marks = [];
+      showTransport();
+      q('gvMsg').textContent = '';
+    }
+    function showTransport() {
+      const on = tp.on;
+      q('gvPause').classList.toggle('hidden', !on);
+      q('gvStop').classList.toggle('hidden', !on);
+      q('gvPause').innerHTML = tp.paused ? `${icon('play')} Resume` : '⏸ Pause';
+      q('gvListen').classList.toggle('hidden', on);
+      q('gvGo').classList.toggle('hidden', on && tp.kind !== 'take');
+      q('gvGo').innerHTML = on && tp.kind === 'take' ? `${icon('check')} Finish & score` : `${icon('play')} Start take`;
+    }
+    q('gvPause').onclick = () => (tp.paused ? resumeTransport() : pauseTransport());
+    q('gvStop').onclick = () => (tp.kind === 'take' ? finish(true) : stopTransport());
+    q('gvLoop').onchange = (e) => { pref.loop = e.target.checked; App.saveSettings(); if (tp.on && tp.kind === 'listen') tp.loop = e.target.checked; };
+    const unStop = PM.Sound.onStop(() => { if (tp.on && tp.kind === 'listen') stopTransport(); });
+
     // playhead + live meter
-    let headStart = 0, headEnd = 0, headPlan = null, lastK = -2, lastBar = -2;
+    let lastK = -2, lastBar = -2;
     const tick = () => {
       raf = requestAnimationFrame(tick);
       const now = PM.Audio.getCtx().currentTime;
       let k = -1, b = -1;
-      if (headPlan && now >= headStart && now < headEnd) {
-        const rel = now - headStart; b = Math.floor(rel / headPlan.barDur);
-        const inBar = rel - b * headPlan.barDur, at = G().stepTime(pat, bpm).at;
+      const m = tp.on && !tp.paused && tp.plan ? tp.marks.filter((x) => x.t0 <= now).pop() : null;
+      if (m && m.bar >= 0 && now < m.t0 + tp.plan.barDur) {
+        b = m.bar;
+        const inBar = now - m.t0, at = G().stepTime(pat, bpm).at;
         for (let i = pat.seq.length - 1; i >= 0; i--) if (at(i) <= inBar) { k = i; break; }
       }
       if (k !== lastK) { lastK = k; $$('.gv-c.now', box).forEach((c) => c.classList.remove('now')); if (k >= 0) $$(`.gv-c[data-k="${k}"]`, box).forEach((c) => c.classList.add('now')); }
@@ -163,13 +253,10 @@
     }
 
     q('gvListen').onclick = () => {
-      if (running) return;
-      warmUp();
-      const ctx = PM.Audio.getCtx(), g = out(), t0 = ctx.currentTime + 0.25;
-      const plan = schedule(t0, Math.min(bars, 2), 1, true, g);
-      headPlan = plan; headStart = plan.start; headEnd = plan.start + plan.total;
-      q('gvMsg').textContent = 'One bar of clicks, then the pattern.';
-      timers.push(setTimeout(() => (q('gvMsg').textContent = ''), (headEnd - ctx.currentTime) * 1000));
+      if (tp.on) return;
+      PM.Sound.stopAll();
+      startTransport('listen', true, 1);
+      q('gvMsg').textContent = 'One bar of clicks, then the pattern.' + (q('gvLoop').checked ? ' It loops until you pause or stop.' : '');
     };
 
     // ---- feedback for a played attack
@@ -196,7 +283,7 @@
 
     // ---- tap input
     const tap = (t) => {
-      if (!take || mode !== 'tap') return;
+      if (!take || take.paused || mode !== 'tap') return;
       const dir = t === 'U' ? -1 : t === 'D' || t === 'X' ? 1 : 0;
       const ctx = PM.Audio.getCtx();
       const pl = { time: ctx.currentTime - (ctx.outputLatency || ctx.baseLatency || 0), dir: kind === 'strum' ? dir : 0 };
@@ -236,54 +323,53 @@
     }
 
     q('gvGo').onclick = async () => {
-      if (running) return finish(true);
+      if (running) return finish(false);
       const ctx = PM.Audio.getCtx();
+      if (tp.on) stopTransport();
       if (mode === 'mic') {
         try { App.live.instrument = inst; App.live.latency = App.settings.latency; await App.live.start(App.settings.deviceId); }
         catch (e) { q('gvMsg').innerHTML = `Microphone unavailable (${esc(e.message || e)}) — switch to <b>Tap</b> to play with keys or touch.`; return; }
         try { an = ctx.createAnalyser(); an.fftSize = 8192; an.smoothingTimeConstant = 0; App.live.gain.connect(an); } catch (e) { an = null; }
       }
-      warmUp();
       running = true;
-      q('gvGo').innerHTML = `${icon('stop')} Stop`;
       q('gvResult').innerHTML = '';
       drawNow();
-      const g = out(), t0 = ctx.currentTime + 0.3;
-      const plan = schedule(t0, bars, guide ? 0.55 : 0, guide, g);
-      const exp = plan.events.map((e) => Object.assign({}, e, { time: plan.start + e.time }));
-      const gaps = exp.slice(1).map((e, i) => e.time - exp[i].time).filter((x) => x > 0);
-      headPlan = plan; headStart = plan.start; headEnd = plan.start + plan.total;
-      take = { exp, played: [], frames: [], dbs: [], startedAt: performance.now(), win: Math.min(0.13, Math.max(0.05, (gaps.length ? Math.min(...gaps) : 0.3) * 0.55)) };
+      const probe = G().events(pat, { bpm, bars, chords: chords(), dynamics: dyn, lo: lo() }).events;
+      const gaps = probe.slice(1).map((e, i) => e.time - probe[i].time).filter((x) => x > 0);
+      take = { exp: [], played: [], frames: [], dbs: [], startedAt: performance.now(), win: Math.min(0.13, Math.max(0.05, (gaps.length ? Math.min(...gaps) : 0.3) * 0.55)) };
+      const start = startTransport('take', guide, guide ? 0.55 : 0);
       q('gvMsg').textContent = mode === 'mic' ? 'Count-in… then play. Overture listens to every ' + (kind === 'strum' ? 'strum' : 'note') + '.' : 'Count-in… then tap with the pattern.';
       if (mode === 'mic') {
         let pending = null;
         unsub = App.live.on((f) => {
-          if (!take) return;
-          if (f.time > plan.start - 0.2) take.frames.push({ time: f.time, active: f.active, db: f.db });
+          if (!take || take.paused) return;
+          if (f.time > start - 0.2) take.frames.push({ time: f.time, active: f.active, db: f.db });
           q('gvLevel').style.width = pctOf(f.active ? f.db : -90) + '%';
           if (pending && f.time - pending.time < 0.09) pending.db = Math.max(pending.db, f.db);
           else if (pending) { take.dbs.push(pending.db); if (kind !== 'strum' || !an) feedback(pending); pending = null; }
-          if (f.onset && f.time > plan.start - 0.15) {
+          if (f.onset && f.time > start - 0.15) {
             pending = { time: f.time, db: f.db, dir: 0 };
             take.played.push(pending);
             captureDirection(pending, f.time + (App.live.latency || 0));
           }
         });
       }
-      timers.push(setTimeout(() => finish(false), (headEnd - ctx.currentTime + 0.5) * 1000));
     };
 
     function finish(aborted) {
       if (!running) return;
       running = false;
+      stopTransport();
       timers.forEach(clearTimeout); timers = [];
       if (unsub) { unsub(); unsub = null; }
       if (an) { try { App.live.gain.disconnect(an); } catch (e) { /* ignore */ } an = null; }
       if (mode === 'mic') App.live.stop();
-      q('gvGo').innerHTML = `${icon('play')} Start take`;
-      headEnd = 0;
+      showTransport();
       const t = take; take = null;
       if (!t || (aborted && t.played.length < 3)) { q('gvMsg').textContent = 'Take stopped — start again when ready.'; return; }
+      const nowT = PM.Audio.getCtx().currentTime;
+      t.exp = t.exp.filter((e) => e.time < nowT - 0.05);
+      if (!t.exp.length) { q('gvMsg').textContent = 'Take stopped — start again when ready.'; return; }
       const s = G().score(t.exp, t.played, { dynamics: dyn, frames: mode === 'mic' ? t.frames : null, window: t.win });
       const res = {};
       t.exp.forEach((e, i) => (res[e.step] = s.perHit[i].result));
@@ -320,7 +406,7 @@
       opts.onDone && opts.onDone(s, stars);
     }
 
-    return { stop() { finish(true); cancelAnimationFrame(raf); if (keyOff) keyOff(); timers.forEach(clearTimeout); } };
+    return { stop() { finish(true); stopTransport(); unStop(); cancelAnimationFrame(raf); if (keyOff) keyOff(); timers.forEach(clearTimeout); } };
   }
 
   PM.GrooveAlong = { mount, gridHtml };

@@ -85,7 +85,7 @@
   function pluck(midi, o, kind) {
     const sr = o.sr, vel = o.vel, f = mtof(midi), r = rng(midi * 104729 + (kind === 'bass' ? 3 : kind === 'electric' ? 2 : 1));
     const spec = {
-      guitar: { t60: 3.2 * Math.pow(2, -(midi - 40) / 26), S: 0.36 - 0.12 * vel, beta: 0.14, max: 3.2, gain: 0.55 },
+      guitar: { t60: 4.2 * Math.pow(2, -(midi - 40) / 24), S: 0.25 - 0.1 * vel, beta: 0.18, max: 3.4, gain: 0.55 },
       electric: { t60: 4.5 * Math.pow(2, -(midi - 40) / 30), S: 0.28 - 0.1 * vel, beta: 0.11, max: 4, gain: 0.5 },
       bass: { t60: 5.5 * Math.pow(2, -(midi - 28) / 30), S: 0.45, beta: 0.22, max: 4, gain: 0.8 },
     }[kind];
@@ -96,7 +96,7 @@
     const g = Math.pow(10, -3 / (spec.t60 * f));
     // excitation: velocity-filtered noise, pluck-position comb, no DC
     const buf = new Float32Array(N), ex = new Float32Array(N);
-    const a = kind === 'bass' ? 0.12 + 0.2 * vel : 0.35 + 0.55 * vel;
+    const a = kind === 'bass' ? 0.12 + 0.2 * vel : kind === 'guitar' ? 0.5 + 0.45 * vel : 0.35 + 0.55 * vel;
     let lpv = 0;
     for (let i = 0; i < N; i++) { lpv += a * (r() - lpv); ex[i] = lpv; }
     const pd = Math.max(1, Math.round(spec.beta * N));
@@ -114,11 +114,13 @@
       out[i] = x;
     }
     if (kind === 'guitar') {
-      // wooden body: air & top resonances + a touch of pick click
-      const b1 = biquad('bandpass', 105, 5, sr), b2 = biquad('bandpass', 215, 4, sr), b3 = biquad('bandpass', 410, 3, sr), hs = biquad('peaking', 3000, 0.8, sr, 3);
-      for (let i = 0; i < len; i++) { const x = out[i]; out[i] = bq(hs, x) * 0.9 + bq(b1, x) * 0.3 + bq(b2, x) * 0.25 + bq(b3, x) * 0.2; }
-      const cl = Math.floor(0.003 * sr), hp = biquad('highpass', 2500, 0.7, sr);
-      for (let i = 0; i < cl; i++) out[i] += bq(hp, r()) * 0.12 * vel * (1 - i / cl);
+      // steel-string acoustic (spruce top, rosewood back): warm air resonance, a lean low-mid,
+      // clear presence and shimmering highs, plus the pick's brief brush on the string
+      const b1 = biquad('bandpass', 98, 5, sr), b2 = biquad('bandpass', 196, 4, sr), b3 = biquad('bandpass', 390, 3, sr);
+      const cut = biquad('peaking', 520, 1.1, sr, -1.5), pres = biquad('peaking', 2800, 0.9, sr, 4), air = biquad('peaking', 7500, 0.7, sr, 3.5);
+      for (let i = 0; i < len; i++) { const x = out[i]; out[i] = bq(air, bq(pres, bq(cut, x))) * 0.92 + bq(b1, x) * 0.40 + bq(b2, x) * 0.3 + bq(b3, x) * 0.1; }
+      const cl = Math.floor(0.004 * sr), hp = biquad('highpass', 3200, 0.7, sr);
+      for (let i = 0; i < cl; i++) out[i] += bq(hp, r()) * 0.16 * vel * (1 - i / cl);
     } else if (kind === 'electric') {
       const drive = 1.6 + vel, td = Math.tanh(drive), hp = biquad('highpass', 90, 0.7, sr), cab = biquad('lowpass', 4800, 0.9, sr), pk = biquad('peaking', 1600, 1, sr, 2.5);
       let peak = 0; for (let i = 0; i < len; i++) peak = Math.max(peak, Math.abs(out[i]));
@@ -247,7 +249,7 @@
   function metal(t, scale) { let s = 0; for (const m of METAL) s += Math.sin(TAU * m * scale * t) > 0 ? 1 : -1; return s / 6; }
   function drum(id, o) {
     const sr = o.sr, vel = o.vel, r = rng((id.length * 7919 + id.charCodeAt(0) * 31) >>> 0);
-    const L = { kick: 0.55, snare: 0.45, rim: 0.12, clap: 0.35, hhc: 0.12, hhp: 0.1, hho: 0.9, ride: 2.2, crash: 2.6, tomh: 0.6, tomm: 0.7, toml: 0.9, shaker: 0.16, tamb: 0.4, cowbell: 0.5, congah: 0.35, congal: 0.45, clave: 0.12, wood: 0.12, woodhi: 0.1 }[id] || 0.4;
+    const L = { kick: 0.55, snare: 0.45, rim: 0.12, chuck: 0.09, pick: 0.05, clap: 0.35, hhc: 0.12, hhp: 0.1, hho: 0.9, ride: 2.2, crash: 2.6, tomh: 0.6, tomm: 0.7, toml: 0.9, shaker: 0.16, tamb: 0.4, cowbell: 0.5, congah: 0.35, congal: 0.45, clave: 0.12, wood: 0.12, woodhi: 0.1 }[id] || 0.4;
     const len = Math.floor(L * sr), out = new Float32Array(len);
     const tone = (fn, dec, amp, sweep, sweepT) => { let ph = 0; for (let i = 0; i < len; i++) { const t = i / sr; ph += TAU * fn * (1 + (sweep || 0) * Math.exp(-t / (sweepT || 0.04))) / sr; out[i] += Math.sin(ph) * amp * Math.exp(-t / dec); } };
     const noise = (filters, dec, amp, att, delay) => { const fs = filters.map((x) => biquad(x[0], x[1], x[2] || 0.7, sr)); const d0 = Math.floor((delay || 0) * sr); for (let i = d0; i < len; i++) { const t = (i - d0) / sr; let x = r(); for (const c of fs) x = bq(c, x); out[i] += x * amp * Math.exp(-t / dec) * (att ? Math.min(1, t / att) : 1); } };
@@ -277,13 +279,16 @@
       case 'cowbell': { const bpf = biquad('bandpass', 760, 2.2, sr); for (let i = 0; i < len; i++) { const t = i / sr; const x = (Math.sin(TAU * 562 * t) > 0 ? 1 : -1) + (Math.sin(TAU * 845 * t) > 0 ? 1 : -1); out[i] = bq(bpf, x) * (0.7 * Math.exp(-t / 0.05) + 0.3 * Math.exp(-t / 0.28)); } break; }
       case 'congah': tone(330, 0.12, 0.8, 0.08, 0.02); tone(660, 0.04, 0.2); noise([['bandpass', 2500, 1.5]], 0.006, 0.6); break;
       case 'congal': tone(215, 0.17, 0.85, 0.08, 0.02); tone(430, 0.05, 0.2); noise([['bandpass', 1800, 1.5]], 0.006, 0.5); break;
+      // guitar: palm slap on muted strings / a pick brushing across the strings
+      case 'chuck': noise([['bandpass', 1100, 1.1], ['lowpass', 5000]], 0.018, 1.1); tone(120, 0.025, 0.45, 0.3, 0.01); noise([['highpass', 3500]], 0.006, 0.35); break;
+      case 'pick': noise([['highpass', 2800], ['peaking', 6500, 1, 6]], 0.009, 0.8); break;
       case 'clave': tone(2480, 0.025, 0.8); tone(4960, 0.012, 0.15); break;
       case 'wood': tone(1050, 0.03, 0.7); tone(1680, 0.02, 0.35); noise([['bandpass', 2500, 2]], 0.004, 0.4); break;
       case 'woodhi': tone(1500, 0.025, 0.7); tone(2350, 0.018, 0.35); noise([['bandpass', 3200, 2]], 0.004, 0.4); break;
       default: tone(200, 0.2, 0.6);
     }
     let peak = 0; for (let i = 0; i < len; i++) peak = Math.max(peak, Math.abs(out[i]));
-    const lvl = { kick: 0.95, snare: 0.75, rim: 0.5, clap: 0.6, hhc: 0.32, hhp: 0.22, hho: 0.3, ride: 0.28, crash: 0.42, tomh: 0.7, tomm: 0.72, toml: 0.78, shaker: 0.22, tamb: 0.3, cowbell: 0.35, congah: 0.55, congal: 0.6, clave: 0.45, wood: 0.5, woodhi: 0.5 }[id] || 0.5;
+    const lvl = { kick: 0.95, snare: 0.75, rim: 0.5, chuck: 0.5, pick: 0.14, clap: 0.6, hhc: 0.32, hhp: 0.22, hho: 0.3, ride: 0.28, crash: 0.42, tomh: 0.7, tomm: 0.72, toml: 0.78, shaker: 0.22, tamb: 0.3, cowbell: 0.35, congah: 0.55, congal: 0.6, clave: 0.45, wood: 0.5, woodhi: 0.5 }[id] || 0.5;
     const g = peak > 0 ? (lvl * (0.3 + 0.7 * vel)) / peak : 1;
     for (let i = 0; i < len; i++) out[i] *= g;
     const att = Math.floor(0.0006 * sr);

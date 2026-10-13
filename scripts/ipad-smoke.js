@@ -566,10 +566,14 @@ fs.mkdirSync(outDir, { recursive: true });
       await page.evaluate(() => document.querySelector('[data-a="groove"]').click());
       await page.waitForSelector('.gv-main .gv-c', { timeout: 5000 });
       const meters = await page.locator('#gvMeters button').count();
-      await page.evaluate(() => { document.querySelector('#gvMode [data-m="tap"]').click(); document.querySelector('.gv-pat[data-p="s-down-up"]').click(); const b = document.querySelector('#gvBars'); b.value = '2'; b.dispatchEvent(new Event('change')); document.querySelector('#gvGo').click(); });
+      await page.evaluate(() => { document.querySelector('#gvMode [data-m="tap"]').click(); document.querySelector('.gv-pat[data-p="s-down-up"]').click(); const b = document.querySelector('#gvBars'); b.value = '2'; b.dispatchEvent(new Event('change')); const t = document.querySelector('#gvBpm'); t.value = 120; t.dispatchEvent(new Event('input')); document.querySelector('#gvGo').click(); });
       await page.evaluate(async () => {
         const ctx = PM.Audio.getCtx(), t0 = ctx.currentTime;
-        while (ctx.currentTime < t0 + 3) { document.querySelector('.gv-pads [data-t="D"]').dispatchEvent(new PointerEvent('pointerdown', { bubbles: true })); await new Promise((r) => setTimeout(r, 400)); }
+        // count-in (2 s at 120 BPM), a pause and resume, then part of the take, then Finish & score
+        while (ctx.currentTime < t0 + 3.2) { document.querySelector('.gv-pads [data-t="D"]').dispatchEvent(new PointerEvent('pointerdown', { bubbles: true })); await new Promise((r) => setTimeout(r, 250)); }
+        document.querySelector('#gvPause').click(); await new Promise((r) => setTimeout(r, 400)); document.querySelector('#gvPause').click();
+        const t1 = ctx.currentTime;
+        while (ctx.currentTime < t1 + 4) { document.querySelector('.gv-pads [data-t="D"]').dispatchEvent(new PointerEvent('pointerdown', { bubbles: true })); await new Promise((r) => setTimeout(r, 250)); }
         document.querySelector('#gvGo').click();
       });
       await page.waitForSelector('.gv-coach', { timeout: 5000 });

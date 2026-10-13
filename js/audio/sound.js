@@ -29,7 +29,7 @@
     input.connect(dry).connect(comp);
     input.connect(conv).connect(wet).connect(comp);
     comp.connect(ctx.destination);
-    bus = { ctx, input, wet };
+    bus = { ctx, input, wet, transient: null };
     return bus;
   }
   /** A small hall: early reflections + a darkening noise tail. */
@@ -48,6 +48,23 @@
     }
     return b;
   }
+
+  /** Bus for one-off listening (Listen / Hear it buttons): stopAll() silences everything on it. */
+  function transient(ctx) {
+    const b = master(ctx || PM.Audio.getCtx());
+    if (!b.transient) { b.transient = b.ctx.createGain(); b.transient.connect(b.input); }
+    return b.transient;
+  }
+  /** Stop every sound played on the transient bus (including notes scheduled for later). */
+  function stopAll() {
+    if (!bus || !bus.transient) return;
+    const old = bus.transient, t = bus.ctx.currentTime;
+    bus.transient = null;
+    try { old.gain.cancelScheduledValues(t); old.gain.setValueAtTime(old.gain.value, t); old.gain.setTargetAtTime(0, t, 0.02); } catch (e) { /* ignore */ }
+    setTimeout(() => { try { old.disconnect(); } catch (e) { /* ignore */ } }, 400);
+    stopAll.listeners.forEach((f) => { try { f(); } catch (e) { /* ignore */ } });
+  }
+  stopAll.listeners = new Set();
 
   const voiceFor = (inst) => {
     if (!inst) return 'piano';
@@ -85,7 +102,7 @@
   /** Play one note. Returns a stop function (releases naturally). */
   function note(voice, midi, when, dur, opts) {
     opts = opts || {};
-    const ctx = PM.Audio.getCtx(), dest = opts.dest || master(ctx).input;
+    const ctx = PM.Audio.getCtx(), dest = opts.dest || transient(ctx);
     voice = V().voiceOf(voice);
     if (voice === 'drums') return drum(V().GM_DRUM[midi] || 'snare', when, opts.vel, dest);
     const vel = opts.vel == null ? 0.8 : opts.vel;
@@ -119,7 +136,7 @@
     const src = ctx.createBufferSource(), g = ctx.createGain();
     src.buffer = e.b;
     g.gain.value = (vel == null ? 0.8 : vel) / e.vel;
-    src.connect(g).connect(dest || master(ctx).input);
+    src.connect(g).connect(dest || transient(ctx));
     const t = Math.max(when || 0, ctx.currentTime + 0.002);
     src.start(t);
     return () => { try { src.stop(); } catch (err) { /* ignore */ } };
@@ -156,5 +173,5 @@
   /** Render (cache) a note without playing it. */
   function prepare(voice, midi, vel, vowel) { voice = V().voiceOf(voice); if (voice !== 'drums') bufferFor(PM.Audio.getCtx(), voice, midi, vel == null ? 0.75 : vel, vowel); }
 
-  PM.Sound = { note, drum, playNotes, warm, prepare, voiceFor, master: (ctx) => master(ctx || PM.Audio.getCtx()).input, setReverb: (v) => { if (bus) bus.wet.gain.value = v; } };
+  PM.Sound = { note, drum, playNotes, warm, prepare, voiceFor, stopAll, transient: (ctx) => transient(ctx), onStop: (f) => { stopAll.listeners.add(f); return () => stopAll.listeners.delete(f); }, master: (ctx) => master(ctx || PM.Audio.getCtx()).input, setReverb: (v) => { if (bus) bus.wet.gain.value = v; } };
 })(typeof self !== 'undefined' ? self : globalThis);

@@ -159,6 +159,11 @@ jobs:
           name: Overture ${{ steps.tag.outputs.name }}
           make_latest: true
           body: |
+            ## What's new in 3.1.1
+            * **Pause, resume, loop and stop:** the strumming / comping / groove trainer now has Pause and Resume (with a one-bar count-in, even in the middle of a take), Stop, and Loop listening; every other Listen / Hear button in the Practice Room and drum trainer turns into Stop while it plays.
+            * **A brighter, more natural acoustic guitar:** a new steel-string voice (clear presence, sparkling highs, longer ring) and realistic strums: pick attack, strings spread across the stereo field, upstrokes on the top strings, notes ringing to the next strum and a percussive chuck for muted strums.
+            * **White Overture logo and wordmark**, with the name set in Avenir Next.
+
             ## What's new in 3.1
             * **New look:** a new Overture logo and colour design — midnight navy, royal blue, gold and teal (the old violet look is still under Theme & fonts).
             * **Academy levels work properly:** choosing Beginner, Intermediate or Advanced now changes the lessons you see, your next lesson and every course and subject page, and **137 new lessons** give every subject and instrument course at least four lessons at each level (262 in all).

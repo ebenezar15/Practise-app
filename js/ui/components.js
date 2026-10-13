@@ -536,5 +536,29 @@
   }
   const rgba = (name, a) => `rgba(${col('rgb-' + name)}, ${a})`;
 
-  PM.UI = { icon, el, $, $$, esc, fmtTime, toast, modal, closeAllModals, bump, confetti, ringSvg, setupCanvas, PianoKeyboard, Fretboard, valvesHtml, setValves, chordDiagram, Timeline, ChromaRing, gaugeHtml, setGauge, strumLaneHtml, barChart, dynamicsChart, roundRect, col, rgba };
+  /**
+   * Make a Listen / Hear button a play–stop toggle. start() plays and returns its length in
+   * seconds (or an object with .duration). While playing the button reads "Stop"; any other
+   * toggle (or PM.Sound.stopAll) stops it.
+   */
+  function playToggle(btn, start, o) {
+    if (!btn) return;
+    o = o || {};
+    const idle = btn.innerHTML;
+    let timer = 0, playing = false, off = null;
+    const reset = () => { playing = false; clearTimeout(timer); btn.innerHTML = idle; btn.classList.remove('playing'); if (off) { off(); off = null; } if (o.onStop) o.onStop(); };
+    btn.onclick = () => {
+      if (playing) { PM.Sound.stopAll(); reset(); return; }
+      PM.Sound.stopAll();
+      let secs = start();
+      if (secs && typeof secs === 'object') secs = secs.duration;
+      if (!secs) return;
+      playing = true; btn.innerHTML = `${icon('stop')} ${o.stopLabel || 'Stop'}`; btn.classList.add('playing');
+      off = PM.Sound.onStop(reset);
+      timer = setTimeout(reset, secs * 1000 + 250);
+    };
+    return { stop() { if (playing) { PM.Sound.stopAll(); reset(); } } };
+  }
+
+  PM.UI = { icon, el, $, $$, esc, fmtTime, toast, modal, closeAllModals, bump, confetti, ringSvg, setupCanvas, PianoKeyboard, Fretboard, valvesHtml, setValves, chordDiagram, Timeline, ChromaRing, gaugeHtml, setGauge, strumLaneHtml, barChart, dynamicsChart, roundRect, col, rgba, playToggle };
 })(typeof self !== 'undefined' ? self : globalThis);

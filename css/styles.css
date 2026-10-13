@@ -89,9 +89,10 @@ p { margin: 0; line-height: 1.55; color: var(--ink-2); }
   background: radial-gradient(circle, rgba(var(--rgb-accent), 0.35), transparent 65%); pointer-events: none;
 }
 .brand { display: flex; align-items: center; gap: 12px; padding: 4px 8px 22px; }
-.brand-logo { width: 42px; height: 42px; border-radius: 12px; display: grid; place-items: center; box-shadow: 0 8px 24px -6px rgba(245, 165, 36, 0.55); flex: none; }
+.brand-logo { width: 42px; height: 42px; border-radius: 12px; display: grid; place-items: center; box-shadow: 0 8px 24px -8px rgba(255, 255, 255, 0.35); flex: none; }
 .brand-logo img { width: 42px; height: 42px; display: block; }
-.brand-name { font-weight: 800; font-size: 22px; letter-spacing: -0.02em; background: linear-gradient(90deg, #fff, #fde68a 55%, #fbbf24); -webkit-background-clip: text; background-clip: text; color: transparent; }
+/* the wordmark is always Avenir Next (Apple devices); Nunito Sans is the bundled open-licence stand-in elsewhere */
+.brand-name { font-family: "Avenir Next", "Avenir", "Nunito Sans", system-ui, sans-serif; font-weight: 600; font-size: 23px; letter-spacing: 0.01em; color: #fff; }
 .brand-sub { font-size: 10px; color: var(--v-300); letter-spacing: 0.08em; text-transform: uppercase; white-space: nowrap; }
 .nav { display: flex; flex-direction: column; gap: 4px; position: relative; }
 .nav a {

@@ -1,7 +1,7 @@
 {
   "name": "cadenza-desktop",
   "productName": "Overture",
-  "version": "3.1.0",
+  "version": "3.1.1",
   "description": "Overture \u2014 offline AI practice coach for piano, guitar, bass & trumpet, with a built-in classroom server",
   "main": "main.js",
   "author": "Overture",

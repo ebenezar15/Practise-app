@@ -87,15 +87,16 @@
     q('daGuide').onchange = (e) => (guide = e.target.checked);
     $$('#daMode button', box).forEach((b) => (b.onclick = () => { mode = b.dataset.m; App.settings.drumInput = mode; App.saveSettings(); $$('#daMode button', box).forEach((x) => x.classList.toggle('on', x === b)); q('daPads').classList.toggle('hidden', mode !== 'tap'); }));
 
-    const out = () => { const ctx = PM.Audio.getCtx(), g = ctx.createGain(); g.connect(PM.Sound.master()); return g; };
-    q('daListen').onclick = () => {
-      if (running) return;
+    const out = () => { const ctx = PM.Audio.getCtx(), g = ctx.createGain(); g.connect(PM.Sound.transient()); return g; };
+    UI.playToggle(q('daListen'), () => {
+      if (running) return 0;
       const ctx = PM.Audio.getCtx(), t0 = ctx.currentTime + 0.15, g = out();
       clickTrack(t0, p.bpb, bpm, p.bpb, g, 0.6);
       const start = t0 + p.bpb * 60 / bpm;
       headT0 = start; headEnd = playPattern(p, start, bpm, 1, g);
       q('daMsg').textContent = 'One bar count-in, then the pattern.';
-    };
+      return headEnd - ctx.currentTime;
+    }, { onStop: () => { headEnd = 0; q('daMsg').textContent = ''; } });
 
     // pads (tap mode) — also hear yourself
     const tap = (id) => {

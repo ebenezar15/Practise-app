@@ -19,7 +19,7 @@
   /** Schedule instrument notes at absolute AudioContext times. Returns a stop function. */
   function synth(notes, voice, gainVal) {
     const v = PM.Sound.voiceFor(voice), gain = (gainVal || 0.25) / 0.25, strum = v === 'guitar' || v === 'electric' ? 0.014 : 0;
-    const ctx = PM.Audio.getCtx(), out = ctx.createGain(); out.gain.value = gain; out.connect(PM.Sound.master());
+    const ctx = PM.Audio.getCtx(), out = ctx.createGain(); out.gain.value = gain; out.connect(PM.Sound.transient());
     const stops = [];
     for (const n of notes) {
       const dur = Math.max(0.08, n.dur * 0.92);
@@ -145,11 +145,13 @@
     drawLane(0);
 
     // ---------------- reference playback
-    q('paListen').onclick = () => {
+    UI.playToggle(q('paListen'), () => {
       const ctx = PM.Audio.getCtx(), beat = 60 / bpm, start = ctx.currentTime + 0.15;
       stopFns.forEach((f) => f()); stopFns = [];
-      stopFns.push(synth(refNotes(start, beat), I.synth));
-    };
+      const list = refNotes(start, beat);
+      stopFns.push(synth(list, I.synth));
+      return list.reduce((m, n) => Math.max(m, n.time + n.dur), 0) - ctx.currentTime;
+    });
     function refNotes(start, beat) {
       let b = 0;
       if (chordsKind) return ex.chords.map((c) => { const p = Theory.parseChordName(c) || { root: 0, type: '' }; let r = 48 + p.root; if (r > 55) r -= 12; const t = start + b * beat; b += ex.beatsPer || 4; return { midi: r, time: t, dur: (ex.beatsPer || 4) * beat, chord: Theory.TYPE_BY_ID[p.type].iv.map((iv) => r + 12 + iv) }; });

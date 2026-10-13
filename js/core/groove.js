@@ -210,7 +210,7 @@
         if (!isHit(p.kind, ch)) continue;
         let len = 1;
         while (i + len < n && p.seq[i + len] === '~') len++;
-        if (p.kind !== 'line') while (i + len < n && (p.seq[i + len] === '-' || p.seq[i + len] === '.') && p.kind !== 'strum') len++;
+        if (p.kind !== 'line') while (i + len < n && (p.seq[i + len] === '-' || p.seq[i + len] === '.')) len++; // let it ring to the next hit
         const accent = !!(p.acc && p.acc[i] === '>');
         out.push({
           time: b * barDur + at(i), bar: b, step: i, ch, chord, accent, level: lv,
