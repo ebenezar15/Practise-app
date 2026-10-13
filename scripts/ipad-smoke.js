@@ -133,7 +133,7 @@ fs.mkdirSync(outDir, { recursive: true });
       const t = await page.evaluate(() => PM.App.player.time);
       const now = await page.$('.cp-line.now');
       await shot('song-playing');
-      await tap('#bPlay');
+      await tap('#bpToggle');
       if (!(t > 0.5)) throw new Error('band did not play: ' + t + ' ' + JSON.stringify(await page.evaluate(() => { const e = PM.App.player.el; return { rs: e.readyState, paused: e.paused, err: e.error && e.error.code, dur: e.duration, ns: e.networkState }; })));
       if (!now) throw new Error('lyrics did not follow the band');
       return key + `, t=${t.toFixed(1)}s`;
@@ -374,6 +374,77 @@ fs.mkdirSync(outDir, { recursive: true });
       if (d.theme !== 'ocean' || d.mode !== 'dark' || d.font !== 'readable') throw new Error(JSON.stringify(d));
       if (kept !== 'ocean/dark') throw new Error('not kept after reload: ' + kept);
       return `${d.bg} · ${d.family.split(',')[0]}`;
+    });
+    await step('harmony: path quiz, hymn parts trainer and part switching', async () => {
+      await page.goto(base + '/#/learn');
+      await page.waitForSelector('[data-a="harmony"]', { timeout: 5000 });
+      await tap('[data-a="harmony"]');
+      await page.waitForSelector('#hRoll', { timeout: 5000 });
+      await tap('[data-l="what"]');
+      await tap('#hQ');
+      await page.waitForSelector('[data-a="yes"]', { timeout: 3000 });
+      await tap('[data-a="yes"]');
+      await page.waitForTimeout(800);
+      await tap('#hTrainer [data-piece="amazing-grace"]');
+      await tap('#hPart [data-p="T"]');
+      await tap('[data-mode="listen"]');
+      await page.waitForTimeout(6500);
+      const chord = await page.textContent('#hChord');
+      await shot('harmony-trainer');
+      await tap('#hStopT');
+      const parts = await page.locator('#hPart [data-p]').count();
+      if (parts !== 4) throw new Error('parts ' + parts);
+      if (!/[A-G]/.test(chord)) throw new Error('no chord shown: ' + chord);
+      return chord.replace(/\s+/g, ' ').trim().slice(0, 60);
+    });
+    await step('hymn page links to the parts trainer', async () => {
+      await page.goto(base + '/#/songs?id=pd-amazing-grace');
+      await page.waitForSelector('.h-cta', { timeout: 5000 });
+      await tap('.h-cta');
+      await page.waitForSelector('#hRoll', { timeout: 5000 });
+      const on = await page.textContent('.h-piece.on b');
+      if (!/Amazing/.test(on)) throw new Error('opened ' + on);
+    });
+    await step('back & forward: pages, scroll position, dialogs and the page bar', async () => {
+      await page.goto(base + '/#/home');
+      await page.waitForFunction(() => PM.App.currentView === 'home', null, { timeout: 5000 }).catch(async () => { throw new Error('home did not render: ' + await page.evaluate(() => location.hash + ' / ' + PM.App.currentView)); });
+      await closeModals();
+      await page.waitForTimeout(450); // let the page transition finish
+      const hit = await page.evaluate(() => { const a = document.querySelector('.nav a[data-id="songs"]'); const r = a.getBoundingClientRect(); const e = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2); const sb = document.querySelector('.sidebar'); const cs = getComputedStyle(sb); return { ok: a.contains(e), hit: e && (e.tagName + '.' + e.className), r: [Math.round(r.y), innerHeight], sb: [cs.position, cs.zIndex, cs.display, cs.transform, cs.opacity], app: getComputedStyle(document.querySelector('#app')).zoom, html: document.documentElement.dataset }; });
+      if (!hit.ok) throw new Error('nav covered: ' + JSON.stringify(hit));
+      await page.evaluate(() => document.querySelector('.nav a[data-id="songs"]').click()); // the bar is fixed: no scroll-into-view
+      await page.waitForSelector('.song-card', { timeout: 5000 });
+      await page.evaluate(() => window.scrollTo(0, 900));
+      await page.waitForTimeout(150);
+      const y0 = await page.evaluate(() => Math.round(window.scrollY));
+      await page.evaluate(() => document.querySelector('.song-card[href*="wl-way-maker"]').click()); // leave from exactly this scroll position
+      await page.waitForSelector('.tutorial', { timeout: 5000 });
+      const atTop = await page.evaluate(() => window.scrollY);
+      await page.evaluate(() => PM.Theme.openModal(PM.App));
+      await page.waitForSelector('.modal-back', { timeout: 2000 });
+      await page.goBack(); // browser / system Back while a dialog is open
+      await page.waitForSelector('.song-card', { timeout: 5000 });
+      await page.waitForTimeout(400);
+      const y1 = await page.evaluate(() => Math.round(window.scrollY));
+      const modals = await page.locator('.modal-back:not(.closing)').count();
+      const view1 = await page.evaluate(() => PM.App.currentView + location.hash);
+      await page.click('#pbFwd'); // the in-app forward button
+      await page.waitForSelector('.tutorial', { timeout: 5000 });
+      const view2 = await page.evaluate(() => location.hash);
+      await page.goBack(); await page.goBack();
+      await page.waitForTimeout(300);
+      const view3 = await page.evaluate(() => PM.App.currentView);
+      for (let i = 0; i < 4; i++) { await page.goForward(); await page.goBack(); }
+      await page.waitForTimeout(500);
+      const view4 = await page.evaluate(() => PM.App.currentView + ' ' + document.querySelectorAll('#view > *').length);
+      await shot('nav-back');
+      if (atTop > 5) throw new Error('new page did not start at the top: ' + atTop);
+      if (Math.abs(y1 - y0) > 40) throw new Error(`scroll not restored: ${y0} → ${y1}`);
+      if (modals) throw new Error('dialog left open after Back');
+      if (!/songs#\/songs$/.test(view1)) throw new Error('back went to ' + view1);
+      if (!/wl-way-maker/.test(view2)) throw new Error('forward went to ' + view2);
+      if (view3 !== 'home') throw new Error('back×2 went to ' + view3);
+      return `scroll ${y0}→${y1}, rapid back/forward ended on ${view4}`;
     });
     await step('ear trainer game', async () => {
       await page.goto(base + '/#/games');

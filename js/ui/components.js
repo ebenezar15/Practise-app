@@ -72,15 +72,33 @@
     setTimeout(() => { t.classList.add('out'); setTimeout(() => t.remove(), 320); }, opts.duration || 3200);
   }
 
+  const openModals = new Set();
   function modal(html, opts) {
     opts = opts || {};
     const back = el(`<div class="modal-back"><div class="modal" role="dialog" aria-modal="true">${html}</div></div>`);
-    const close = () => { back.remove(); opts.onClose && opts.onClose(); };
+    let closed = false;
+    const onKey = (e) => { if (e.key === 'Escape') close(); };
+    const close = () => {
+      if (closed) return;
+      closed = true;
+      openModals.delete(api);
+      document.removeEventListener('keydown', onKey);
+      back.classList.add('closing');
+      const done = () => { back.remove(); };
+      if (PM.Theme && PM.Theme.calm()) done(); else setTimeout(done, 160);
+      opts.onClose && opts.onClose();
+    };
+    const api = { el: back, close };
     back.addEventListener('click', (e) => { if (e.target === back || e.target.closest('[data-close]')) close(); });
-    document.addEventListener('keydown', function onKey(e) { if (e.key === 'Escape') { close(); document.removeEventListener('keydown', onKey); } });
+    document.addEventListener('keydown', onKey);
     document.body.appendChild(back);
-    return { el: back, close };
+    openModals.add(api);
+    return api;
   }
+  /** Close every open dialog (used when the page changes — e.g. the Back button). */
+  function closeAllModals() { [...openModals].forEach((m) => m.close()); document.querySelectorAll('.modal-back').forEach((m) => m.remove()); }
+  /** Replay a one-shot CSS animation class on an element. */
+  function bump(elm, cls) { if (!elm) return; cls = cls || 'pop-in'; elm.classList.remove(cls); void elm.offsetWidth; elm.classList.add(cls); }
 
   function confetti() {
     if (PM.Theme && PM.Theme.calm()) return; // calm mode: no flashing celebration
@@ -504,5 +522,5 @@
     }
   }
 
-  PM.UI = { icon, el, $, $$, esc, fmtTime, toast, modal, confetti, ringSvg, setupCanvas, PianoKeyboard, Fretboard, valvesHtml, setValves, chordDiagram, Timeline, ChromaRing, gaugeHtml, setGauge, strumLaneHtml, barChart, dynamicsChart, roundRect };
+  PM.UI = { icon, el, $, $$, esc, fmtTime, toast, modal, closeAllModals, bump, confetti, ringSvg, setupCanvas, PianoKeyboard, Fretboard, valvesHtml, setValves, chordDiagram, Timeline, ChromaRing, gaugeHtml, setGauge, strumLaneHtml, barChart, dynamicsChart, roundRect };
 })(typeof self !== 'undefined' ? self : globalThis);

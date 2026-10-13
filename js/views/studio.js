@@ -474,7 +474,9 @@
           }
           const expName = $('#expName', host);
           if (expName) {
+            const prevName = expName.textContent;
             expName.textContent = expected ? expected.name + (!I.chordal && !improv && partNote != null ? ' · ' + (I.transpose ? DSP.pcName(partNote + I.transpose) : DSP.pcName(partNote)) : '') : '—';
+            if (expName.textContent !== prevName && expected) UI.bump(expName.closest('.chord-box'), 'pulse-once');
             $('#expSub', host).textContent = expected ? `${expected.roman || ''} ${expected.fn ? '· ' + expected.fn : ''}` : player.playing ? 'no chord' : 'press play';
           }
           const nextEl = $('#nextName', host);

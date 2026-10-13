@@ -159,6 +159,11 @@ jobs:
           name: Cadenza ${{ steps.tag.outputs.name }}
           make_latest: true
           body: |
+            ## What's new in 2.5
+            * **Harmony & part singing:** a six-step harmony path (what harmony is, holding a drone, singing in thirds, rounds, finding your part) and a part trainer for hymns — Doxology, Amazing Grace, Joyful Joyful, Silent Night, When the Saints, plus rounds — in four parts. Listen, hear your part alone, or sing it while Cadenza sings the others, with a scrolling four-colour score, the chord and each voice's chord tone, words, your live pitch line and an in-tune score.
+            * **Smoother app:** page transitions that follow the direction you travel, cascading cards, tactile buttons and live chord-change pulses (all switched off by calm mode).
+            * **Back & forward without glitches:** an in-app back/forward bar (and edge swipes in the installed app), scroll position remembered for every page, dialogs closed cleanly when you go back, a floating band control on song pages, and a friendly recovery card if a page ever fails.
+
             ## What's new in 2.4
             * **Worship song library:** Bethel Music, Hillsong and contemporary worship chord charts (practice arrangements — check the official chart for exact chords and words), public-domain hymns with words, and Tamil worship practice patterns (Keharwa, Thappu 6/8, ஆராதனை ballad, prayer song, carol, Carnatic colour) with பல்லவி / சரணம் sections.
             * **Song tutorials for guitar & piano:** strumming and finger-picking patterns, capo options, the hardest chord change, voice-led piano voicings with inversions, left/right-hand patterns, a step-by-step checklist, dynamics roadmap, and a matching drum groove. "Make my copy" lets teachers edit any chart or add words and PDFs.

@@ -43,21 +43,69 @@
 
     go(id) { location.hash = '#/' + id; },
 
-    route() {
-      const id = (location.hash.replace(/^#\/?/, '').split('?')[0]) || 'home';
-      const view = this.views[id] || this.views.home;
-      if (this.cleanup) { try { this.cleanup(); } catch (e) { console.error(e); } }
-      this.cleanup = null;
-      const host = $('#view');
-      host.innerHTML = '';
-      $$('.nav a').forEach((a) => a.classList.toggle('active', a.dataset.id === view.id));
-      this.currentView = view.id;
-      document.title = view.title + ' · Cadenza';
-      this.cleanup = view.render(host, this) || null;
-      host.scrollTop = 0;
-      window.scrollTo(0, 0);
+    route(opts) {
+      opts = opts || {};
+      // re-entrancy guard: a navigation that happens while a page is rendering runs after it
+      if (this._routing) { this._again = opts; return; }
+      this._routing = true;
+      try {
+        const nav = this.nav;
+        // every history entry gets an index → direction (back / forward) and scroll memory
+        let st = history.state, dir = 'none';
+        if (!st || st.cadIdx == null) {
+          nav.max += 1;
+          try { sessionStorage.setItem('cadenza.navmax', String(nav.max)); } catch (e) { /* private mode */ }
+          st = Object.assign({}, st, { cadIdx: nav.max });
+          history.replaceState(st, '');
+          if (this.currentView) dir = 'fwd';
+          nav.fwdMax = st.cadIdx;
+        } else if (this.currentView && !opts.rerender) dir = st.cadIdx < nav.idx ? 'back' : st.cadIdx > nav.idx ? 'fwd' : 'none';
+        if (this.currentView && !opts.rerender) nav.scroll[nav.idx] = window.scrollY;
+        nav.idx = st.cadIdx;
+        nav.fwdMax = Math.max(nav.fwdMax || 0, nav.idx);
+
+        const id = (location.hash.replace(/^#\/?/, '').split('?')[0]) || 'home';
+        const view = this.views[id] || this.views.home;
+        // leave the old page cleanly: dialogs, speech, the page's own timers/audio
+        UI.closeAllModals();
+        try { root.speechSynthesis && root.speechSynthesis.cancel(); } catch (e) { /* no speech */ }
+        if (this.cleanup) { try { this.cleanup(); } catch (e) { console.error(e); } }
+        this.cleanup = null;
+        const host = $('#view');
+        host.innerHTML = '';
+        $$('.nav a').forEach((a) => a.classList.toggle('active', a.dataset.id === view.id || (view.hidden && a.dataset.id === view.parent)));
+        this.currentView = view.id;
+        document.title = view.title + ' · Cadenza';
+        try { this.cleanup = view.render(host, this) || null; }
+        catch (e) {
+          console.error(e);
+          host.innerHTML = `<div class="card empty" style="margin-top:20px"><h3>Something went wrong on this page</h3><p class="small">${esc(e.message || String(e))}</p><a class="btn primary" href="#/home">Go home</a></div>`;
+        }
+        // page transition (direction-aware), then restore the scroll position for Back / Forward
+        host.classList.remove('enter-fwd', 'enter-back', 'enter-none');
+        void host.offsetWidth;
+        host.classList.add(dir === 'back' ? 'enter-back' : dir === 'fwd' ? 'enter-fwd' : 'enter-none');
+        const y = dir === 'back' || (dir === 'fwd' && nav.scroll[nav.idx] != null && st.cadIdx < nav.fwdMax) ? nav.scroll[nav.idx] || 0 : 0;
+        const restore = () => window.scrollTo(0, y);
+        if (opts.keepScroll) { /* stay */ } else { restore(); if (y) { requestAnimationFrame(restore); setTimeout(restore, 180); } }
+        host.scrollTop = 0;
+        this.updatePageBar(view);
+      } finally {
+        this._routing = false;
+        if (this._again) { const o = this._again; this._again = null; this.route(o); }
+      }
     },
-    rerender() { this.route(); },
+    rerender() { this.route({ rerender: true }); },
+    nav: { idx: 0, max: (() => { try { return +sessionStorage.getItem('cadenza.navmax') || 0; } catch (e) { return 0; } })(), scroll: {}, fwdMax: 0 },
+    updatePageBar(view) {
+      const bar = $('#pagebar');
+      if (!bar) return;
+      const nav = this.nav;
+      const st = history.state || {};
+      $('#pbBack', bar).disabled = view.id === 'home' && !(st.cadIdx > 1);
+      $('#pbFwd', bar).disabled = !(nav.idx < nav.fwdMax);
+      $('#pbTitle', bar).textContent = view.title;
+    },
 
     /** Analyse & load a user file (audio or MIDI). onProgress(fraction, label) */
     async loadFile(file, onProgress, extra) {
@@ -282,12 +330,28 @@
           <a class="sync-pill" id="syncSide" href="#/classroom" style="text-decoration:none"><i></i><span>Classroom: not connected</span></a>
         </div>
       </aside>
+      <header class="pagebar" id="pagebar"><button class="pb-btn" id="pbBack" aria-label="Back" title="Back">‹</button><button class="pb-btn" id="pbFwd" aria-label="Forward" title="Forward">›</button><b id="pbTitle"></b></header>
       <main id="view"></main>`;
     $$('.inst-switch button').forEach((b) => {
       b.classList.toggle('on', b.dataset.inst === App.instrument);
       b.addEventListener('click', () => App.setInstrument(b.dataset.inst));
     });
     $('#themeBtn').onclick = () => PM.Theme.openModal(App);
+    $('#pbBack').onclick = () => { if ((history.state || {}).cadIdx > 1) history.back(); else App.go('home'); };
+    $('#pbFwd').onclick = () => history.forward();
+    // edge swipes in the installed app (browsers already have their own)
+    const standalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+    if (standalone) {
+      let sx = 0, sy = 0, edge = 0;
+      addEventListener('touchstart', (e) => { const t = e.touches[0]; sx = t.clientX; sy = t.clientY; edge = sx < 24 ? -1 : sx > innerWidth - 24 ? 1 : 0; }, { passive: true });
+      addEventListener('touchend', (e) => {
+        if (!edge) return;
+        const t = e.changedTouches[0], dx = t.clientX - sx, dy = Math.abs(t.clientY - sy);
+        if (dy < 70 && edge < 0 && dx > 80) $('#pbBack').click();
+        else if (dy < 70 && edge > 0 && dx < -80) history.forward();
+        edge = 0;
+      }, { passive: true });
+    }
     updateMiniLevel();
   }
 
@@ -308,6 +372,7 @@
     PM.Sync.start();
     pill();
     if (PM.Cadi) PM.Cadi.init(App);
+    if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
     addEventListener('hashchange', () => App.route());
     App.route();
     if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {

@@ -23,6 +23,7 @@
     return list;
   }
   const findSong = (id) => allSongs().find((s) => s.id === id) || null;
+  const HARMONY_OF = { 'pd-amazing-grace': 'amazing-grace', 'pd-doxology': 'doxology', 'pd-joyful-joyful': 'joyful', 'pd-silent-night': 'silent-night', 'pd-saints': 'saints' };
   const colOf = (s) => s.collection || (s.source === 'builtin' ? 'Hymns' : '');
   const langOf = (s) => s.language || (Songs.hasTamil(s.chart) ? 'Tamil' : 'English');
   const srcLabel = { builtin: 'Hymnal', class: 'Classroom', mine: 'My songs' };
@@ -114,6 +115,7 @@
           ${written ? '<p class="muted small" style="margin:0 0 10px">Chords are shown in <b>B♭ trumpet (written) pitch</b>.</p>' : ''}
           <div class="chart ${Songs.hasTamil(song.chart) ? 'tamil' : ''}" id="chart"></div>
           ${song.notes ? `<div class="notice" style="margin-top:16px">${icon('info')}<div style="white-space:pre-wrap">${esc(song.notes)}</div></div>` : ''}
+          ${HARMONY_OF[song.id] ? `<a class="btn h-cta" href="#/harmony?hymn=${HARMONY_OF[song.id]}">🎶 Sing the parts (soprano · alto · tenor · bass)</a>` : ''}
           <div id="tut" style="margin-top:18px"></div>
         </section>
         <aside class="song-side">
@@ -270,8 +272,15 @@
       $('#bStop', box).onclick = () => { App.player.pause(); App.player.time = 0; sync(); highlight(-1); };
       $('#bRate', box).onchange = (e) => { App.player.rate = +e.target.value; };
       $('#bStudio', box).onclick = () => { App.player.pause(); App.go('studio'); };
-      const offP = App.player.on(() => sync());
-      cleanup.push(offP);
+      // a floating pill keeps Play / Pause in reach while the chart scrolls
+      let pill = document.querySelector('.band-pill');
+      if (!pill) { pill = document.createElement('div'); pill.className = 'band-pill'; document.body.appendChild(pill); }
+      pill.innerHTML = `<button class="btn primary round sm" id="bpToggle" aria-label="Play or pause the band">${icon('play')}</button><span>${esc(song.title)}</span><button class="btn ghost sm icon" id="bpStop" aria-label="Stop">${icon('stop')}</button>`;
+      const pillSync = () => { const b = pill.querySelector('#bpToggle'); if (b) b.innerHTML = icon(App.player.playing ? 'pause' : 'play'); pill.classList.toggle('on', App.player.playing); };
+      pill.querySelector('#bpToggle').onclick = () => playBtn.click();
+      pill.querySelector('#bpStop').onclick = () => $('#bStop', box).click();
+      const offP = App.player.on(() => { sync(); pillSync(); });
+      cleanup.push(offP, () => pill.remove());
     };
     let lastLine = -2;
     const highlight = (li) => {
@@ -280,7 +289,12 @@
       $$('.cp-line.now', chartEl).forEach((x) => x.classList.remove('now'));
       if (li < 0) return;
       const el = $(`.cp-line[data-li="${li}"]`, chartEl);
-      if (el) { el.classList.add('now'); if ($('#bFollow', host) && $('#bFollow', host).checked) el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+      if (el) {
+        el.classList.add('now');
+        // follow gently: only scroll when the line leaves the middle of the screen
+        const r = el.getBoundingClientRect();
+        if ($('#bFollow', host) && $('#bFollow', host).checked && (r.top < innerHeight * 0.18 || r.bottom > innerHeight * 0.72)) el.scrollIntoView({ behavior: PM.Theme && PM.Theme.calm() ? 'auto' : 'smooth', block: 'center' });
+      }
     };
     const follow = setInterval(() => {
       if (!band.loaded || !App.player.playing || !App.track || App.track.songId !== song.id) return;

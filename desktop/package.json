@@ -1,7 +1,7 @@
 {
   "name": "cadenza-desktop",
   "productName": "Cadenza",
-  "version": "2.4.0",
+  "version": "2.5.0",
   "description": "Cadenza \u2014 offline AI practice coach for piano, guitar, bass & trumpet, with a built-in classroom server",
   "main": "main.js",
   "author": "Cadenza",

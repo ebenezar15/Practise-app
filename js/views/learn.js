@@ -17,6 +17,7 @@
     { id: 'chords', art: '🎼', name: 'Chord library & changes', desc: 'Every chord in a key with shapes for your instrument, plus the one-minute chord-change drill.', input: true },
     { id: 'intervals', art: '👂', name: 'Interval ear training', desc: 'Hear two notes and name the distance — with a famous song to remember each one.', input: false },
     { id: 'callresp', art: '🗣️', name: 'Call & response', desc: 'Echo short phrases by ear, then invent your own answers. Creative ear training.', input: true },
+    { id: 'harmony', art: '🎶', name: 'Harmony & part singing', desc: 'Sing soprano, alto, tenor or bass in famous hymns while Cadenza sings the other parts. Rounds, thirds and drones too.', input: true, link: 'harmony' },
     { id: 'builder', art: '🧱', name: 'Progression builder', desc: 'Build your own chord progression, hear it with a band and improvise over it. Save it as a song.', input: false },
   ];
   const ART = Object.fromEntries(ACTIVITIES.map((a) => [a.id, a]));
@@ -96,11 +97,12 @@
       const stage = $('#lStage', host);
       let current = null;
       const open = (id, params) => {
+        if (ART[id] && ART[id].link) { App.go(ART[id].link); return; }
         if (current && current.stop) current.stop();
         stage.classList.remove('hidden');
         $$('.learn-tile', host).forEach((t) => t.classList.toggle('on', t.dataset.a === id));
         current = ACT[id](stage, App, params || {}) || null;
-        setTimeout(() => stage.scrollIntoView({ behavior: 'smooth', block: 'start' }), 30);
+        setTimeout(() => { if (stage.isConnected) stage.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 30);
       };
       $$('[data-a]', host).forEach((b) => (b.onclick = () => open(b.dataset.a)));
       $$('#vType [data-v]', host).forEach((b) => (b.onclick = () => { App.settings.voiceType = b.dataset.v; App.saveSettings(); PM.Learn.setVoiceType(b.dataset.v); App.rerender(); }));
@@ -295,7 +297,7 @@
         $('#pNext', box).disabled = idx >= list.length - 1;
         $('#pPrev', box).onclick = () => draw(list[idx - 1].id);
         $('#pNext', box).onclick = () => draw(list[idx + 1].id);
-        setTimeout(() => box.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60);
+        setTimeout(() => { if (box && box.isConnected) box.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 60);
       }
     };
     draw(p.exercise || null);
