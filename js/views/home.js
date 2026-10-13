@@ -62,6 +62,11 @@
           </div>
         </div>
 
+        <div class="grid g2 daily-pair" style="margin-top:18px">
+          <div class="card daily-card tip"><div class="card-head"><h3>💡 Tip of the day</h3><button class="btn sm ghost" id="tipNext" aria-label="Another tip">Another →</button></div><p class="daily-text" id="tipText"></p><span class="small muted" id="tipAbout"></span></div>
+          <div class="card daily-card fact"><div class="card-head"><h3>🤓 Did you know?</h3><button class="btn sm ghost" id="factNext" aria-label="Another fact">Another →</button></div><p class="daily-text" id="factText"></p></div>
+        </div>
+
         <h2 style="margin:28px 0 14px">What would you like to do today?</h2>
         <div class="tiles">
           <a class="card tile feature" href="#/academy"><div class="tile-ic">${icon('library')}</div><h3>Learn — Academy</h3><p>${PM.Academy.LESSONS.length} lessons: fundamentals, reading, scales, chords, ear, songwriting, worship band and more.</p></a>
@@ -83,11 +88,16 @@
               <span class="stars">${PM.Shared.stars(r.stars || 0)}</span></div>`).join('')}</div>` : '<div class="empty">No sessions yet — your first one earns the <b>First Note</b> badge 🎵</div>'}
           </div>
           <div class="card">
-            <div class="card-head"><h3>${icon('sparkle')} Coach's tip of the day</h3></div>
-            <p style="font-size:15px">${esc(PM.Instruments.get(inst).tips[new Date().getDate() % PM.Instruments.get(inst).tips.length])}</p>
-            <div class="notice" style="margin-top:16px">${icon('headphones')}<div><b>Best results:</b> wear headphones while playing along so the coach hears only <i>you</i>, not the backing track. Using an audio interface? Pick it as the input in the Studio.</div></div>
+            <div class="card-head"><h3>${icon('headphones')} Getting the best results</h3></div>
+            <div class="notice">${icon('headphones')}<div><b>Best results:</b> wear headphones while playing along so the coach hears only <i>you</i>, not the backing track. Using an audio interface? Pick it as the input in the Studio.</div></div>
           </div>
         </div>`;
+      let tipOff = 0, factOff = 0;
+      const showTip = () => { const t = PM.Daily.tip(inst, tipOff); host.querySelector('#tipText').textContent = t.text; host.querySelector('#tipAbout').textContent = t.about === 'Practice' ? 'Practice habit' : 'For ' + t.about; };
+      const showFact = () => { host.querySelector('#factText').textContent = PM.Daily.fact(factOff); };
+      showTip(); showFact();
+      host.querySelector('#tipNext').onclick = () => { tipOff++; showTip(); UI.bump(host.querySelector('#tipText'), 'pop-in'); };
+      host.querySelector('#factNext').onclick = () => { factOff++; showFact(); UI.bump(host.querySelector('#factText'), 'pop-in'); };
       PM.Install.render(host.querySelector('#installHint'));
     },
   });

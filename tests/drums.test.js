@@ -51,3 +51,16 @@ test('instrument voices render in tune, without clipping or NaNs', () => {
   const L = V.looped('voice', 60, { sr, vel: 0.7 });
   assert.ok(L.loopEnd > L.loopStart && L.loopStart > 0);
 });
+
+test('tip of the day and did-you-know facts change daily and cover the whole list', () => {
+  const Dly = PM.Daily;
+  assert.ok(Dly.TIPS.length >= 30 && Dly.FACTS.length >= 50);
+  const day = (n) => new Date(2026, 0, 1 + n, 12);
+  assert.strictEqual(Dly.fact(0, day(3)), Dly.fact(0, day(3)), 'same all day');
+  assert.notStrictEqual(Dly.fact(0, day(3)), Dly.fact(0, day(4)));
+  const seen = new Set(); for (let i = 0; i < Dly.FACTS.length; i++) seen.add(Dly.fact(i, day(0)));
+  assert.strictEqual(seen.size, Dly.FACTS.length, 'every fact appears before any repeats');
+  const tips = new Set(); for (let i = 0; i < 40; i++) tips.add(Dly.tip('guitar', i, day(0)).text);
+  assert.ok(tips.size >= 25, 'tips ' + tips.size);
+  assert.ok([0, 1].some((o) => Dly.tip('drums', o, day(0)).about === 'Drums'), 'instrument tips are mixed in');
+});
