@@ -80,6 +80,32 @@
         'Rest as much as you play — a tired embouchure learns bad habits.',
       ],
     },
+    voice: {
+      id: 'voice', label: 'Voice (singing)', short: 'Voice', emoji: '🎤', icon: 'mic', family: 'voice',
+      chordal: false, mono: true, range: [40, 84], viewRange: [40, 84], transpose: 0, synth: 'voice', part: 'vocals', minFreq: 70, maxFreq: 1100,
+      tips: [
+        'Breathe low: let your belly expand on the in-breath and keep your shoulders still.',
+        'Support the sound with a steady stream of air — imagine slowly blowing out a candle without making it flicker.',
+        'Relax your jaw, tongue and neck. Tension is the enemy of a free, in-tune voice.',
+        'Hear the note in your head before you sing it — pitch starts in the ear.',
+        'Open vowels ("ah", "oh") carry pitch best; shape consonants quickly and return to the vowel.',
+        'Warm up with lip trills and gentle sirens before singing songs.',
+        'Sing high notes with less push, not more — let the voice get lighter as it rises.',
+        'Drink water through the day and rest your voice if it feels tired or scratchy.',
+        'Stand tall: feet hip-width apart, knees soft, chest open, chin level.',
+        'Record yourself and listen back — the voice sounds different inside your head.',
+      ],
+    },
+  };
+
+  /** Comfortable ranges (MIDI) for each voice type. */
+  const VOICE_TYPES = {
+    soprano: { label: 'Soprano', range: [60, 84], start: 60 },
+    mezzo: { label: 'Mezzo-soprano', range: [57, 81], start: 57 },
+    alto: { label: 'Alto', range: [53, 77], start: 55 },
+    tenor: { label: 'Tenor', range: [48, 72], start: 50 },
+    baritone: { label: 'Baritone', range: [43, 67], start: 45 },
+    bass: { label: 'Bass', range: [40, 64], start: 43 },
   };
 
   const list = () => Object.values(INSTRUMENTS);
@@ -110,6 +136,6 @@
     return best;
   }
 
-  PM.Instruments = { INSTRUMENTS, list, get, isGuitarLike, trumpetInfo, fretPosition, TRUMPET_FINGERING };
+  PM.Instruments = { INSTRUMENTS, VOICE_TYPES, list, get, isGuitarLike, trumpetInfo, fretPosition, TRUMPET_FINGERING };
   if (typeof module !== 'undefined' && module.exports) module.exports = PM.Instruments;
 })(typeof self !== 'undefined' ? self : globalThis);

@@ -231,7 +231,9 @@
         bass: { easy: [28, 40], medium: [28, 48], hard: [28, 55] },
         trumpet: { easy: [58, 70], medium: [55, 74], hard: [52, 79] },
       };
-      const range = RANGES[inst][diff];
+      const VR = PM.Learn.RANGE.voice;
+      RANGES.voice = { easy: [VR.low + 3, VR.low + 12], medium: [VR.low, VR.high - 3], hard: [VR.low, VR.high] };
+      const range = (RANGES[inst] || RANGES.piano)[diff];
       const natural = (m) => ![1, 3, 6, 8, 10].includes((m + tr) % 12);
       const pool = [];
       for (let m = range[0]; m <= range[1]; m++) if (diff === 'hard' || natural(m)) pool.push(m);
@@ -275,7 +277,7 @@
     async function longTones() {
       if (!(await openInput())) return;
       const I = PM.Instruments.get(inst), tr = I.transpose || 0;
-      const pool = { trumpet: [58, 60, 62, 65, 67, 70], bass: [28, 33, 36, 38, 43], guitar: [52, 55, 57, 59, 64], electric: [52, 55, 57, 59, 64] }[inst] || [60, 64, 67];
+      const pool = { trumpet: [58, 60, 62, 65, 67, 70], bass: [28, 33, 36, 38, 43], guitar: [52, 55, 57, 59, 64], electric: [52, 55, 57, 59, 64], voice: [0, 2, 4, 5, 7].map((d) => PM.Learn.RANGE.voice.low + 3 + d) }[inst] || [60, 64, 67];
       const tol = diff === 'easy' ? 15 : diff === 'medium' ? 10 : 6;
       let target = null, hold = [], startHold = 0, done = false, since = 0;
       const next = () => {

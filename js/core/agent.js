@@ -37,6 +37,16 @@
   const SCALE_WORDS = [['harmonic minor', 'harmonic'], ['melodic minor', 'melodic'], ['natural minor', 'minor'], ['minor pentatonic', 'minpent'], ['major pentatonic', 'majpent'], ['pentatonic', 'majpent'], ['blues', 'blues'], ['dorian', 'dorian'], ['mixolydian', 'mixolydian'], ['chromatic', 'chromatic'], ['minor', 'minor'], ['major', 'major']];
 
   const TOPICS = [
+    // singing topics first — they win whenever the question is about the voice
+    { voice: true, keys: /\b(breath support|breath|breathe|breathing|diaphragm|run out of air|out of breath)\b/i, all: ['Breathe low: hand on your belly, breathe in through the nose for 4 and feel the belly and lower ribs expand — shoulders stay still.', 'Sing on the "hiss" first: breathe in, then hiss "sss" steadily for 20 seconds. That steady, slow release is exactly the support a long phrase needs.', 'Don\'t take a huge gasp — take a comfortable, low breath and *keep the ribs open* while you sing.'] },
+    { voice: true, keys: /\b(head voice|chest voice|mix|mixed voice|falsetto|break|crack|cracking|passaggio|register)\b/i, all: ['The "break" is where chest voice hands over to head voice. Sirens on "oo" and "goo" (Exercise path → Registers) teach the two to blend.', 'Approach high notes lighter, not louder: let the voice thin out as it rises instead of dragging chest voice up.', 'Bratty "nay" on 1-3-5-3-1 is the quickest route to a mixed voice — it keeps the sound forward and the larynx easy.'] },
+    { voice: true, keys: /\b(high notes?|range|low notes?|reach|belt|belting)\b/i, all: ['Range grows slowly: warm up first, sing high notes with less volume, and stop before it strains.', 'For high notes keep the jaw relaxed and the mouth a bit taller ("ah" toward "aw"). Never lift the chin.', 'Belting is a bright, speech-like sound with strong breath support — learn it with a teacher and keep sessions short.'] },
+    { voice: true, keys: /\b(pitch|in tune|out of tune|flat|sharp|tone deaf|off key)\b/i, all: ['Hear the note in your head *before* you sing it. Use Learn → Ear training and the sing-along pitch trail to see where you drift.', 'Singing flat usually means low energy: keep the breath moving and think "up" on every note.', 'Singing sharp usually means tension: relax the jaw and neck and sing a little softer.'] },
+    { voice: true, keys: /\b(vibrato|wobble)\b/i, all: ['Vibrato appears on its own when the voice is free: sing long tones relaxed, never force a wobble.', 'Practise straight tone first, then let the note "bloom" into vibrato at the end of a long note.'] },
+    { voice: true, keys: /\b(hoarse|sore throat|throat|vocal health|tired voice|strain|straining|lose my voice|lost my voice|scratchy)\b/i, all: ['If your voice is hoarse or hurts, rest it — no whispering either. See a doctor if it lasts more than two weeks.', 'Hydrate all day (water, steam), avoid shouting, and always warm up for 5–10 minutes before singing.', 'Strain means stop: lower the key (Songs → Transpose) or sing that passage an octave down for now.'] },
+    { voice: true, keys: /\b(warm ?up|warmup|exercise)\b/i, all: ['A 10-minute vocal warm-up: 1 min breathing, 2 min lip trills, 2 min humming 5-4-3-2-1, 2 min sirens on "oo", 3 min 5-note scales on "ma" rising by semitones.', 'Start every session with Exercise path Level 1 (breath, lip trills, humming) — then sing your song.'] },
+    { voice: true, keys: /\b(diction|lyrics|words|consonant|vowel)\b/i, all: ['Sustain the vowel and make consonants quick and crisp at the end of the note.', 'Speak the lyrics in rhythm first, then sing them.', 'Keep vowels pure and tall: "ee" with a bit of "ih", "ah" with a bit of "aw".'] },
+    { voice: true, keys: /\b(harmony|harmoni[sz]e|sing a third|alto line|tenor line)\b/i, all: ['Start harmony a 3rd above the melody — the Exercise path has harmony lines you can sing against the band.', 'Learn the harmony alone first, then sing it while the melody plays quietly in the Studio mixer.'] },
     { keys: /\b(timing|rhythm|in time|rush|rushing|drag|dragging|steady|pulse|tempo)\b/i, all: ['Practise with the metronome on beats 2 and 4 only — it forces you to feel the pulse yourself.', 'Record a take and listen back: your ears catch rushing better while you are not playing.', 'Count out loud while you play. Saying "1 & 2 &" ties your hands to the beat.', 'Use the Gap trainer in the Metronome: every other bar is silent and you keep the time.', 'Slow down until you can play it perfectly in time, then add 4 BPM at a time.'] },
     { keys: /\b(speed|faster|fast|quick|velocity)\b/i, all: ['Speed comes from accuracy: play it perfectly slow, then raise the tempo 4–5 BPM at a time.', 'Use the speed trainer in the Metronome (it raises the BPM automatically every few bars).', 'Stay relaxed — tension is the biggest speed killer. Check your shoulders and jaw.', 'Practise in short bursts: play 4 notes fast, stop, relax, then the next 4.'] },
     { keys: /\b(mistake|wrong note|accuracy|accurate|clean|slip)\b/i, all: ['Find the exact spot where it goes wrong and loop only those 2–4 notes.', 'Say each note name before you play it — it slows the brain down enough to be accurate.', 'Practise the difficult move 5 times correctly in a row before playing the whole passage again.'] },
@@ -94,6 +104,7 @@
       if (sh) s += ` Guitar shape (low E → high e): **${sh.frets.map((f) => (f < 0 ? 'x' : f)).join(' ')}**${sh.barre ? ` (barre at fret ${sh.barre})` : ''}.`;
     } else if (inst === 'piano') s += ` On piano: play ${notes.join(', ')} together with fingers ${t.iv.length === 3 ? '1-3-5' : '1-2-3-5'} (right hand), and ${notes[0]} in the left hand.`;
     else if (inst === 'bass') s += ` On bass, play the root **${notes[0]}** on beat 1 and use ${notes.slice(1).join(' / ')} to walk or decorate.`;
+    else if (inst === 'voice') s += ` To sing it, arpeggiate it: ${notes.join(' – ')} – ${notes[0]} (do-mi-so-do), then hold the 3rd — that note decides major or minor.`;
     else if (inst === 'trumpet') { const w = t.iv.map((iv) => SHARPS[mod12(c.root + iv + 2)]); s += ` For B♭ trumpet the written arpeggio is ${w.join(' – ')} (concert ${notes.join('–')}).`; }
     return s;
   }
@@ -106,6 +117,7 @@
     const names = sc.iv.map((iv) => (flats ? FLATS : SHARPS)[mod12(pc + iv)]);
     const steps = sc.iv.slice(1).concat(12).map((v, i) => v - sc.iv[i]).map((d) => (d === 1 ? 'H' : d === 2 ? 'W' : d === 3 ? 'W+H' : d + ' st')).join(' ');
     let s = `**${(flats ? FLATS : SHARPS)[pc]} ${sc.name}**: ${names.join(' – ')} (steps: ${steps}).`;
+    if (inst === 'voice') s += ' Sing it on solfege (do-re-mi…) or "la", slowly against a drone, and check each note on the pitch trail.';
     if (inst === 'trumpet') s += ` Written for B♭ trumpet: ${sc.iv.map((iv) => SHARPS[mod12(pc + iv + 2)]).join(' – ')}.`;
     s += ' Practise it in **Learn → Scales**.';
     return s;
@@ -117,7 +129,7 @@
     ctx = ctx || {};
     const q = String(question || '').trim();
     const ql = q.toLowerCase();
-    const named = /\b(piano|keyboard|keys)\b/i.test(q) ? 'piano' : /\bbass\b/i.test(q) ? 'bass' : /\btrumpet\b/i.test(q) ? 'trumpet' : /\belectric\b/i.test(q) ? 'electric' : /\bguitar\b/i.test(q) ? 'guitar' : null;
+    const named = /\b(sing|singing|singer|vocal|vocals|voice)\b/i.test(q) ? 'voice' : /\b(piano|keyboard|keys)\b/i.test(q) ? 'piano' : /\bbass\b/i.test(q) ? 'bass' : /\btrumpet\b/i.test(q) ? 'trumpet' : /\belectric\b/i.test(q) ? 'electric' : /\bguitar\b/i.test(q) ? 'guitar' : null;
     const inst = named || ctx.instrument || 'guitar';
     const I = PM.Instruments.get(inst);
     if (!q) return { text: 'Ask me anything about practising, chords, scales, rhythm or how to use Cadenza!' };
@@ -157,7 +169,7 @@
     // app help
     for (const h of APP_HELP) if (h.keys.test(q) && /\b(how|where|what|can|use|open|find)\b/i.test(q)) return { text: h.text };
     // practice topics
-    const topic = TOPICS.find((t) => t.keys.test(q));
+    const topic = TOPICS.find((t) => (!t.voice || inst === 'voice') && t.keys.test(q));
     if (topic) return { text: pick(topic.all) + (I.tips ? '' : '') };
     if (/\btip\b|\badvice\b|\bhelp\b/i.test(q)) return { text: `${pick(I.tips)}` };
     return { text: `I'm not sure about that one yet. I can explain chords ("How do I play F#m?"), scales ("notes in Bb major"), intervals ("what is a perfect fifth?"), time signatures ("what is 6/8?"), tempo words ("what does andante mean?"), give practice advice (timing, speed, tone, memorising…) or plan your practice ("What should I practise?").` };
@@ -233,6 +245,14 @@
       else lines.push('About the same as your last take — consistency is good!');
     }
     if (s.slips && s.slips.length) lines.push(`Watch: ${s.slips.slice(0, 3).join(', ')}.`);
+    if (s.pitch) {
+      const p = s.pitch;
+      if (p.inTune >= 0.8) lines.push(`Pitch: **${pct(p.inTune)} in tune** (±${p.avgCents}¢) — lovely, steady singing. 🎤`);
+      else lines.push(`Pitch: **${pct(p.inTune)} in tune**, about ±${p.avgCents}¢ off on average.`);
+      if (p.bias <= -12) lines.push('You tend to sit **flat** — keep the breath moving and think "up" into each note; don\'t let energy drop at the end of phrases.');
+      else if (p.bias >= 12) lines.push('You tend to sit **sharp** — relax the jaw and neck and sing a touch softer; don\'t push.');
+      else if (p.inTune < 0.7) lines.push('Your average is centred, so the issue is *steadiness*: hold each note on a long "ah" with the guide melody on, and watch the line stay green.');
+    }
     if (s.accuracy >= 0.9 && s.inTime >= 0.85 && ex) lines.push(`Ready for more: try **${Math.round(s.bpm * 1.06)} BPM**, or move on to the next exercise.`);
     else if (s.accuracy < 0.6 && s.bpm > 50) lines.push(`Try **${Math.max(40, Math.round(s.bpm * 0.85))} BPM** and use "Wait for me" mode for the hard spots.`);
     lines.push('Play the take back and listen — your ears will hear things your hands missed.');

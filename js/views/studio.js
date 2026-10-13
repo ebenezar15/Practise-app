@@ -19,7 +19,7 @@
       const engineName = App.settings.source === 'midi' ? 'midi' : 'mic';
       const mode = App.settings.studioMode === 'improv' ? 'improv' : 'part';
       const improv = mode === 'improv';
-      const visual = I.family === 'keys' ? 'keys' : I.family === 'brass' ? 'brass' : 'fret';
+      const visual = I.family === 'keys' ? 'keys' : I.family === 'brass' ? 'brass' : I.family === 'voice' ? 'voice' : 'fret';
 
       host.innerHTML = `
         <div class="page-head">
@@ -101,10 +101,12 @@
         </div>
 
         <section class="card instrument-panel">
-          <div class="card-head"><h3>${icon(I.icon)} ${visual === 'keys' ? 'Keyboard' : visual === 'brass' ? 'Valves' : 'Fretboard'}</h3>
-            <div class="legend">${improv ? '<span><i style="background:#a855f7"></i>Chord tones</span><span><i style="background:#ddd6fe;border:1px solid #c4b5fd"></i>Scale tones</span><span><i style="background:#f0abfc"></i>You</span>' : visual === 'fret' ? (I.chordal ? '<span><i style="background:#a855f7"></i>Chord shape</span><span><i style="background:#10b981"></i>Heard</span><span><i style="background:#f43f5e"></i>Missing</span>' : '<span><i style="background:#10b981"></i>Target note</span><span><i style="background:#a855f7"></i>Chord tones</span><span><i style="background:#f0abfc"></i>You</span>') : visual === 'keys' ? '<span><i style="background:#ede9fe;border:1px solid #c4b5fd"></i>Expected</span><span><i style="background:#d946ef"></i>You played</span><span><i style="background:#10b981"></i>Correct</span>' : '<span>Written pitch for B♭ trumpet</span>'}</div></div>
+          <div class="card-head"><h3>${icon(I.icon)} ${visual === 'keys' ? 'Keyboard' : visual === 'brass' ? 'Valves' : visual === 'voice' ? 'Pitch trail' : 'Fretboard'}</h3>
+            <div class="legend">${improv ? '<span><i style="background:#a855f7"></i>Chord tones</span><span><i style="background:#ddd6fe;border:1px solid #c4b5fd"></i>Scale tones</span><span><i style="background:#f0abfc"></i>You</span>' : visual === 'fret' ? (I.chordal ? '<span><i style="background:#a855f7"></i>Chord shape</span><span><i style="background:#10b981"></i>Heard</span><span><i style="background:#f43f5e"></i>Missing</span>' : '<span><i style="background:#10b981"></i>Target note</span><span><i style="background:#a855f7"></i>Chord tones</span><span><i style="background:#f0abfc"></i>You</span>') : visual === 'voice' ? '<span><i style="background:#ddd6fe"></i>Melody to sing</span><span><i style="background:#10b981"></i>In tune</span><span><i style="background:#f59e0b"></i>Close</span><span><i style="background:#f43f5e"></i>Off</span>' : visual === 'keys' ? '<span><i style="background:#ede9fe;border:1px solid #c4b5fd"></i>Expected</span><span><i style="background:#d946ef"></i>You played</span><span><i style="background:#10b981"></i>Correct</span>' : '<span>Written pitch for B♭ trumpet</span>'}</div></div>
           ${visual === 'fret' ? `<div class="inst-row"><div class="fret-wrap" id="fret"></div>${I.chordal ? '<div id="diagram" style="min-width:110px;display:grid;place-items:center"></div>' : ''}</div>
             ${a && a.strum && I.strum && !improv ? `<div class="card-head" style="margin:16px 0 6px"><h3>${icon('hand')} Strumming pattern <span class="muted small" style="font-weight:600">· ${esc(a.strum.gridLabel)} · ${Math.round(a.strum.consistency * 100)}% of bars</span></h3></div><div id="strum">${UI.strumLaneHtml(a.strum)}</div>` : ''}` :
+            visual === 'voice' ? `<canvas class="pitch-trail" id="trail"></canvas>
+            <div class="row small" style="margin-top:10px;gap:14px;flex-wrap:wrap"><span class="muted" id="trailSrc">${a ? (a.part && a.part.notes && a.part.notes.length ? 'Target: the vocal part' : a.melody && a.melody.length ? 'Target: the melody Cadenza heard in the song' : 'No melody found — free singing') : 'Free singing — load a song or use the Exercise path for a melody to follow'}</span><span>In tune <b id="trailAcc">—</b></span>${a ? '<button class="btn sm ghost" id="karaoke">🎤 Sing-along mix (mute vocals)</button>' : ''}</div>` :
             visual === 'keys' ? '<div class="keyboard-wrap" id="kbd"></div>' : `<div id="valves">${UI.valvesHtml()}</div>`}
         </section>`;
 
@@ -114,6 +116,7 @@
       // ---------- Track card ----------
       const trackCard = $('#trackCard', host);
       let timeline = null, cleanupTrack = null;
+      const secs = a ? Analyzer.sections(a) : [];
       if (!a) {
         trackCard.innerHTML = `<div class="grid g2"><div id="up"></div><div id="backingBox"></div></div>`;
         PM.Shared.uploader($('#up', trackCard), () => App.rerender());
@@ -123,10 +126,16 @@
           <div class="track-head">
             <div class="track-art">${icon(track.kind === 'midi' ? 'midi' : 'music')}</div>
             <div class="track-title"><h2>${esc(track.name)}</h2><div class="chips">${PM.Shared.trackChips(a, inst)}</div></div>
+            <select id="trackSw" class="track-switch" title="Switch to another saved track" aria-label="Switch track"><option value="">Switch track…</option></select>
             <a class="btn ghost sm" href="#/insights">${icon('insights')} Insights</a>
-            <button class="btn ghost sm" id="changeTrack">${icon('upload')} Change</button>
+            <button class="btn ghost sm" id="changeTrack">${icon('upload')} New</button>
           </div>
           <div class="timeline-wrap"><canvas class="timeline" id="tl"></canvas></div>
+          <div class="nav-row">
+            <button class="btn ghost sm" id="prevChord" title="Previous chord ([)">${icon('back')} Chord</button>
+            <button class="btn ghost sm" id="nextChord" title="Next chord (])">Chord ⏭</button>
+            <div class="section-chips" id="secChips">${secs.map((x, i) => `<button class="sec-chip" data-i="${i}" title="Bar ${x.bar} · ${UI.fmtTime(x.start)}"><b>${esc(x.letter)}</b>${esc(x.label)}</button>`).join('')}</div>
+          </div>
           <div class="transport">
             <button class="btn primary round" id="playBtn" aria-label="Play">${icon('play')}</button>
             <button class="btn ghost icon" id="rewBtn" title="Back 5 s">${icon('back')}</button>
@@ -136,13 +145,68 @@
             <div class="spacer"></div>
             <div class="speed">Speed <input type="range" id="speed" min="0.5" max="1.25" step="0.05" value="${player.rate || 1}"><b id="speedLbl">${Math.round((player.rate || 1) * 100)}%</b></div>
           </div>
-          <p class="muted small" style="margin-top:8px">${matchMedia('(hover: none)').matches ? 'Tap the timeline to jump · use Loop 2 bars to repeat a section · slowing down keeps the pitch.' : 'Click the timeline to seek · Shift-drag to loop · Space play/pause · L listen · slowing down keeps the pitch.'}</p>`;
+          <p class="muted small" style="margin-top:8px">${matchMedia('(hover: none)').matches ? 'Tap the timeline to jump · use Loop 2 bars to repeat a section · slowing down keeps the pitch.' : 'Click the timeline to seek · Shift-drag to loop · Space play/pause · [ ] previous/next chord · 1–9 jump to a section · L listen · slowing down keeps the pitch.'}</p>`;
         timeline = new UI.Timeline($('#tl', host), a, {
           onSeek: (t) => { player.time = t; timeline.setTime(t); },
           onLoop: (loop) => { player.setLoop(loop && loop.a, loop && loop.b); $('#loopBtn', host).classList.toggle('primary', !!loop); },
         });
         if (player.loop) timeline.loop = player.loop;
         $('#changeTrack', host).onclick = () => { player.pause(); App.setTrack(null); App.rerender(); };
+        // ---- quick navigation: saved tracks, sections, chord by chord, floating mini transport
+        const fillSwitcher = async (sel) => {
+          const items = await PM.Audio.Library.list();
+          sel.innerHTML = '<option value="">Switch track…</option>' + items.slice(0, 40).map((it) => `<option value="${esc(it.id)}" ${it.id === track.id ? 'disabled' : ''}>${esc(it.name)}${it.analysis && it.analysis.key ? ' · ' + esc(it.analysis.key.name) : ''}</option>`).join('');
+          sel.onchange = async () => {
+            const it = items.find((x) => x.id === sel.value);
+            if (!it) return;
+            sel.disabled = true;
+            player.pause();
+            UI.toast(`Opening “${it.name}”…`, { icon: '📂' });
+            try { await App.openFromLibrary(it); } catch (e) { UI.toast('Could not open: ' + (e.message || e), { icon: '⚠️' }); }
+            App.rerender();
+          };
+        };
+        fillSwitcher($('#trackSw', host));
+        const seek = (t) => { player.time = Math.max(0, Math.min(a.duration - 0.05, t)); timeline.setTime(player.time); };
+        const chordStep = (dir) => {
+          const t = player.time, cs = a.chords.filter((c) => c.name !== 'N');
+          if (dir > 0) { const n = cs.find((c) => c.start > t + 0.05); if (n) seek(n.start); }
+          else {
+            let i = -1;
+            cs.forEach((c, k) => { if (c.start <= t) i = k; });
+            const cur = cs[i];
+            if (cur && t - cur.start > 0.6) seek(cur.start); else if (cs[Math.max(0, i - 1)]) seek(cs[Math.max(0, i - 1)].start);
+          }
+        };
+        $('#prevChord', host).onclick = () => chordStep(-1);
+        $('#nextChord', host).onclick = () => chordStep(1);
+        $$('#secChips .sec-chip', host).forEach((b) => (b.onclick = () => { const x = secs[+b.dataset.i]; seek(x.start); if (!player.playing) togglePlay(); }));
+        const mini = document.createElement('div');
+        mini.className = 'mini-transport hidden';
+        mini.innerHTML = `<button class="btn primary round sm" id="mPlay" aria-label="Play">${icon('play')}</button>
+          <div class="mt-main"><b>${esc(track.name)}</b><span class="small" id="mInfo">—</span></div>
+          <button class="btn ghost sm icon" id="mPrev" title="Previous chord">${icon('back')}</button>
+          <button class="btn ghost sm icon" id="mNext" title="Next chord">⏭</button>
+          <select id="mSec" aria-label="Jump to section"><option value="">Sections</option>${secs.map((x, i) => `<option value="${i}">${esc(x.label)}</option>`).join('')}</select>
+          <select id="mTrack" class="track-switch" aria-label="Switch track"></select>`;
+        document.body.appendChild(mini);
+        fillSwitcher($('#mTrack', mini));
+        $('#mPlay', mini).onclick = () => togglePlay();
+        $('#mPrev', mini).onclick = () => chordStep(-1);
+        $('#mNext', mini).onclick = () => chordStep(1);
+        $('#mSec', mini).onchange = (e) => { const x = secs[+e.target.value]; if (x) seek(x.start); e.target.value = ''; };
+        const io = 'IntersectionObserver' in root ? new IntersectionObserver(([en]) => { mini.classList.toggle('hidden', en.isIntersecting); document.body.classList.toggle('has-mini', !en.isIntersecting); }, { threshold: 0 }) : null;
+        if (io) io.observe($('.transport', trackCard));
+        const miniTimer = setInterval(() => {
+          if (mini.classList.contains('hidden')) return;
+          const at = Analyzer.chordAt(a, player.time);
+          const sec = secs.find((x) => player.time >= x.start && player.time < x.end);
+          $('#mInfo', mini).textContent = `${UI.fmtTime(player.time)} / ${UI.fmtTime(a.duration)}${sec ? ' · ' + sec.label : ''}${at && at.chord.name !== 'N' ? ' · ' + at.chord.name : ''}`;
+          $('#mPlay', mini).innerHTML = icon(player.playing ? 'pause' : 'play');
+          $$('#secChips .sec-chip', host).forEach((b, i) => b.classList.toggle('on', secs[i] === sec));
+        }, 250);
+        const secTimer = setInterval(() => { const sec = secs.find((x) => player.time >= x.start && player.time < x.end); $$('#secChips .sec-chip', host).forEach((b, i) => b.classList.toggle('on', secs[i] === sec)); }, 400);
+        const cleanMini = () => { clearInterval(miniTimer); clearInterval(secTimer); if (io) io.disconnect(); mini.remove(); document.body.classList.remove('has-mini'); };
         const playBtn = $('#playBtn', host);
         const setPlayIcon = () => { playBtn.innerHTML = icon(player.playing ? 'pause' : 'play'); };
         let countingIn = false;
@@ -189,9 +253,12 @@
           if (e.target.matches('input, select, textarea')) return;
           if (e.code === 'Space') { e.preventDefault(); togglePlay(); }
           if (e.key === 'l' || e.key === 'L') listenBtn.click();
+          if (e.key === ']') chordStep(1);
+          if (e.key === '[') chordStep(-1);
+          if (/^[1-9]$/.test(e.key) && secs[+e.key - 1] && !e.metaKey && !e.ctrlKey) seek(secs[+e.key - 1].start);
         };
         addEventListener('keydown', keyHandler);
-        cleanupTrack = () => { offPlayer(); removeEventListener('keydown', keyHandler); };
+        cleanupTrack = () => { offPlayer(); removeEventListener('keydown', keyHandler); cleanMini(); };
         PM.Shared.mixer($('#mixCard', host), App);
       }
 
@@ -199,6 +266,24 @@
       const kbd = visual === 'keys' ? new UI.PianoKeyboard($('#kbd', host), I.viewRange[0], I.viewRange[1]) : null;
       const fret = visual === 'fret' ? new UI.Fretboard($('#fret', host), { strings: I.strings, names: I.stringNames, frets: I.frets }) : null;
       const valves = visual === 'brass' ? $('#valves', host) : null;
+      const VR = PM.Learn.RANGE.voice;
+      const trail = visual === 'voice' ? new PM.PitchTrail.PitchTrail($('#trail', host), { low: VR.low - 2, high: VR.high + 2 }) : null;
+      const melodyTargets = () => (a && a.part && a.part.notes && a.part.notes.length ? a.part.notes : a && a.melody ? a.melody : []);
+      if (trail) trail.setTargets(melodyTargets());
+      const karaokeBtn = $('#karaoke', host);
+      if (karaokeBtn) karaokeBtn.onclick = async () => {
+        karaokeBtn.disabled = true;
+        try {
+          if (!track.stemsReady) { UI.toast('Separating the vocals…', { icon: '🎛️' }); await App.separateStems(); }
+          const g = PM.Shared.presetGains(track, 'novocals');
+          App.applyMix(g);
+          track.mixPreset = track.partStem === 'vocals' ? 'backing' : 'novocals';
+          PM.Shared.mixer($('#mixCard', host), App);
+          if (trail) trail.setTargets(melodyTargets());
+          UI.toast('Sing-along mix on — the vocals are muted', { icon: '🎤' });
+        } catch (e) { UI.toast('Could not separate: ' + (e.message || e), { icon: '⚠️' }); }
+        karaokeBtn.disabled = false;
+      };
       const ring = new UI.ChromaRing($('#ring', host));
       const strumSlots = $$('#strum .strum-slot', host);
 
@@ -294,6 +379,14 @@
         const st = improv ? coach.update(frame, frame.refTime) : coach.update(frame, grid);
         latest = frame;
         latest.state = st;
+        if (trail) {
+          const tt = a && player.playing ? frame.refTime : performance.now() / 1000;
+          const m = frame.active && frame.pitch && frame.pitch.confidence > 0.6 ? frame.pitch.midi + (frame.pitch.cents || 0) / 100 : null;
+          trail.push(tt, m);
+          const acc = trail.accuracy();
+          const ta = $('#trailAcc', host);
+          if (ta) ta.textContent = acc == null ? '—' : Math.round(acc * 100) + '%';
+        }
         $('#lvl', host).style.width = Math.max(0, Math.min(100, (frame.db + 70) * 1.6)) + '%';
         const youName = $('#youName', host), youSub = $('#youSub', host);
         const single = frame.active && frame.pitch && (!I.chordal || !frame.chord);
@@ -443,6 +536,7 @@
             kbd.set(exp, f ? f.notes.map((n) => n.midi) : []);
           }
         }
+        if (trail) trail.draw(a && player.playing ? t : performance.now() / 1000);
         if (valves) {
           let target = partNote;
           if (target == null && expected) target = 60 + expected.pcs[improv && sug ? 1 : 0] + (expected.pcs[0] < 4 ? 12 : 0);

@@ -58,20 +58,45 @@
   }
 
   /** Score every chord template (TEMPLATES order) against a chroma vector. */
-  function chordScores(chroma, bass) {
+  function chordScores(chroma, bass, prior) {
     const out = new Float32Array(TEMPLATES.length);
     let energy = 0;
     for (let i = 0; i < 12; i++) energy += chroma[i] * chroma[i];
     if (energy <= 1e-12) return out;
     const norm = Math.sqrt(energy);
     const bassN = normBass(bass);
+    let bassPc = -1;
+    if (bassN) { let bm = 0; for (let i = 0; i < 12; i++) if (bassN[i] > bm) { bm = bassN[i]; bassPc = i; } }
     for (let j = 0; j < TEMPLATES.length; j++) {
       const t = TEMPLATES[j];
       let dot = 0;
       for (let i = 0; i < 12; i++) dot += (chroma[i] / norm) * t.v[i];
-      out[j] = dot * t.type.w + (bassN ? 0.08 * bassN[t.root] : 0);
+      let b = 0;
+      if (bassN) {
+        // root in the bass is most likely; a chord tone in the bass is an inversion; a foreign bass note is unlikely
+        if (bassPc === t.root) b = 0.08;
+        else if (t.type.iv.some((iv) => mod12(t.root + iv) === bassPc)) b = 0.04 + 0.04 * bassN[t.root];
+        else b = -0.03;
+      }
+      out[j] = dot * t.type.w + b + (prior ? prior[j] : 0);
     }
     return out;
+  }
+
+  /** Small bonus for chords that belong to a key (diatonic, plus V/V7 in minor) — used as a prior. */
+  function keyPrior(key, amount) {
+    const p = new Float32Array(TEMPLATES.length);
+    if (!key) return p;
+    amount = amount == null ? 0.04 : amount;
+    const scale = (key.mode === 'major' ? MAJOR_SCALE : MINOR_SCALE).map((iv) => mod12(key.tonic + iv));
+    const harm = key.mode === 'minor' ? mod12(key.tonic + 11) : -1; // raised 7th (harmonic minor V)
+    for (let j = 0; j < TEMPLATES.length; j++) {
+      const t = TEMPLATES[j];
+      const pcs = t.type.iv.map((iv) => mod12(t.root + iv));
+      const inKey = pcs.every((pc) => scale.includes(pc) || pc === harm);
+      if (inKey) p[j] = amount;
+    }
+    return p;
   }
 
   /** Build a chord description for template index j, with optional slash bass. */
@@ -129,7 +154,7 @@
         if (lastInfo) for (let j = 0; j < S; j++) e[j] = lastInfo[j] * 0.5;
         return e;
       }
-      e.set(chordScores(f.chroma, f.bass));
+      e.set(chordScores(f.chroma, f.bass, opts.prior));
       e[NO] = nScore;
       lastInfo = e;
       return e;
@@ -218,6 +243,7 @@
     info.margin = best.r - results[1].r;
     info.alternatives = results.slice(1, 3).map((x) => keyInfo(x.tonic, x.mode).name);
     info.candidates = results.slice(0, 4);
+    info.allCandidates = results.slice(0, 8);
     return info;
   }
 
@@ -231,10 +257,22 @@
     if (!real.length) return key;
     const total = real.reduce((a, c) => a + (c.end - c.start), 0) || 1;
     const isTonic = (c, k) => c.root === k.tonic && (k.mode === 'major' ? ['', '7', 'maj7', 'sus2', 'sus4', '5'] : ['m', 'm7', '5']).includes(c.type);
+    const all = key.allCandidates || key.candidates;
     let best = null;
-    for (const cand of key.candidates) {
+    for (const cand of all) {
+      const scale = (cand.mode === 'major' ? MAJOR_SCALE : MINOR_SCALE).map((iv) => mod12(cand.tonic + iv));
+      const harm = cand.mode === 'minor' ? mod12(cand.tonic + 11) : -1;
+      let dia = 0, cad = 0;
+      for (let i = 0; i < real.length; i++) {
+        const c = real[i];
+        const pcs = chordPcs(c.root, c.type);
+        if (pcs.every((pc) => scale.includes(pc) || pc === harm)) dia += c.end - c.start;
+        // V → I cadence
+        const nx = real[i + 1];
+        if (nx && isTonic(nx, cand) && mod12(c.root - cand.tonic) === 7 && ['', '7'].includes(c.type)) cad++;
+      }
       const share = real.filter((c) => isTonic(c, cand)).reduce((a, c) => a + (c.end - c.start), 0) / total;
-      const s = cand.r + 0.35 * share + (isTonic(real[0], cand) ? 0.08 : 0) + (isTonic(real[real.length - 1], cand) ? 0.08 : 0);
+      const s = cand.r + 0.35 * share + 0.4 * (dia / total) + (isTonic(real[0], cand) ? 0.08 : 0) + (isTonic(real[real.length - 1], cand) ? 0.1 : 0) + Math.min(0.12, 0.03 * cad);
       if (!best || s > best.s) best = { s, cand };
     }
     if (best.cand.tonic === key.tonic && best.cand.mode === key.mode) return key;
@@ -242,6 +280,7 @@
     k.confidence = key.confidence;
     k.alternatives = key.candidates.filter((c) => c !== best.cand).slice(0, 2).map((x) => keyInfo(x.tonic, x.mode).name);
     k.candidates = key.candidates;
+    k.allCandidates = all;
     return k;
   }
 
@@ -338,7 +377,7 @@
 
   PM.Theory = {
     SHARPS, FLATS, CHORD_TYPES, TYPE_BY_ID, STANDARD_TUNING, mod12, spell, chordName, chordPcs, detectChord, chordFromNotes,
-    detectKey, refineKeyWithChords, keyInfo, romanNumeral, chordScores, describeTemplate, viterbiChords, TEMPLATES, chordFunction, diatonicChords, guitarShape, pianoVoicing, parseChordName, pearson,
+    detectKey, refineKeyWithChords, keyInfo, keyPrior, romanNumeral, chordScores, describeTemplate, viterbiChords, TEMPLATES, chordFunction, diatonicChords, guitarShape, pianoVoicing, parseChordName, pearson,
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = PM.Theory;
 })(typeof self !== 'undefined' ? self : globalThis);

@@ -37,7 +37,7 @@ fs.mkdirSync(outDir, { recursive: true });
   let failed = false;
   const step = async (name, fn) => {
     try { const info = await fn(); results.push({ step: name, ok: true, info: info || '' }); console.log(`✓ ${name}${info ? ' — ' + info : ''}`); }
-    catch (e) { failed = true; results.push({ step: name, ok: false, info: e.message }); console.log(`✗ ${name} — ${e.message.split('\n')[0]}`); }
+    catch (e) { failed = true; results.push({ step: name, ok: false, info: e.message }); console.log(`✗ ${name} — ${process.env.SMOKE_VERBOSE ? e.message : e.message.split("\n")[0]}`); }
   };
 
   for (const deviceName of ['iPad Pro 11', 'iPad Pro 11 landscape', 'iPhone 13']) {
@@ -209,6 +209,77 @@ fs.mkdirSync(outDir, { recursive: true });
       await page.goto(base + '/#/insights');
       await page.waitForSelector('#dyn', { timeout: 10000 });
       await shot('insights');
+    });
+    await step('studio: navigate the song (sections, next chord, track switcher, mini transport)', async () => {
+      await page.goto(base + '/#/studio');
+      await page.waitForSelector('#tl', { timeout: 10000 });
+      const before = await page.evaluate(() => PM.App.player.time);
+      await tap('#nextChord');
+      await page.waitForTimeout(300);
+      const after = await page.evaluate(() => PM.App.player.time);
+      const tracks = await page.locator('#trackSw option').count();
+      await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+      await page.waitForTimeout(500);
+      const mini = await page.evaluate(() => { const m = document.querySelector('.mini-transport'); return m && !m.classList.contains('hidden'); });
+      await shot('studio-mini-transport');
+      await page.evaluate(() => window.scrollTo(0, 0));
+      if (!(after > before)) throw new Error(`next chord did not move (${before} → ${after})`);
+      if (tracks < 2) throw new Error('track switcher empty');
+      if (!mini) throw new Error('mini transport not shown when scrolled');
+      // switch back to the first saved track through the switcher
+      const id = await page.evaluate(() => [...document.querySelectorAll('#trackSw option')].find((o) => o.value && !o.disabled).value);
+      await page.selectOption('#trackSw', id);
+      await page.waitForFunction((x) => PM.App.track && PM.App.track.id === x, id, { timeout: 30000 });
+      return `${tracks - 1} saved tracks, chord step ${before.toFixed(2)}→${after.toFixed(2)}s`;
+    });
+    await step('voice: sing-along demo with vocal stem, pitch trail and karaoke mix', async () => {
+      await page.goto(base + '/#/studio');
+      await tap('.mobile-inst [data-inst="voice"]');
+      await page.waitForTimeout(300);
+      if (await page.locator('#changeTrack').count()) { await tap('#changeTrack'); await page.waitForTimeout(300); }
+      await tap('[data-demo]');
+      await page.waitForFunction(() => PM.App.track && PM.App.track.stemsReady && document.querySelector('#tl'), null, { timeout: 30000 });
+      await page.waitForSelector('#karaoke', { timeout: 10000 });
+      await closeModals(); // level-up celebration after the analysis XP
+      const part = await page.evaluate(() => PM.App.track.partStem);
+      const targets = await page.evaluate(() => (PM.App.track.analysis.part ? PM.App.track.analysis.part.notes.length : 0));
+      await tap('#karaoke');
+      await page.waitForTimeout(1200);
+      const g = await page.evaluate(() => PM.App.track.gains.vocals);
+      await page.evaluate(() => window.scrollTo(0, 0));
+      await tap('#playBtn');
+      await page.waitForTimeout(4200);
+      await shot('voice-studio');
+      await tap('#playBtn');
+      if (part !== 'vocals' || !targets) throw new Error(`part ${part}, ${targets} target notes`);
+      if (g !== 0) throw new Error('vocals not muted: ' + g);
+      return `${targets} melody notes to sing`;
+    });
+    await step('voice: vocal exercise path and voice types', async () => {
+      await page.goto(base + '/#/learn');
+      await closeModals();
+      await tap('#vType [data-v="tenor"]');
+      await page.waitForTimeout(300);
+      await tap('[data-a="path"]');
+      await page.waitForSelector('.path-item', { timeout: 5000 });
+      const n = await page.locator('.path-item').count();
+      const titles = await page.locator('.path-item b').allTextContents();
+      await tap('.path-item');
+      await page.waitForSelector('#paGo', { timeout: 5000 });
+      await shot('voice-path');
+      if (n < 50) throw new Error('only ' + n + ' vocal exercises');
+      if (!titles.some((t) => /Lip trill/.test(t))) throw new Error('no lip trills');
+      const range = await page.evaluate(() => PM.Learn.RANGE.voice.type);
+      if (range !== 'tenor') throw new Error('voice type not applied');
+      return n + ' vocal exercises (tenor)';
+    });
+    await step('voice: insights show melody, voice fit and song map', async () => {
+      await page.goto(base + '/#/insights');
+      await page.waitForSelector('#dyn', { timeout: 10000 });
+      const txt = await page.textContent('#body');
+      await shot('voice-insights');
+      if (!/For your voice/.test(txt)) throw new Error('no voice section');
+      if (!/Melody, voicings/.test(txt)) throw new Error('no melody section');
     });
     await step('ear trainer game', async () => {
       await page.goto(base + '/#/games');

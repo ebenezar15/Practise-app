@@ -110,6 +110,39 @@
       const v = score(lag) * prior;
       if (v > bv) { bv = v; best = lag; }
     }
+    // Octave/triple errors: compare related tempi by how strongly the onsets (and the bass, which
+    // marks the beat) line up on a grid with that period at its best phase.
+    if (opts.verify !== false) {
+      // strong attacks: local novelty maxima in the top 35%
+      const env = (i) => nov[i] + (opts.bass ? 3 * opts.bass[i] : 0);
+      const lm = [];
+      for (let i = 1; i < N - 1; i++) if (env(i) > env(i - 1) && env(i) >= env(i + 1) && env(i) > 0) lm.push(i);
+      const vals = lm.map(env).sort((x, y) => x - y);
+      const thr = vals.length ? vals[Math.floor(vals.length * 0.65)] : 0;
+      const strong = lm.filter((i) => env(i) >= thr);
+      const fit = (L) => {
+        if (L < minLag * 0.6 || L > N / 3 || !strong.length) return -Infinity;
+        let bestV = -Infinity;
+        for (let ph = 0; ph < L; ph += 0.5) {
+          let sum = 0, cnt = 0;
+          for (let t = ph; t < N; t += L) { const i = Math.round(t); sum += env(i); cnt++; }
+          let hit = 0;
+          for (const i of strong) { const k = Math.round((i - ph) / L); if (Math.abs(i - (ph + k * L)) <= 2.5) hit++; }
+          const v = (sum / Math.max(1, cnt)) * Math.pow(hit / strong.length, 0.8);
+          if (v > bestV) bestV = v;
+        }
+        return bestV;
+      };
+      const cands = [best, best * 1.5, best / 1.5, best * 2, best / 2].filter((L) => 60 / (L * hopTime) >= minBpm && 60 / (L * hopTime) <= maxBpm);
+      let pick = best, pv = -Infinity;
+      for (const L of cands) {
+        const bpm = 60 / (L * hopTime);
+        const prior = Math.exp(-0.5 * Math.pow(Math.log2(bpm / 110) / 1.1, 2));
+        const v = fit(L) * prior * (L === best ? 1.03 : 1);
+        if (v > pv) { pv = v; pick = L; }
+      }
+      best = Math.round(pick);
+    }
     let refined = best;
     if (best > minLag && best < maxLag) {
       const a = ac[best - 1], b = ac[best], c = ac[best + 1];

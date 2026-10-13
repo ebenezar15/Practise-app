@@ -42,6 +42,13 @@
     bass: { low: 28, high: 63, start: 31 },
     trumpet: { low: 52, high: 80, start: 58 }, // written C4 = concert Bb3
   };
+  RANGE.voice = { low: 53, high: 77, start: 55 };
+  /** Singers pick a voice type; scales and exercises then sit in that range. */
+  function setVoiceType(type) {
+    const V = PM.Instruments && PM.Instruments.VOICE_TYPES[type];
+    if (!V) return;
+    RANGE.voice = { low: V.range[0], high: V.range[1], start: V.start, type };
+  }
   const rangeOf = (inst) => RANGE[inst] || RANGE.piano;
 
   /** Lowest MIDI note with pitch class pc at or above `from`. */
@@ -131,6 +138,11 @@
       list.push({ id: 'lip-slurs', name: 'Lip slurs (open)', desc: 'Slur between the open notes without changing valves: written C – G – C and back. Keep the air moving.', notes: [open[0], open[1], open[2], open[1], open[0]] });
       list.push({ id: 'lip-slurs-2', name: 'Lip slurs (2nd valve)', desc: 'Same slur pattern with the 2nd valve down: written B – F# – B.', notes: [open[0] - 1, open[1] - 1, open[2] - 1, open[1] - 1, open[0] - 1] });
       list.push({ id: 'long-ladder', name: 'Long-tone ladder', desc: 'Hold each note of the scale for a full breath with a steady sound before moving on.', notes: sc({ octaves: 1, direction: 'up' }) });
+    } else if (inst === 'voice') {
+      const c = startNote('voice', tonic, 12);
+      list.push({ id: 'lip-trill', name: 'Lip trill 1-2-3-4-5-4-3-2-1', desc: 'Blow through loose lips ("brr") on the five-note scale — the easiest way to connect breath and voice.', notes: [0, 2, 4, 5, 7, 5, 4, 2, 0].map((d) => c + d) });
+      list.push({ id: 'siren', name: 'Octave siren on "oo"', desc: 'Do – so – do\' – so – do on a gentle "oo", letting the voice lighten at the top.', notes: [0, 7, 12, 7, 0].map((d) => c + d) });
+      list.push({ id: 'long-ladder', name: 'Long-tone ladder', desc: 'Hold each note of the scale for a full, steady breath on "ah".', notes: sc({ octaves: 1, direction: 'up' }) });
     }
     list.push({ id: 'scale-arp', name: 'Scale + arpeggio', desc: 'Major scale up, then the tonic arpeggio back down.', notes: sc({ direction: 'up' }).concat(arpeggio({ tonic, type: '', instrument: inst, direction: 'up' }).reverse().slice(1)) });
     return list;
@@ -215,6 +227,6 @@
   /** Letter name for the note-names quiz (written pitch for transposing instruments). */
   const LETTERS = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
 
-  PM.Learn = { SCALES, INTERVALS, RANGE, PROMPTS, LETTERS, scale, arpeggio, scalePattern, exercises, sightReading, motif, gradeAnswer, palette, startNote, rng };
+  PM.Learn = { setVoiceType, SCALES, INTERVALS, RANGE, PROMPTS, LETTERS, scale, arpeggio, scalePattern, exercises, sightReading, motif, gradeAnswer, palette, startNote, rng };
   if (typeof module !== 'undefined' && module.exports) module.exports = PM.Learn;
 })(typeof self !== 'undefined' ? self : globalThis);

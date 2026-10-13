@@ -70,7 +70,7 @@ test('scales, arpeggios and exercises fit each instrument', () => {
   for (const inst of Object.keys(Instruments.INSTRUMENTS)) {
     const R = Learn.RANGE[inst];
     for (let tonic = 0; tonic < 12; tonic++) {
-      const s = Learn.scale({ tonic, scale: 'major', instrument: inst, octaves: inst === 'trumpet' ? 1 : 2 });
+      const s = Learn.scale({ tonic, scale: 'major', instrument: inst, octaves: inst === 'trumpet' || inst === 'voice' ? 1 : 2 });
       assert.ok(Math.min(...s) >= R.low && Math.max(...s) <= R.high, `${inst} scale on ${tonic} in range`);
       const ex = Learn.exercises(inst, tonic);
       assert.ok(ex.length >= 3);

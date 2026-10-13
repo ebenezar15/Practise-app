@@ -65,6 +65,7 @@
       <div class="pa">
         <div class="pa-head"><span class="lvl l${ex.level || 1}">Level ${ex.level || 1}</span><span class="chip">${esc(ex.cat || '')}</span><b class="pa-title">${esc(ex.title)}</b></div>
         ${ex.desc ? `<p class="small" style="margin-top:6px">${esc(ex.desc)}</p>` : ''}
+        ${ex.syllable ? `<p class="small" style="margin-top:4px">🎤 Sing on: <b>${esc(ex.syllable)}</b></p>` : ''}
         ${ex.tip ? `<div class="pa-tip">💡 ${esc(ex.tip)}</div>` : ''}
         <div class="pa-controls">
           <label class="field">Tempo <b id="paBpmL">${bpm}</b> BPM<input type="range" id="paBpm" min="40" max="220" value="${bpm}"></label>
@@ -124,6 +125,24 @@
         g.fillText(pcName(m, inst), x + 6, y + 4);
         if (r === 'wrong' && targets[i].playedName) { g.fillStyle = '#fecaca'; g.fillText('✕ ' + targets[i].playedName.replace(/-?\d+$/, ''), x + 6, y + 22); }
       });
+      // live pitch line (singers & single-note instruments): green in tune, amber close, red off
+      if (take && take.sung && take.sung.length && t0 != null) {
+        g.lineWidth = 3; g.lineCap = 'round';
+        let prev = null;
+        for (const s of take.sung) {
+          if (s.m == null) { prev = null; continue; }
+          const x = x0 + ((s.t - t0) / beat) * pxPerBeat;
+          if (x < -4 || x > w * 0.22 + 4) { prev = null; continue; }
+          const tg = targets.find((tt) => s.t >= tt.time - 0.05 && s.t < tt.time + tt.dur);
+          const oct = q('paOct') && q('paOct').checked;
+          const j = tg && PM.PitchTrail ? PM.PitchTrail.judge(s.m, tg.midi, oct) : null;
+          let m = s.m;
+          if (tg && oct) m -= Math.round((s.m - tg.midi) / 12) * 12;
+          const y = Math.max(4, Math.min(h - 26, yOf(m)));
+          if (prev) { g.strokeStyle = j ? { good: '#34d399', close: '#fbbf24', off: '#fb7185' }[j.grade] : 'rgba(240,171,252,0.8)'; g.beginPath(); g.moveTo(prev.x, prev.y); g.lineTo(x, y); g.stroke(); }
+          prev = { x, y };
+        }
+      }
       g.fillStyle = '#f0abfc';
       g.fillRect(w * 0.22, 0, 2, h - 22);
       g.fillStyle = 'rgba(255,255,255,0.6)'; g.font = '11px system-ui'; g.fillText(running ? (curBeat < 0 ? 'count-in…' : 'play!') : 'ready', 8, h - 6);
@@ -183,7 +202,7 @@
       for (let i = -bpb; i < Math.ceil(totalBeats()); i++) { ticks.push(t0 + i * beat); acc.push(((i % bpb) + bpb) % bpb === 0); }
       stopFns.forEach((f) => f()); stopFns = [clicks(ticks, acc)];
       if (q('paGuide').checked) stopFns.push(synth(refNotes(t0, beat), I.synth, 0.12));
-      take = { t0, recStart, beat, cursor: 0, startedAt: performance.now(), no: takes.length + 1 };
+      take = { t0, recStart, beat, cursor: 0, startedAt: performance.now(), no: takes.length + 1, sung: [] };
       running = true;
       q('paGo').innerHTML = `${icon('stop')} Stop`;
       q('paResult').innerHTML = '';
@@ -197,8 +216,9 @@
         const now = ctx.currentTime;
         if (chordsKind) return judgeChord(f, now, tol);
         const p = f.active ? f.pitch : null;
+        if (I.mono) take.sung.push({ t: now, m: p && p.confidence > 0.6 ? p.midi + (p.cents || 0) / 100 : null });
         if (p) {
-          q('paHeard').textContent = nameOf(p.midi, inst);
+          q('paHeard').textContent = nameOf(p.midi, inst) + (I.family === 'voice' && p.cents != null ? ` ${p.cents > 0 ? '+' : ''}${p.cents}¢` : '');
           stable = p.midi === lastMidi ? stable + 1 : 0;
           if ((f.onset || stable === 2) && !take.cand) take.cand = { time: f.onset ? f.time : f.time - 0.04, frames: [] };
           lastMidi = p.midi;
@@ -287,6 +307,21 @@
       takes.push(entry);
       while (takes.length > 6) { const old = takes.shift(); PM.Sync.Blobs.del('take-' + old.id); }
       const m = loadMeta(); m[ex.id] = takes; saveMeta(m);
+      if (I.mono && take.sung.length) {
+        const oct = q('paOct') && q('paOct').checked;
+        const devs = [];
+        for (const s of take.sung) {
+          if (s.m == null) continue;
+          const tg = targets.find((tt) => s.t >= tt.time + 0.08 && s.t < tt.time + tt.dur - 0.03);
+          if (!tg) continue;
+          const j = PM.PitchTrail.judge(s.m, tg.midi, oct);
+          if (Math.abs(j.cents) < 150) devs.push(j.cents);
+        }
+        if (devs.length > 8) {
+          const mean = devs.reduce((x, y) => x + y, 0) / devs.length;
+          stats.pitch = { avgCents: Math.round(devs.reduce((x, y) => x + Math.abs(y), 0) / devs.length), bias: Math.round(mean), inTune: devs.filter((c) => Math.abs(c) <= 35).length / devs.length };
+        }
+      }
       showResult(stats, prev);
       drawTakes();
       if (lane) drawLane(0);
@@ -316,6 +351,7 @@
         <div><b>${pct(s.accuracy)}</b><span>right notes ${prev ? d(s.accuracy, prev.accuracy) : ''}</span></div>
         <div><b>${pct(s.inTime)}</b><span>in time ${prev ? d(s.inTime, prev.inTime) : ''}</span></div>
         <div><b>${s.avgOffset == null ? '—' : (s.avgOffset > 0 ? '+' : '') + Math.round(s.avgOffset) + ' ms'}</b><span>${s.avgOffset == null ? 'timing' : s.avgOffset < -15 ? 'rushing' : s.avgOffset > 15 ? 'dragging' : 'centred'}</span></div>
+        ${s.pitch ? `<div><b>${Math.round(s.pitch.inTune * 100)}%</b><span>in tune · ±${s.pitch.avgCents}¢${Math.abs(s.pitch.bias) >= 12 ? (s.pitch.bias > 0 ? ' · a bit sharp' : ' · a bit flat') : ''}</span></div>` : ''}
         <div><b class="stars">${'★'.repeat(starsFor(s))}${'☆'.repeat(3 - starsFor(s))}</b><span>${s.missed} missed</span></div></div>`;
     }
 

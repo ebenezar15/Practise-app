@@ -16,6 +16,7 @@
     electric: [9, 4, 7, 2, 0, 5, 11, 6, 10, 3, 8, 1],
     bass: [4, 9, 7, 2, 0, 5, 10, 3, 11, 6, 8, 1],
     trumpet: [10, 3, 5, 8, 0, 1, 7, 6, 2, 9, 11, 4],
+    voice: [0, 2, 7, 9, 5, 4, 10, 3, 11, 1, 8, 6],
   };
   const keyName = (pc, inst) => NAMES[mod12(pc + (inst === 'trumpet' ? 2 : 0))];
 
@@ -161,8 +162,138 @@
     return ex;
   }
 
+
+  // ---------------- singing: a dedicated vocal path (warm-ups that climb by semitones,
+  // breath, registers, agility, harmony, solfege, Carnatic sarali varisai, sing-alongs)
+  function buildVoice() {
+    const L = PM.Learn, R = L.RANGE.voice, I = PM.Instruments.get('voice');
+    const ex = [];
+    const lo = R.low, hi = R.high;
+    const home = lo + 3; // comfortable low-middle note to start warm-ups
+    const MAJ = [0, 2, 4, 5, 7, 9, 11, 12, 14, 16];
+    const add = (level, cat, title, desc, tip, notes, opts) => {
+      opts = opts || {};
+      const out = opts.noFit ? notes : fit('voice', notes);
+      ex.push(Object.assign({ id: '', n: ex.length + 1, level, cat, title, desc, tip, kind: 'notes', notes: out, beats: opts.beats || out.map(() => opts.each || 1), bpm: opts.bpm || 72, octaveFree: !!opts.octaveFree, syllable: opts.syl || '' }, opts.extra || {}));
+    };
+    /** A pattern (semitones from its root) sung in rising keys, a semitone apart — the classic warm-up. */
+    const rising = (level, cat, title, desc, tip, pat, opts) => {
+      opts = opts || {};
+      const step = opts.step || 1;
+      let root = opts.from != null ? opts.from : home - Math.min(0, Math.min(...pat));
+      const notes = [], beats = [];
+      for (let r = 0; r < (opts.reps || 4) && root + Math.max(...pat) <= hi; r++, root += step) {
+        pat.forEach((iv, i) => { notes.push(root + iv); beats.push(i === pat.length - 1 ? (opts.hold || 2) : (opts.each || 1)); });
+      }
+      if (!notes.length) pat.forEach((iv, i) => { notes.push(lo + iv); beats.push(i === pat.length - 1 ? 2 : opts.each || 1); });
+        add(level, cat, title, desc, tip, notes, Object.assign({}, opts, { beats, noFit: true }));
+    };
+    const tonicAt = (pc, span, below) => {
+      below = below || 0; // lowest note sits `below` semitones under the tonic
+      let m = lo + below + mod12(pc - lo - below);
+      const miss = (x) => Math.max(0, lo - (x - below)) + Math.max(0, x + span - hi);
+      if (miss(m - 12) < miss(m)) m -= 12;
+      return m;
+    };
+    const kn = (pc) => NAMES[mod12(pc)];
+    // keys that sit well in THIS voice type: low enough that an octave + a step fits above
+    const k0 = mod12(lo + 2), k1 = mod12(lo + 4), k2 = mod12(lo + 5), mn0 = mod12(lo + 2), mn1 = mod12(lo + 4);
+    const scale = (pc, sc, dir) => L.scale({ tonic: pc, scale: sc, octaves: 1, direction: dir || 'updown', start: tonicAt(pc, 12) });
+    // sing-alongs: start from the suggested key, nudging it until the whole tune fits the voice
+    const tune = (m, pc) => {
+      const a = Math.min(0, ...m.deg), b = Math.max(...m.deg);
+      for (const off of [0, 1, -1, 2, -2, 3, -3, 4, -4, 5, -5, 6]) {
+        const t = tonicAt(mod12(pc + off), b, -a);
+        if (t + a >= lo && t + b <= hi) return m.deg.map((d) => t + d);
+      }
+      return m.deg.map((d) => tonicAt(pc, b, -a) + d);
+    };
+    const rnd = L.rng(7);
+    const thirdAbove = (d) => { const i = MAJ.indexOf(mod12(d)); return i < 0 ? d + 4 : d + MAJ[i + 2] - MAJ[i]; };
+
+    // ---------------- Level 1 — breath, posture, first pitches
+    add(1, 'Breath', 'Long tone on "ah" — 4 counts', 'Breathe low (belly and ribs expand), then sing one comfortable note for four beats.', 'Keep the sound steady to the very end of the note — the tuner trail should stay flat.', [home + 2, home + 2, home + 2], { each: 4, bpm: 60, syl: 'ah', noFit: true });
+    add(1, 'Breath', 'Breath pulses on "ha"', 'Eight short, bouncy "ha"s on one note — feel the belly kick in on each one.', 'The pulse comes from the abs, not the throat.', new Array(8).fill(home + 4), { bpm: 76, syl: 'ha', noFit: true });
+    add(1, 'Breath', 'Long tones on "oo" — three pitches', 'Three long notes, four beats each, stepping up.', 'Breathe in through the nose for 4, sing for 4 — never squeeze out the last air.', [home, home + 2, home + 4], { each: 4, bpm: 60, syl: 'oo', noFit: true });
+    rising(1, 'Warm-up', 'Humming 5-4-3-2-1 on "mm"', 'Hum down five notes with lips gently closed; repeat a semitone higher each time.', 'Feel the buzz on your lips and nose — that is forward resonance.', [7, 5, 4, 2, 0], { syl: 'mm', bpm: 72 });
+    rising(1, 'Warm-up', 'Lip trill 1-2-3-2-1', 'Blow through loose lips ("brr") while gliding 1-2-3-2-1. Rises a semitone each time.', 'Press your cheeks lightly with your fingers if the lips stop buzzing.', [0, 2, 4, 2, 0], { syl: 'brr', bpm: 76 });
+    rising(1, 'Warm-up', 'Stepped siren 1-5-8-5-1 on "oo"', 'An easy "oo" from bottom to top and back — think of a gentle fire-engine siren.', 'Let the voice flip lighter at the top; do not push.', [0, 7, 12, 7, 0], { syl: 'oo', bpm: 66, reps: 3 });
+    add(1, 'Pitch', 'Match the note', 'Listen, then sing each note back on "la": home, a 3rd up, a 5th up, a step up.', 'Hear the note in your head before you sing it.', [home, home + 4, home + 7, home + 2, home], { each: 2, bpm: 60, syl: 'la', noFit: true, octaveFree: true });
+    add(1, 'Pitch', 'Echo do-re-mi', 'Sing do-re-mi-re-do in solfege.', 'Keep "do" exactly the same pitch at the start and the end.', [0, 2, 4, 2, 0].map((d) => tonicAt(k0, 7) + d), { bpm: 66, syl: 'do re mi re do' });
+    add(1, 'Sing-along', MELODIES[0].title, 'Your first sing-along — listen once, then sing with the guide.', 'Open the mouth a little more on the long notes.', tune(MELODIES[0], k0), { beats: MELODIES[0].beats, bpm: 80, syl: 'la' });
+    add(1, 'Sing-along', MELODIES[1].title, 'A simple stepwise tune to sing on "la" or the words.', 'Stay relaxed on repeated notes — no extra push.', tune(MELODIES[1], k1), { beats: MELODIES[1].beats, bpm: 88, syl: 'la' });
+
+    // ---------------- Level 2 — five-note scales, vowels, legato & staccato
+    rising(2, 'Scales', '5-note scale on "ma"', '1-2-3-4-5-4-3-2-1 on "ma", rising a semitone each repetition.', 'Keep the jaw loose and dropped on "ah".', [0, 2, 4, 5, 7, 5, 4, 2, 0], { syl: 'ma', bpm: 84, reps: 5 });
+    rising(2, 'Scales', '5-4-3-2-1 on "nee"', 'Descending five notes on a bright "nee".', 'The "n" places the sound forward; keep that buzz as you go down.', [7, 5, 4, 2, 0], { syl: 'nee', bpm: 84, reps: 5 });
+    rising(2, 'Vowels', 'Vowel ladder 1-3-5-3-1', '"mee-may-mah-moh-moo" on a broken chord.', 'Change only the vowel shape — keep the same space in the throat.', [0, 4, 7, 4, 0], { syl: 'mee may mah moh moo', bpm: 76, reps: 5 });
+    for (const pc of [k0, k1]) add(2, 'Scales', `${kn(pc)} major scale in solfege`, 'do-re-mi-fa-so-la-ti-do and back.', 'Say the solfege names in rhythm first, then sing them.', scale(pc, 'major'), { bpm: 72, syl: 'do re mi fa so la ti do' });
+    add(2, 'Intervals', 'Growing intervals from do', 'do-re, do-mi, do-fa, do-so — come back home each time.', 'Picture the step size before you sing it.', [0, 2, 0, 4, 0, 5, 0, 7, 0].map((d) => tonicAt(k0, 7) + d), { bpm: 66, syl: 'do' });
+    rising(2, 'Articulation', 'Staccato arpeggio on "ha"', '1-3-5-8-5-3-1 short and bouncy.', 'Each note starts from a little belly kick — no glottal "click".', [0, 4, 7, 12, 7, 4, 0], { syl: 'ha', each: 0.5, bpm: 72, reps: 3 });
+    rising(2, 'Articulation', 'Legato 5-note scale on "yah"', 'The same five notes, perfectly smooth and connected.', 'Imagine one long line of sound — no bumps between notes.', [0, 2, 4, 5, 7, 5, 4, 2, 0], { syl: 'yah', bpm: 66, reps: 4 });
+    rising(2, 'Resonance', 'Bratty "nay" 1-3-5-3-1', 'A cheeky, bright "nay" — it gives the voice an easy forward edge.', 'Think "nasal" at first; it balances out with practice.', [0, 4, 7, 4, 0], { syl: 'nay', bpm: 80, reps: 5 });
+    for (const m of [MELODIES[2], MELODIES[3]]) add(2, 'Sing-along', m.title, 'Sing along with the guide melody, then try it with the guide muted.', 'Breathe at the ends of phrases, not in the middle.', tune(m, k0), { beats: m.beats, bpm: 88, syl: 'la' });
+
+    // ---------------- Level 3 — arpeggios, octaves, minor, registers, harmony, solfege
+    rising(3, 'Arpeggios', 'Arpeggio 1-3-5-8-5-3-1 on "ah"', 'A major arpeggio across the octave, rising each time.', 'Let the top note float — less push, more space.', [0, 4, 7, 12, 7, 4, 0], { syl: 'ah', bpm: 80, reps: 4 });
+    rising(3, 'Registers', 'Octave jump 1-8-7-6-5-4-3-2-1', 'Leap to the octave on "oo", then walk down the scale.', 'The leap lands softly in head voice; blend back to chest as you descend.', [0, 12, 11, 9, 7, 5, 4, 2, 0], { syl: 'oo', bpm: 84, reps: 3 });
+    rising(3, 'Scales', 'Rossini scale 1-2-3-4-5-6-7-8-9-8-…-1', 'The nine-note scale classical singers use to stretch the range.', 'Keep the tempo steady through the top — no rushing.', [0, 2, 4, 5, 7, 9, 11, 12, 14, 12, 11, 9, 7, 5, 4, 2, 0], { syl: 'ah', each: 0.5, bpm: 72, reps: 2 });
+    for (const pc of [mn0, mn1]) add(3, 'Scales', `${kn(pc)} natural minor scale`, 'Sing the minor scale on "la" — feel its darker colour.', 'The minor 3rd is the note that sounds "sad" — tune it carefully.', scale(pc, 'minor'), { bpm: 76, syl: 'la' });
+    add(3, 'Scales', `${kn(k0)} major pentatonic`, 'Five-note scale used in folk, gospel and pop melodies.', 'No half steps — every note sits nicely over the home chord.', scale(k0, 'majpent'), { bpm: 80, syl: 'ah' });
+    rising(3, 'Dynamics', 'Messa di voce (soft–loud–soft)', 'Each note held 6 beats: start soft, swell, and come back soft.', 'Pitch must not rise as you get louder — watch the trail.', [0, 4, 7], { syl: 'ah', each: 6, hold: 6, bpm: 72, reps: 2, step: 2 });
+    rising(3, 'Registers', 'Bridging the break 1-5-8-5-1 on "goo"', 'Rising through the passaggio, where chest voice hands over to head voice.', '"G" and "oo" keep the larynx low and the sound smooth across the break.', [0, 7, 12, 7, 0], { syl: 'goo', bpm: 76, reps: 5, from: lo + 5 });
+    add(3, 'Vowels', 'Five vowels on one pitch', '"ee-eh-ah-oh-oo" on the same note, two beats each.', 'Pitch should not move when the vowel changes.', new Array(5).fill(home + 5), { each: 2, bpm: 66, syl: 'ee eh ah oh oo', noFit: true });
+    add(3, 'Intervals', `Thirds through ${kn(k1)} major`, 'do-mi, re-fa, mi-so… broken thirds up the scale.', 'Hear the upper note before you leap.', (() => { const s = scale(k1, 'major', 'up'); const o = []; for (let i = 0; i + 2 < s.length; i++) o.push(s[i], s[i + 2]); return o; })(), { each: 0.5, bpm: 72, syl: 'solfege' });
+    add(3, 'Harmony', `Harmony a 3rd above: ${MELODIES[0].title}`, 'Sing a harmony line a diatonic 3rd above the melody — play the original in the band to hear them together.', 'Lock onto the melody in your ear and stay parallel to it.', tune({ deg: MELODIES[0].deg.map(thirdAbove) }, k0), { beats: MELODIES[0].beats, bpm: 76, syl: 'la' });
+    add(3, 'Sight-singing', 'Sight-sing a stepwise melody', 'Read and sing a short stepwise tune in solfege.', 'Find "do" first; then count steps.', L.sightReading({ tonic: k0, scale: 'major', instrument: 'voice', level: 1, length: 8, rand: rnd }), { bpm: 66, syl: 'solfege' });
+    // Carnatic warm-ups (Mayamalavagowla): sa ri ga ma pa da ni sa
+    const MMG = [0, 1, 4, 5, 7, 8, 11, 12];
+    add(3, 'Carnatic', 'Sarali varisai 1 (Mayamalavagowla)', 'Sa-Ri-Ga-Ma-Pa-Da-Ni-Ṡa and back — the first exercise of Carnatic singing.', 'Sing with open "aa" and steady śruti (pitch) — keep Sa rock solid.', MMG.concat(MMG.slice(0, -1).reverse()).map((d) => tonicAt(k0, 12) + d), { bpm: 66, syl: 'sa ri ga ma pa da ni sa' });
+    add(3, 'Carnatic', 'Sarali varisai 2', 'Sa-Ri, Sa-Ri, Sa-Ri-Ga-Ma | Sa-Ri-Ga-Ma-Pa-Da-Ni-Ṡa.', 'Count the tala on your hand: clap, finger counts, clap.', [0, 1, 0, 1, 0, 1, 4, 5, 0, 1, 4, 5, 7, 8, 11, 12].map((d) => tonicAt(k0, 12) + d), { each: 0.5, bpm: 72, syl: 'sa ri ga ma' });
+    add(3, 'Sing-along', MELODIES[4].title, 'A slow hymn — shape each phrase with a gentle swell.', 'Take a full breath before each phrase so you can hold the long notes.', tune(MELODIES[4], k2), { beats: MELODIES[4].beats, bpm: 72, syl: 'words' });
+
+    // ---------------- Level 4 — agility, runs, gospel & blues colour, harmony below
+    rising(4, 'Agility', 'Fast 5-note scale on "ah"', '1-2-3-4-5-4-3-2-1 in eighth notes, light and clean.', 'Lighter is faster: smaller sound, crisp separation, no aspirate "h".', [0, 2, 4, 5, 7, 5, 4, 2, 0], { syl: 'ah', each: 0.5, bpm: 96, reps: 5 });
+    rising(4, 'Agility', 'Zig-zag 1-3-2-4-3-5-4-2-1', 'A twisting pattern that trains quick, accurate pitch changes.', 'Practise slowly at first — accuracy before speed.', [0, 4, 2, 5, 4, 7, 5, 2, 0], { syl: 'ah', each: 0.5, bpm: 88, reps: 4 });
+    rising(4, 'Arpeggios', 'Extended arpeggio 1-3-5-8-10-8-5-3-1', 'Up past the octave to the 10th and back.', 'Keep the mouth shape tall as you go higher.', [0, 4, 7, 12, 16, 12, 7, 4, 0], { syl: 'ah', each: 0.5, bpm: 80, reps: 3 });
+    add(4, 'Style', `Gospel run: ${kn(k0)} pentatonic descent`, 'A classic run down the major pentatonic: 8-6-5-3-2-1.', 'Start on the beat, land on "do" with a held note.', [12, 9, 7, 4, 2, 0, 0].map((d) => tonicAt(k0, 12) + d), { beats: [0.25, 0.25, 0.25, 0.25, 0.5, 0.5, 2], bpm: 80, syl: 'oh' });
+    add(4, 'Style', `${kn(mn0)} minor pentatonic (R&B)`, 'The minor pentatonic — the backbone of soul and R&B riffs.', 'Swing it gently and slide into the 4th and 5th.', scale(mn0, 'minpent'), { each: 0.5, bpm: 84, syl: 'ah' });
+    add(4, 'Style', `${kn(mn1)} blues scale`, 'Minor pentatonic plus the blue note.', 'Use the blue note as a passing colour — slide through it.', scale(mn1, 'blues'), { each: 0.5, bpm: 84, syl: 'yeah' });
+    add(4, 'Scales', `${kn(mn0)} Dorian mode`, 'Minor with a bright 6th — modern worship and jazz.', 'Tune the 6th a little high in your mind — it is the signature note.', scale(mn0, 'dorian'), { each: 0.5, bpm: 80, syl: 'ah' });
+    add(4, 'Scales', `${kn(mn1)} harmonic minor`, 'Natural minor with a raised 7th.', 'Prepare the wide step between the 6th and 7th.', scale(mn1, 'harmonic'), { each: 0.5, bpm: 76, syl: 'ah' });
+    add(4, 'Harmony', `Harmony a 3rd below: ${MELODIES[2].title}`, 'An alto/tenor line a 3rd under the tune — the sound of a choir section.', 'Lower harmony lines are often quieter: support, don\'t lead.', tune({ deg: MELODIES[2].deg.map((d) => thirdAbove(d) - 12 + (mod12(d) === 0 || mod12(d) === 7 ? 0 : 0)) }, k0), { beats: MELODIES[2].beats, bpm: 84, syl: 'oo' });
+    add(4, 'Sight-singing', 'Sight-sing with skips', 'A tune with steps and small skips.', 'Spot the skips (do-mi, re-fa…) before you start.', L.sightReading({ tonic: k1, scale: 'major', instrument: 'voice', level: 2, length: 10, rand: rnd }), { bpm: 66, syl: 'solfege' });
+    add(4, 'Articulation', 'Staccato vs legato contrast', 'The scale up staccato, down legato.', 'Same pitch accuracy both ways — only the length changes.', scale(k2, 'major'), { beats: [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 1, 1, 1, 1, 1, 1, 1, 2], bpm: 72, syl: 'ha / ah' });
+    add(4, 'Carnatic', 'Janta varisai (doubled notes)', 'Sa-Sa Ri-Ri Ga-Ga Ma-Ma … each note sung twice with a clean re-attack.', 'The second note gets a tiny stress — no glottal stop.', MMG.flatMap((d) => [d, d]).map((d) => tonicAt(k0, 12) + d), { each: 0.5, bpm: 72, syl: 'sa sa ri ri' });
+    add(4, 'Sing-along', MELODIES[5].title, 'Bright and quick — crisp consonants!', 'Smile slightly to keep the tone bright on fast notes.', tune(MELODIES[5], k1), { beats: MELODIES[5].beats, bpm: 104, syl: 'words' });
+
+    // ---------------- Level 5 — advanced range, runs and control
+    add(5, 'Scales', `Chromatic scale from ${kn(k0)}`, 'Every semitone up the octave and back.', 'Think tiny, even steps — practise against the drone.', scale(k0, 'chromatic'), { each: 0.5, bpm: 72, syl: 'ah' });
+    rising(5, 'Agility', 'Rossini run in 16ths', 'The nine-note scale at speed.', 'Practise in short bursts with full rest between them.', [0, 2, 4, 5, 7, 9, 11, 12, 14, 12, 11, 9, 7, 5, 4, 2, 0], { syl: 'ah', each: 0.25, bpm: 76, reps: 3 });
+    add(5, 'Intervals', 'Wide leaps from do', 'do-la, do-ti, do-do\' and back down.', 'Aim for the top note from above, mentally — never scoop.', [0, 9, 0, 11, 0, 12, 0].map((d) => tonicAt(k1, 12) + d), { each: 1, bpm: 66, syl: 'do' });
+    add(5, 'Intervals', 'Descending intervals from the top', 'do\'-ti, do\'-la, do\'-so… down to do.', 'Keep the top note light; descend without dropping energy.', [12, 11, 12, 9, 12, 7, 12, 4, 12, 0].map((d) => tonicAt(k2, 12) + d), { each: 1, bpm: 66, syl: 'do' });
+    add(5, 'Style', 'Gospel riff with blue note', 'A soulful riff: 5-♭3-3-1 / 6-5-3-2-1.', 'Bend lightly through the ♭3 into the 3rd.', [7, 3, 4, 0, 9, 7, 4, 2, 0].map((d) => tonicAt(k0, 12) + d), { beats: [0.5, 0.25, 0.25, 1, 0.25, 0.25, 0.25, 0.25, 2], bpm: 76, syl: 'oh' });
+    add(5, 'Style', 'Melisma: minor pentatonic run', 'A long R&B run down and up the minor pentatonic.', 'Map the run in slow motion first, then speed it up 4 BPM at a time.', (() => { const t = tonicAt(mn0, 12); return [12, 10, 7, 5, 3, 0, 3, 5, 7, 5, 3, 0].map((d) => t + d); })(), { each: 0.25, bpm: 72, syl: 'ah' });
+    add(5, 'Dynamics', 'Messa di voce at the top', 'Soft–loud–soft on the upper notes of your range.', 'If it squeezes, back off the volume — the swell must stay free.', [hi - 5, hi - 3, hi - 1], { each: 6, bpm: 72, syl: 'ah', noFit: true });
+    add(5, 'Agility', 'Vocal trill practice', 'Alternate two neighbouring notes faster and faster.', 'A trill is a relaxed wobble between two notes — never forced.', new Array(16).fill(0).map((_, i) => home + 7 + (i % 2 ? 2 : 0)), { each: 0.25, bpm: 76, syl: 'ah', noFit: true });
+    add(5, 'Arpeggios', `${kn(mod12(k1 + 1))} diminished arpeggio`, 'Stacked minor thirds — hard to tune!', 'Every step is a minor 3rd; count three semitones each time.', L.arpeggio({ tonic: mod12(k1 + 1), type: 'dim', octaves: 1, direction: 'updown', start: tonicAt(mod12(k1 + 1), 12) }), { bpm: 66, syl: 'ah' });
+    add(5, 'Sight-singing', 'Sight-sing with leaps and accidentals', 'A harder tune with leaps and the odd chromatic note.', 'Name each accidental as "raised" or "lowered" before singing it.', L.sightReading({ tonic: k2, scale: 'major', instrument: 'voice', level: 3, length: 12, rand: rnd }), { bpm: 66, syl: 'solfege' });
+    add(5, 'Harmony', `Harmony a 3rd above: ${MELODIES[4].title}`, 'The hymn with a descant line a 3rd above.', 'Blend: match the lead singer\'s vowel and volume.', tune({ deg: MELODIES[4].deg.map(thirdAbove) }, k2), { beats: MELODIES[4].beats, bpm: 72, syl: 'oo' });
+    add(5, 'Sing-along', `${MELODIES[4].title} — expressive`, 'Sing the full hymn with dynamics: soft verse start, building to the high note.', 'Plan your breaths, and crescendo through the long notes.', tune(MELODIES[4], k0), { beats: MELODIES[4].beats, bpm: 66, syl: 'words' });
+
+    // ---------------- vocal technique from the instrument tips (one per level band)
+    I.tips.slice(0, 4).forEach((tip, i) => add(Math.min(5, 1 + i), 'Technique', ['Posture & breath check', 'Resonance check', 'Relaxation check', 'Vocal health check'][i], tip, tip, [home + 4, home + 4, home + 4], { each: 4, bpm: 60, syl: 'ah', noFit: true }));
+
+    ex.sort((a, b) => a.level - b.level || a.n - b.n);
+    ex.forEach((e, i) => { e.n = i + 1; e.id = `voice-${String(i + 1).padStart(2, '0')}`; });
+    return ex;
+  }
+
   const cache = {};
-  function forInstrument(inst) { return cache[inst] || (cache[inst] = build(inst)); }
+  function forInstrument(inst) {
+    const key = inst === 'voice' ? 'voice:' + (PM.Learn.RANGE.voice.type || 'alto') : inst;
+    return cache[key] || (cache[key] = inst === 'voice' ? buildVoice() : build(inst));
+  }
   const LEVELS = ['', 'Beginner', 'Elementary', 'Intermediate', 'Upper-intermediate', 'Advanced'];
 
   PM.Curriculum = { forInstrument, LEVELS, MELODIES, keyName };

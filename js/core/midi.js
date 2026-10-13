@@ -115,7 +115,9 @@
     electric: { name: 'Electric guitar', icon: '⚡', voice: 'electric' },
     bass: { name: 'Bass', icon: '🎸', voice: 'bass' },
     strings: { name: 'Strings & pads', icon: '🎻', voice: 'strings' },
+    vocals: { name: 'Vocals & choir', icon: '🎤', voice: 'voice' },
     lead: { name: 'Brass & lead', icon: '🎺', voice: 'trumpet' },
+    winds: { name: 'Woodwinds & flutes', icon: '🪈', voice: 'organ' },
     drums: { name: 'Drums', icon: '🥁', voice: 'drums' },
   };
   function familyOf(note) {
@@ -126,14 +128,16 @@
     if (p < 26) return 'guitar';
     if (p < 32) return 'electric';
     if (p < 40) return 'bass';
+    if (p >= 52 && p <= 54) return 'vocals';
     if (p < 56) return 'strings';
-    if (p < 80) return 'lead';
+    if (p < 64) return 'lead';
+    if (p < 80) return 'winds';
     if (p < 88) return 'lead';
     if (p < 104) return 'strings';
     return 'keys';
   }
   /** Programs used when the app writes MIDI for a voice. */
-  const VOICE_PROGRAM = { piano: 0, organ: 16, guitar: 25, electric: 29, bass: 33, strings: 48, trumpet: 56 };
+  const VOICE_PROGRAM = { piano: 0, organ: 16, guitar: 25, electric: 29, bass: 33, strings: 48, voice: 52, trumpet: 56 };
 
   // ---------- Synthesis ----------
   function makeRand(seed) {
@@ -217,6 +221,7 @@
     const spec = {
       trumpet: { table: wavetable('brass', [1, 0.9, 0.8, 0.7, 0.55, 0.45, 0.35, 0.28, 0.2, 0.15, 0.1, 0.07]), dull: wavetable('brass-soft', [1, 0.6, 0.35, 0.2, 0.1, 0.05]), attack: 0.035, release: 0.08, vib: 0.006, gain: 0.32 },
       strings: { table: wavetable('saw', Array.from({ length: 16 }, (_, h) => 1 / (h + 1))), dull: wavetable('saw-soft', [1, 0.4, 0.2, 0.1]), attack: 0.14, release: 0.3, vib: 0.004, gain: 0.18 },
+      voice: { table: wavetable('voice-ah', [1, 0.55, 0.35, 0.5, 0.42, 0.18, 0.1, 0.12, 0.08, 0.05]), dull: wavetable('voice-oo', [1, 0.3, 0.1, 0.05]), attack: 0.08, release: 0.15, vib: 0.012, gain: 0.3 },
       organ: { table: wavetable('organ', [1, 0.8, 0.0, 0.5, 0, 0.3, 0, 0.25]), dull: wavetable('organ', [1, 0.8, 0.0, 0.5, 0, 0.3, 0, 0.25]), attack: 0.01, release: 0.06, vib: 0, gain: 0.2 },
     }[voice];
     const rel = spec.release, len = Math.min(out.length - start, Math.ceil((held + rel) * sr));
@@ -271,7 +276,7 @@
     const duration = opts.duration || notes.reduce((m, n) => Math.max(m, n.end), 0) + 2;
     const out = new Float32Array(Math.ceil(duration * sr));
     const rand = makeRand(12345);
-    const instVoice = { piano: 'piano', guitar: 'guitar', electric: 'electric', bass: 'bass', trumpet: 'trumpet' }[opts.instrument] || 'piano';
+    const instVoice = { piano: 'piano', guitar: 'guitar', electric: 'electric', bass: 'bass', trumpet: 'trumpet', voice: 'voice' }[opts.instrument] || 'piano';
     for (const n of notes) {
       const start = Math.floor(n.start * sr);
       if (start >= out.length) continue;
@@ -283,7 +288,7 @@
       else if (voice === 'guitar') karplus(out, start, f, held, sr, vel, rand, {});
       else if (voice === 'electric') karplus(out, start, f, held, sr, vel, rand, { damp: 0.998, drive: 2.2, gain: 0.32, bright: 0.6 });
       else if (voice === 'bass') karplus(out, start, f, held, sr, vel, rand, { damp: 0.9985, bright: 0.18, sub: 0.6, gain: 0.55, tail: 0.08, release: 0.03 });
-      else if (voice === 'trumpet' || voice === 'strings' || voice === 'organ') sustained(out, start, f, held, sr, vel, voice);
+      else if (voice === 'trumpet' || voice === 'strings' || voice === 'organ' || voice === 'voice') sustained(out, start, f, held, sr, vel, voice);
       else additivePiano(out, start, f, held, sr, vel);
     }
     if (opts.normalize !== false) {

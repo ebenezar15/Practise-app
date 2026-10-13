@@ -180,6 +180,40 @@
     return out;
   }
 
+  /**
+   * Harmonic-aware chroma: a peak that sits on the 3rd/5th/6th… harmonic of a lower, strong-enough
+   * peak is credited to that lower note instead of its own pitch class. This removes the
+   * "phantom fifth/third" that overtones add to plain chroma (C3's 3rd harmonic is a G, its 5th an E).
+   */
+  function noteChroma(peaks, out, opts) {
+    opts = opts || {};
+    out = out || new Float32Array(12);
+    out.fill(0);
+    const minF = opts.minFreq || 55, maxF = opts.maxFreq || 4200;
+    const ps = peaks.filter((p) => p.freq >= minF && p.freq <= maxF).sort((a, b) => a.freq - b.freq);
+    const pcOf = new Int8Array(ps.length);
+    const owner = new Int16Array(ps.length).fill(-1);
+    for (let i = 0; i < ps.length; i++) {
+      const m = freqToMidi(ps[i].freq), r = Math.round(m);
+      pcOf[i] = Math.abs(m - r) > 0.42 ? -1 : ((r % 12) + 12) % 12;
+      for (let j = 0; j < i; j++) {
+        const ratio = ps[i].freq / ps[j].freq, h = Math.round(ratio);
+        if (h < 2 || h > 7 || h === 4 || h === 2) continue; // octaves keep their pitch class anyway
+        if (Math.abs(12 * Math.log2(ratio / h)) > 0.3) continue;
+        if (ps[j].mag * Math.pow(0.75, h - 1) * 2.2 < ps[i].mag) continue; // too weak to explain this peak
+        owner[i] = owner[j] >= 0 ? owner[j] : j;
+        break;
+      }
+    }
+    for (let i = 0; i < ps.length; i++) {
+      if (pcOf[i] < 0) continue;
+      const w = Math.sqrt(ps[i].mag) / (1 + Math.pow(ps[i].freq / 1800, 2));
+      if (owner[i] >= 0 && pcOf[owner[i]] >= 0) out[pcOf[owner[i]]] += w * 0.35;
+      else out[pcOf[i]] += w;
+    }
+    return out;
+  }
+
   function normalize(v) {
     let mx = 0;
     for (let i = 0; i < v.length; i++) if (v[i] > mx) mx = v[i];
@@ -281,7 +315,7 @@
   PM.DSP = {
     decimate2,
     NOTE_NAMES, fft, hann, spectrumAnalyzer, freqToMidi, midiToFreq, pcName, midiName, describeFreq,
-    yin, spectralPeaks, chromaFromPeaks, normalize, polyNotes, rms, toDb, spectralFlatness, prepareMono,
+    yin, spectralPeaks, chromaFromPeaks, noteChroma, normalize, polyNotes, rms, toDb, spectralFlatness, prepareMono,
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = PM.DSP;
 })(typeof self !== 'undefined' ? self : globalThis);

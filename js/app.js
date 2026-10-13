@@ -126,7 +126,7 @@
       if (!t || t.stemsReady) return t && t.sep;
       if (!t.audio) t.audio = await PM.Audio.decodeAudioFile(t.blob);
       if (t.audio.duration > 10 * 60) throw new Error('Separation is limited to 10-minute tracks.');
-      t.sep = await PM.Separation.separateAudio(t.audio.channels, t.audio.sampleRate, { onProgress });
+      t.sep = await PM.Separation.separateAudio(t.audio.channels, t.audio.sampleRate, { onProgress, melody: t.analysis && t.analysis.melody });
       t.stemsReady = true;
       await this.preparePart(t, true);
       return t.sep;
@@ -203,7 +203,7 @@
         }
       } else {
         // band arrangement with the student's part on its own channel
-        const spec = { bass: { tonic: 7, progression: 'pop', style: 'rock', bpm: 96 }, electric: { tonic: 9, progression: 'minor', style: 'rock', bpm: 110 }, trumpet: { tonic: 5, progression: 'jazz', style: 'swing', bpm: 120 } }[kind];
+        const spec = { voice: { tonic: 0, progression: 'ballad', style: 'ballad', bpm: 76 }, bass: { tonic: 7, progression: 'pop', style: 'rock', bpm: 96 }, electric: { tonic: 9, progression: 'minor', style: 'rock', bpm: 110 }, trumpet: { tonic: 5, progression: 'jazz', style: 'swing', bpm: 120 } }[kind];
         const g = PM.Backing.generate(Object.assign({ choruses: kind === 'trumpet' ? 4 : 4, exclude: '' }, spec));
         notes = g.notes; bpm = g.bpm; key = g.key;
         const beat = 60 / bpm;
@@ -216,12 +216,19 @@
           const t0 = beat * 4 + b * 4 * beat;
           if (kind === 'electric') { // power-chord riff: 8ths
             for (let k = 0; k < 8; k++) [40 + ((root - 4 + 12) % 12), 47 + ((root - 4 + 12) % 12)].forEach((m) => notes.push({ midi: m, start: t0 + (k * beat) / 2, end: t0 + ((k + 0.8) * beat) / 2, velocity: k % 2 ? 0.6 : 0.85, channel: 3, voice: 'electric' }));
+          } else if (kind === 'voice') { // a singable tune in the chosen voice type's range, on chord tones
+            const R = PM.Learn.RANGE.voice, MAJ = [0, 2, 4, 5, 7, 9, 11, 12, 14];
+            const base = R.low + (((spec.tonic - R.low) % 12) + 12) % 12; // lowest tonic in range
+            const deg = [[0, 2, 4, 4], [5, 4, 2, 0], [5, 3, 0, 3], [4, 6, 4]][b % 4];
+            const rh = b % 4 === 3 ? [1, 1, 2] : [1, 1, 1, 1];
+            let t = t0;
+            rh.forEach((len, k) => { notes.push({ midi: Math.min(R.high, base + MAJ[deg[k]]), start: t, end: t + len * beat * 0.95, velocity: 0.8, channel: 3, voice: 'voice' }); t += len * beat; });
           } else if (kind === 'trumpet') { // simple melody on chord tones
             const mel = [pcs[1], pcs[2], pcs[0], pcs[1]].map((pc) => 60 + pc + (pc < 5 ? 12 : 0));
             mel.forEach((m, k) => notes.push({ midi: m, start: t0 + k * beat, end: t0 + (k + (k === 3 ? 0.95 : 0.85)) * beat, velocity: 0.8, channel: 3, voice: 'trumpet' }));
           }
         }
-        name = { bass: 'Demo — Groove in G (bass)', electric: 'Demo — Minor Rock in A (electric)', trumpet: 'Demo — Swing ii–V–I in F (trumpet)' }[kind];
+        name = { voice: 'Demo — Evening Song in C (sing-along)', bass: 'Demo — Groove in G (bass)', electric: 'Demo — Minor Rock in A (electric)', trumpet: 'Demo — Swing ii–V–I in F (trumpet)' }[kind];
       }
       const buf = PM.Midi.writeMidi(notes, { bpm, key });
       return this.loadFile(new File([buf], name + '.mid', { type: 'audio/midi' }));
@@ -283,6 +290,7 @@
   }
 
   App.start = function () {
+    if (App.settings.voiceType) PM.Learn.setVoiceType(App.settings.voiceType);
     App.live.instrument = App.instrument;
     App.live.latency = App.settings.latency;
     buildShell();

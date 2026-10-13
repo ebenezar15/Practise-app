@@ -158,7 +158,8 @@
     if (pid === 'full') return {};
     if (pid === 'backing') return part ? { [part]: 0 } : null;
     if (pid === 'part') return part ? Object.fromEntries(stems.map((s) => [s.id, s.id === part ? 1 : 0])) : null;
-    if (pid === 'rhythm') return Object.fromEntries(stems.map((s) => [s.id, ['drums', 'bass'].includes(s.id) ? 1 : 0]));
+    if (pid === 'rhythm') return Object.fromEntries(stems.map((s) => [s.id, PM.Separation.DRUM_IDS.includes(s.id) || s.id === 'bass' ? 1 : 0]));
+    if (pid === 'novocals') return Object.fromEntries(stems.map((s) => [s.id, s.id === 'vocals' ? 0 : 1]));
     return {};
   }
 
@@ -169,7 +170,7 @@
     const head = `<div class="card-head"><h3>${icon('layers')} Instruments & practice mix</h3><span class="muted small">${t.kind === 'midi' ? 'Exact separation from MIDI' : 'On-device separation (approximate)'}</span></div>`;
     if (!t.stemsReady) {
       container.innerHTML = `${head}
-        <div class="row"><p style="flex:1;min-width:240px">Split this song into <b>drums, bass, vocals/lead and guitars/keys</b>. Then play along with the full song, a <b>backing track without your ${esc(I.short.toLowerCase())}</b>, or your part on its own.</p>
+        <div class="row"><p style="flex:1;min-width:240px">Split this song into <b>vocals, guitars & piano, pads & strings, bass, kick, snare and cymbals</b> (MIDI files: every instrument family exactly). Then play along with the full song, a <b>backing track without your ${esc(I.short.toLowerCase())}</b>, or your part on its own.</p>
         <button class="btn primary" id="sepBtn">${icon('layers')} Separate instruments</button></div>
         <div id="sepProg" class="hidden" style="margin-top:12px"><div class="row"><span class="small an-label">Preparing…</span></div><div class="progress" style="margin-top:6px"><i style="width:0"></i></div></div>`;
       container.querySelector('#sepBtn').onclick = async (e) => {
@@ -186,10 +187,12 @@
     }
     const stems = t.sep.stems, part = t.partStem;
     const gains = Object.assign({}, t.gains || {});
-    const presets = ['full', 'backing', 'part', 'rhythm'].map((pid) => ({ id: pid, label: { full: 'Full song', backing: `Backing track (no ${I.short.toLowerCase()})`, part: `My ${I.short.toLowerCase()} part only`, rhythm: 'Drums & bass only' }[pid], g: presetGains(t, pid) }));
+    const presets = ['full', 'backing', 'part', 'rhythm'].concat(stems.some((s) => s.id === 'vocals') && part !== 'vocals' ? ['novocals'] : []).map((pid) => ({ id: pid, label: { full: 'Full song', backing: `Backing track (no ${I.short.toLowerCase()})`, part: `My ${I.short.toLowerCase()} part only`, rhythm: 'Drums & bass only', novocals: 'Karaoke (no vocals)' }[pid], g: presetGains(t, pid) }));
+    const drumIds = stems.filter((s) => s.group === 'drums').map((s) => s.id);
     container.innerHTML = `${head}
       <div class="presets">${presets.map((p) => `<button class="btn sm ${t.mixPreset === p.id ? 'primary' : 'ghost'}" data-p="${p.id}" ${p.g ? '' : 'disabled title="Your instrument is not in this song"'}>${esc(p.label)}</button>`).join('')}</div>
       ${part ? '' : `<p class="small" style="margin-top:8px">No separate ${esc(I.short.toLowerCase())} part was found in this track — use the full song or improvise over it.</p>`}
+      ${drumIds.length > 1 ? `<div class="row" style="margin-top:10px"><button class="mini-btn" id="drumGrp">${drumIds.every((id) => gains[id] === 0) ? 'Unmute' : 'Mute'} all drums</button><span class="muted small">${stems.length} stems</span></div>` : ''}
       <div class="mixer">${stems.map((s) => `
         <div class="stem-row ${s.id === part ? 'part' : ''} ${gains[s.id] === 0 ? 'muted' : ''}" data-id="${s.id}">
           <span class="s-ic">${s.icon}</span><div><b>${esc(s.name)}</b>${s.id === part ? '<span class="tag">your part</span>' : ''}</div>
@@ -203,6 +206,8 @@
       mixer(container, App);
     };
     container.querySelectorAll('[data-p]').forEach((b) => (b.onclick = () => { const p = presets.find((x) => x.id === b.dataset.p); apply(p.g, p.id); }));
+    const dg = container.querySelector('#drumGrp');
+    if (dg) dg.onclick = () => { const mute = !drumIds.every((id) => gains[id] === 0); drumIds.forEach((id) => (gains[id] = mute ? 0 : 1)); apply(gains); };
     container.querySelectorAll('.stem-row').forEach((row) => {
       const id = row.dataset.id;
       row.querySelector('.mute').onclick = () => { gains[id] = gains[id] === 0 ? 1 : 0; apply(gains); };

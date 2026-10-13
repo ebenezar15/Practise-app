@@ -44,20 +44,21 @@ Local builds: `cd desktop && npm install && npm run dist:mac` (or `dist:win`, `d
 
 | Area | What it does |
 | --- | --- |
-| **5 instruments** | Piano, acoustic guitar, electric guitar, bass guitar (4-string, down to low E 41 Hz) and B♭ trumpet (written pitch, valve fingerings). Each has its own fretboard/keyboard/valve view, tuner strings, tips and coaching focus. |
-| **Live Studio** | Real-time coaching via mic, audio interface (line-in) or MIDI device: chord/note matching, next-chord countdown with fingering, harmony radar, timing (rushing/dragging in ms), intonation in cents, dynamics vs. the song, score/combo/accuracy, coach feed. Slow-down without pitch change, loops, count-in. |
-| **Instrument separation** | Split an audio song into **drums, bass, vocals/lead and guitars/keys** on-device (STFT soft-mask HPSS + stereo-centre + bass-band; stems always sum back to the original). MIDI files separate **exactly** by instrument. Presets: *Full song · Backing track (no my instrument) · My part only · Drums & bass*, plus per-stem mute/solo/volume. |
+| **6 instruments** | Piano, acoustic guitar, electric guitar, bass guitar (4-string, down to low E 41 Hz), B♭ trumpet (written pitch, valve fingerings) and **voice** (soprano, mezzo, alto, tenor, baritone, bass). Each has its own fretboard/keyboard/valve/pitch-trail view, tuner, tips and coaching focus. |
+| **Singing** | 65 graded vocal exercises pitched for your voice type: breathing, lip trills, humming, sirens, scales rising by semitones, arpeggios, octave leaps, messa di voce, agility runs, gospel/R&B riffs, harmony lines, solfege sight-singing, Carnatic sarali & janta varisai and sing-alongs. A **pitch trail** shows your voice against the melody; takes get an intonation score (±cents, sharp/flat tendency); a **karaoke mix** mutes the vocals; Insights suggests the best key for your voice. |
+| **Live Studio** | Real-time coaching via mic, audio interface (line-in) or MIDI device: chord/note matching, next-chord countdown with fingering, harmony radar, timing (rushing/dragging in ms), intonation in cents, dynamics vs. the song, score/combo/accuracy, coach feed. Slow-down without pitch change, loops, count-in. Jump by section or chord (`[` `]`, `1`–`9`), switch saved tracks from the header, and a floating mini transport while you scroll. |
+| **Instrument separation** | Split an audio song into **7 stems — vocals, guitars & piano, pads & strings, bass, kick, snare and cymbals** — on-device (STFT soft-mask HPSS with a sustain floor, stereo-centre + melody-guided comb mask for vocals, bass band, percussive flatness for snare vs cymbals; stems always sum back to the original). MIDI files separate **exactly** by instrument. Presets: *Full song · Backing track (no my instrument) · My part only · Drums & bass*, plus per-stem mute/solo/volume. |
 | **Part following** | For bass and trumpet the coach follows your isolated part (exact from MIDI, transcribed from audio stems) — or the chord roots/chord tones when no part exists. |
 | **Improvise mode** | Chord-scale suggestions for every chord (pentatonic, modes, blues…), chord tones & scale tones mapped on the fretboard/keyboard, live note classification (chord / scale / blue / outside), praise for targeting 3rds & 7ths on changes, clash warnings with resolution hints, range/rhythm/phrasing feedback and creative prompts. |
 | **Backing-track generator** | Any key; pop, ballad, 12-bar blues, jazz ii–V–I, minor, funk and Dorian progressions; rock, swing, ballad and funk grooves; any tempo. Generated **without your instrument**. |
-| **Song Insights** | Key, tempo, time signature, chord progression with roman numerals, chord shapes (guitars), bass roots & positions, trumpet written-key chart, strumming pattern, dynamics chart and a practice plan. |
+| **Song Insights** | Key, tempo, time signature, song map (intro / verse / chorus), chord progression with roman numerals and inversions (C/E…), melody line with passing notes, strumming vs finger-picking, chord shapes (guitars), bass roots & positions, trumpet written-key chart, strumming pattern, dynamics chart and a practice plan. |
 | **Electric guitar** | Power chords, bend measurement (half/whole-step accuracy in cents), muting tips. |
 | **Trumpet** | Written-pitch display with valves, transposed instructions, tone-steadiness (wobble) detection, Long Tones challenge. |
 | **Metronome & tuner** | Accents, subdivisions, odd meters, speed & gap trainers, timing check; chromatic tuner with per-instrument strings and B♭ transposition. |
 | **Learn** | Scales (major, minors, pentatonics, blues, modes; 1–2 octaves, any key), arpeggios, instrument-specific technique (five-finger & Hanon-style, chromatic 1-2-3-4, root–fifth, lip slurs…), sight-reading on the staff, note-names quiz, chord library + one-minute changes, interval ear training, call & response (echo & improvised answers), progression builder → jam with a band. The coach listens and moves on with you; slips are reported. |
 | **Songs** | Public-domain hymns & spirituals built in; teachers add songs in **English, Tamil or any language** (ChordPro or chords-over-lyrics) with **chord PDFs**, images and audio. Transpose, capo, text size, auto-scroll, chord diagrams for your instrument (B♭ chords for trumpet), a generated **backing band in the song's meter** whose lyrics highlight as it plays, and **record & send for review**. |
 | **Recordings & review** | Record with or without the backing track, listen back, add a note, send (queued offline, uploads later). Teachers listen in **Results**, give 1–5 stars, a pitch/timing/tone/expression rubric and comments, or **ask to try again**. |
-| **Exercise path** | 70+ graded exercises per instrument (Level 1 → 5): first notes, pulse, scales in many keys, arpeggios, melodies, rhythms, intervals, modes, 7th arpeggios, ii–V–I chord tones, chord changes and instrument technique. Play along with count-in and click — every note is judged for pitch and timing — or use *Wait for me*. Stars and progress sync. |
+| **Exercise path** | 65–70+ graded exercises per instrument (Level 1 → 5): first notes, pulse, scales in many keys, arpeggios, melodies, rhythms, intervals, modes, 7th arpeggios, ii–V–I chord tones, chord changes and instrument technique. Play along with count-in and click — every note is judged for pitch and timing — or use *Wait for me*. Stars and progress sync. |
 | **Takes & playback** | Every play-along take is recorded: play it back, hear it **with the reference**, compare takes (accuracy, timing ±ms) and send the best to your teacher. |
 | **Rhythm styles** | 41 arranger-keyboard style rhythms (pop/worship ballads, soft & hard rock, disco, funk, house, hip-hop, reggae, bossa, samba, cha cha, tango, swing, jazz waltz, country, waltzes, gospel 12/8, 6/8 worship, bhangra, keherwa, dadra…) with Intro, Main A/B, Fill, Ending and auto-accompaniment (bass + chords) following the chords you type. |
 | **Beat maker** | Step sequencer & pattern builder: 18 synthesized drum voices, 16th/8th/triplet/3/4/6/8/5/4/7/8 grids, accents, ghost notes, swing, save/load, start from a style. **Rhythm practice** scores your claps/strums against any drum part. |
@@ -123,7 +124,8 @@ XP/levels/badges/history merge across devices (conflict-free), whenever the serv
 ```bash
 npm start        # app at http://localhost:5173 (static server, zero dependencies)
 npm run server   # classroom server at http://localhost:8787 (also serves the app)
-npm test         # unit + integration tests
+npm test         # unit + integration tests (incl. an analyser accuracy floor)
+node scripts/bench-analyzer.js 30 [--midi]   # analyser accuracy report on synthetic songs with ground truth
 npm run package:web   # dist/Cadenza-web-<version>.zip
 cd desktop && npm install && npm start   # desktop app in development
 ```
@@ -131,14 +133,16 @@ cd desktop && npm install && npm start   # desktop app in development
 ## How the "AI" works (all on-device)
 
 - **Pitch:** YIN with parabolic interpolation (decimated for bass down to 35 Hz).
-- **Chords:** peak-picked chroma → template matching (10 qualities × 12 roots) with bass/inversion detection → Viterbi smoothing over beats → segment-level quality refinement (e.g. A → A7).
-- **Key:** Krumhansl–Kessler profiles refined by chord evidence (resolves relative major/minor).
+- **Chords:** harmonic-aware chroma (overtones credited to their fundamental) → template matching (10 qualities × 12 roots) with inversion-aware bass scoring and a key prior → Viterbi smoothing over beats → segment-level quality refinement (e.g. A → A7) → voicing & inversion labels (C/E, 1st/2nd inversion, top note, spread).
+- **Key:** Krumhansl–Kessler profiles refined by chord evidence — diatonic share, tonic share, cadences, first & last chord (resolves relative major/minor).
+- **Melody & picking:** salience-and-continuity melody tracking with passing notes; strumming vs finger-picking from new notes per attack (and Travis-pattern hints).
+- **Sections:** 4-bar phrases grouped by chord sequence, loudest repeated part = chorus.
 - **Tempo/beats/meter:** spectral-flux novelty, autocorrelation with tempo prior, dynamic-programming beat tracker, accent-periodicity meter with compound-meter detection.
 - **Strumming:** grid quantisation + low-to-high pitch-sweep direction + hand-motion priors.
-- **Separation:** harmonic/percussive median filtering, stereo-centre and frequency-band soft masks on a packed stereo STFT with perfect-reconstruction overlap-add.
+- **Separation (7 stems):** harmonic/percussive median filtering, a sliding-minimum sustain floor for pads, melody-guided comb + stereo-centre masks for vocals, a bass band, kick/snare/cymbals from percussive band energy and spectral flatness — on a packed stereo STFT with perfect-reconstruction overlap-add.
 - **Transcription:** monophonic YIN tracking with median smoothing and re-attack detection (bass lines, melodies).
 - **Improvisation:** chord-scale selection by key fit, note classification, targeting detection, inter-onset rhythmic entropy, range and space metrics.
-- **Synthesis:** additive piano, Karplus–Strong guitar/electric/bass, wavetable brass/strings/organ and a synthesized drum kit.
+- **Synthesis:** additive piano, Karplus–Strong guitar/electric/bass, wavetable brass/strings/organ/voice and a synthesized drum kit.
 
 These are signal-processing methods, not neural networks: separation is approximate on dense
 real-world mixes (MIDI is exact), and all results are best treated as a practice guide.

@@ -70,10 +70,12 @@
         <div class="prog">${uniq.map((u) => `<div class="prog-chord"><b>${esc(u.name)}</b><span>${esc(u.roman || '')}</span><div class="share"><i style="width:${Math.round(u.share * 100)}%"></i></div></div>`).join('')}</div>
         ${instrumentSection(a, inst, uniq, chordsForDiagrams, key)}
         <h3 style="margin:20px 0 10px">Chord timeline</h3>
-        <div class="chord-strip">${a.chords.filter((c) => c.name !== 'N').map((c) => `<div class="cs ${c.fn}" title="${UI.fmtTime(c.start)}">${esc(c.name)}<i>${UI.fmtTime(c.start)} · ${c.beats}b</i></div>`).join('')}</div>
+        <div class="chord-strip">${a.chords.filter((c) => c.name !== 'N').map((c) => `<div class="cs ${c.fn}" title="${UI.fmtTime(c.start)}${c.voicing ? ' · ' + esc(c.voicing.inversion) + (c.voicing.notes ? ' · ' + c.voicing.notes.map((m) => PM.DSP.midiName(m)).join(' ') : '') : ''}">${esc(c.name)}<i>${UI.fmtTime(c.start)} · ${c.beats}b</i>${c.voicing && c.voicing.inversion !== 'root position' ? `<i class="inv">${esc(c.voicing.inversion)}</i>` : ''}</div>`).join('')}</div>
         <div class="legend" style="margin-top:10px"><span><i style="background:var(--v-600)"></i>Tonic</span><span><i style="background:#60a5fa"></i>Subdominant</span><span><i style="background:var(--fuchsia)"></i>Dominant</span><span><i style="background:var(--v-300)"></i>Chromatic</span></div>
       </section>
 
+      ${songMap(a)}
+      ${melodySection(a)}
       ${a.strum && PM.Instruments.get(inst).strum ? `
       <section class="card" style="margin-top:18px">
         <div class="card-head"><h3>${icon('hand')} Strumming pattern</h3><span class="tag">${esc(a.strum.gridLabel)} · ${a.strum.barCount} bars</span></div>
@@ -96,6 +98,8 @@
         <ol style="color:var(--ink-2);line-height:1.8;margin:0;padding-left:20px">${practicePlan(a, inst).map((s) => `<li>${s}</li>`).join('')}</ol>
       </section>`;
     UI.dynamicsChart($('#dyn', body), a.dynamics, a.duration);
+    if ($('#melRoll', body)) drawMelody($('#melRoll', body), a);
+    $$('[data-sec]', body).forEach((b) => (b.onclick = () => { App.player.time = +b.dataset.sec; App.go('studio'); }));
     $('#toMetro', body).onclick = () => {
       const m = App.metronome;
       m.setBpm(a.meter.compound ? a.tempo.bpm * 3 : a.tempo.bpm);
@@ -103,6 +107,56 @@
       UI.toast(`Metronome set to ${Math.round(m.bpm)} BPM, ${a.meter.label}`, { icon: '⏱️' });
       App.go('metronome');
     };
+  }
+
+  /** Sections (verse / chorus …) as jump links into the Studio. */
+  function songMap(a) {
+    const secs = PM.Analyzer.sections(a);
+    if (secs.length < 2) return '';
+    return `<section class="card" style="margin-top:18px">
+      <div class="card-head"><h3>${icon('layers')} Song map</h3><span class="muted small">${secs.length} sections · tap to practise from there</span></div>
+      <div class="section-chips" style="flex-wrap:wrap">${secs.map((x) => `<button class="sec-chip" data-sec="${x.start}"><b>${esc(x.letter)}</b>${esc(x.label)} <span class="muted">· bar ${x.bar} · ${UI.fmtTime(x.start)}</span></button>`).join('')}</div>
+    </section>`;
+  }
+
+  /** Melody line, passing notes, voicings and picking style. */
+  function melodySection(a) {
+    const mel = a.melody || [];
+    const pick = a.picking;
+    const inv = a.chords.filter((c) => c.voicing && c.voicing.inversion && c.voicing.inversion !== 'root position');
+    if (!mel.length && !pick && !inv.length) return '';
+    let passing = 0;
+    for (const n of mel) {
+      const at = PM.Analyzer.chordAt(a, (n.start + n.end) / 2);
+      if (at && at.chord.pcs && at.chord.pcs.length && !at.chord.pcs.includes(((n.midi % 12) + 12) % 12)) passing++;
+    }
+    const lo = mel.length ? Math.min(...mel.map((n) => n.midi)) : 0, hi = mel.length ? Math.max(...mel.map((n) => n.midi)) : 0;
+    const pickTxt = pick ? { strumming: 'Strummed — several strings hit together on each attack', fingerpicking: 'Finger-picked — one or two notes per attack', hybrid: 'Hybrid — mixes strums with picked notes' }[pick.style] : '';
+    return `<section class="card" style="margin-top:18px">
+      <div class="card-head"><h3>${icon('music')} Melody, voicings & picking</h3>${mel.length ? `<span class="tag">${mel.length} melody notes · ${PM.DSP.midiName(lo)}–${PM.DSP.midiName(hi)}</span>` : ''}</div>
+      ${mel.length ? `<canvas class="mel-roll" id="melRoll"></canvas>
+      <div class="legend" style="margin-top:8px"><span><i style="background:var(--v-600)"></i>Chord tone</span><span><i style="background:var(--fuchsia)"></i>Passing / neighbour note (${passing})</span></div>
+      <p class="small" style="margin-top:6px">${mel.length ? `${Math.round((passing / mel.length) * 100)}% of the melody notes are <b>in-between notes</b> (not in the chord underneath) — sing or play them lightly and let the chord tones land on the beats.` : ''} Singers: the vocal range is ${PM.DSP.midiName(lo)}–${PM.DSP.midiName(hi)} (${hi - lo} semitones).</p>` : ''}
+      <div class="grid g2" style="margin-top:12px">
+        ${pick ? `<div class="notice">${icon('hand')}<div><b>${esc(pick.style[0].toUpperCase() + pick.style.slice(1))}</b> · ${pick.notesPerAttack} notes per attack${pick.pattern ? ` · pattern <span class="mono">${esc(pick.pattern)}</span>` : ''}<br><span class="small">${esc(pickTxt)}</span></div></div>` : ''}
+        ${inv.length ? `<div class="notice">${icon('layers')}<div><b>${inv.length} inverted chord${inv.length > 1 ? 's' : ''}</b> — ${inv.slice(0, 4).map((c) => `${esc(c.name)} (${esc(c.voicing.inversion)})`).join(', ')}${inv.length > 4 ? '…' : ''}<br><span class="small">A slash chord like C/E means the bass plays E. Inversions make bass lines walk smoothly.</span></div></div>` : ''}
+      </div>
+    </section>`;
+  }
+
+  function drawMelody(canvas, a) {
+    const { g, w, h } = UI.setupCanvas(canvas);
+    const mel = a.melody;
+    const lo = Math.min(...mel.map((n) => n.midi)) - 1, hi = Math.max(...mel.map((n) => n.midi)) + 1;
+    const X = (t) => (t / a.duration) * w, Y = (m) => h - 6 - ((m - lo) / Math.max(1, hi - lo)) * (h - 12);
+    g.clearRect(0, 0, w, h);
+    for (const c of a.chords) { if (c.name === 'N') continue; g.fillStyle = 'rgba(124,58,237,0.05)'; g.fillRect(X(c.start), 0, Math.max(1, X(c.end) - X(c.start) - 1), h); }
+    for (const n of mel) {
+      const at = PM.Analyzer.chordAt(a, (n.start + n.end) / 2);
+      const ct = !at || !at.chord.pcs || !at.chord.pcs.length || at.chord.pcs.includes(((n.midi % 12) + 12) % 12);
+      g.fillStyle = ct ? '#7c3aed' : '#d946ef';
+      g.fillRect(X(n.start), Y(n.midi) - 2, Math.max(2, X(n.end) - X(n.start)), 4);
+    }
   }
 
   function writtenKey(key) {
@@ -123,6 +177,26 @@
         const fifth = Theory.spell(r + 7, pf);
         return `<div class="prog-chord"><b style="font-size:16px">${esc(u.name)}</b><span>root ${Theory.spell(r, pf)} · ${pos ? I.stringNames[pos.string] + ' string ' + (pos.fret ? 'fret ' + pos.fret : 'open') : ''}</span><div class="muted small">5th ${fifth}</div></div>`;
       }).join('')}</div>${a.part && a.part.notes ? `<p class="small" style="margin-top:10px">Bass line: ${a.part.notes.slice(0, 24).map((n) => PM.DSP.midiName(n.midi)).join(' ')}${a.part.notes.length > 24 ? ' …' : ''}</p>` : ''}`;
+    }
+    if (I.family === 'voice') {
+      const mel = a.part && a.part.notes && a.part.notes.length ? a.part.notes : a.melody || [];
+      if (!mel.length) return '<p class="small" style="margin-top:14px">No clear melody was found — use Studio → Sing-along mix and sing over the chords.</p>';
+      const R = PM.Learn.RANGE.voice;
+      const lo = Math.min(...mel.map((n) => n.midi)), hi = Math.max(...mel.map((n) => n.midi));
+      // best transposition (−6…+6, any octave) to fit the melody inside the singer's range
+      let best = null;
+      for (let st = -6; st <= 6; st++) for (const o of [-24, -12, 0, 12]) {
+        const l = lo + st + o, h = hi + st + o;
+        const out = Math.max(0, R.low - l) + Math.max(0, h - R.high);
+        const score = out * 10 + Math.abs(st) + Math.abs((l + h) / 2 - (R.low + R.high) / 2) * 0.2;
+        if (!best || score < best.score) best = { st, o, score, out };
+      }
+      const keyTo = key ? Theory.keyInfo(Theory.mod12(key.tonic + best.st), key.mode).name : '';
+      return `<h3 style="margin:20px 0 10px">For your voice (${esc(R.type ? PM.Instruments.VOICE_TYPES[R.type].label : 'Alto')})</h3>
+        <div class="notice">${icon('mic')}<div>Melody range <b>${PM.DSP.midiName(lo)}–${PM.DSP.midiName(hi)}</b>; your comfortable range is ${PM.DSP.midiName(R.low)}–${PM.DSP.midiName(R.high)}.
+        ${best.st === 0 ? (best.out ? 'Some notes sit outside your range — sing those an octave away or choose a different voice type.' : 'The original key suits you. 🎉') : `Best key for you: <b>${esc(keyTo)}</b> (${best.st > 0 ? '+' : ''}${best.st} semitone${Math.abs(best.st) > 1 ? 's' : ''}) — set it with <b>Songs → Transpose</b> or play the backing in that key.`}
+        ${best.o ? ` Sing it an octave ${best.o > 0 ? 'higher' : 'lower'} than written.` : ''}</div></div>
+        <p class="small" style="margin-top:10px">Melody: ${mel.slice(0, 24).map((n) => PM.DSP.midiName(n.midi)).join(' ')}${mel.length > 24 ? ' …' : ''}</p>`;
     }
     // trumpet: written pitches
     return `<h3 style="margin:20px 0 10px">For B♭ trumpet (written pitch)</h3>

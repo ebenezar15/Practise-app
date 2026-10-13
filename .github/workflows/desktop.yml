@@ -159,13 +159,15 @@ jobs:
           name: Cadenza ${{ steps.tag.outputs.name }}
           make_latest: true
           body: |
-            ## What's new in 2.2
-            * **Exercise path:** 70+ graded exercises per instrument (piano, acoustic, electric, bass, trumpet) from Level 1 to Level 5 — scales, arpeggios, melodies, rhythm, intervals, modes, chord changes and technique.
-            * **Play along with live feedback:** count-in and click, scrolling note lane, every note judged for pitch and timing (on time / early / late / wrong / missed), stars and progress that sync.
-            * **Playback revisions:** every take is recorded — play it back, hear it against the reference, compare takes and send the best one to your teacher.
-            * **Rhythm styles:** 41 keyboard-style rhythms (ballads, disco, hard rock, funk, Latin, jazz, gospel, world…) with Intro / Main A / Main B / Fill / Ending and auto-accompaniment that follows your chords.
-            * **Beat maker:** step sequencer & pattern builder (16ths, triplets, 3/4, 6/8, swing, accents, ghost notes), save your patterns, start from any style, and rhythm practice that scores every hit.
-            * **Cadi, your practice coach:** comments live while you play, reviews and compares takes, plans your practice and answers music questions (chords, scales, intervals, time signatures, technique) — offline, with optional spoken tips.
+            ## What's new in 2.3
+            * **Singing:** a new **Voice** instrument with 65 graded vocal exercises for your voice type (soprano → bass): breathing, lip trills, humming, sirens, five-note scales rising by semitones, arpeggios, octave leaps, messa di voce, agility runs, gospel & R&B riffs, harmony lines, solfege sight-singing, Carnatic sarali/janta varisai and sing-along melodies.
+            * **Pitch trail & sing-along:** see your voice as a line against the melody (green in tune, amber close, red off), a karaoke mix that mutes the vocals, intonation scores per take (±cents, sharp/flat tendency) and vocal coaching from Cadi (breath, registers, pitch, vibrato, vocal health).
+            * **7-instrument separation:** vocals, guitars & piano, pads & strings, bass, kick, snare and cymbals — with a Karaoke preset and "mute all drums".
+            * **More accurate analysis:** better key detection (chord-aware), chord roots, major/minor, 7ths, inversions & voicings (e.g. C/E), chord-change timing, tempo, melody lines with passing notes, and strumming vs finger-picking detection — for audio, MIDI and guitar.
+            * **Easier navigation:** song map (intro / verse / chorus), jump by section or chord, switch tracks from the Studio, and a floating mini transport while you scroll.
+
+            ### Also in 2.2
+            * 70+ graded exercises per instrument with live play-along feedback and recorded takes, 41 keyboard-style rhythms with auto-accompaniment, beat maker, rhythm practice and the Cadi practice coach.
 
             ### Also in 2.1
             * Custom assignments with PDFs, record & send for review, teacher listening review, gospel/hymn song library (English, Tamil & any language), Learn modes, free Cloudflare Tunnel hosting.

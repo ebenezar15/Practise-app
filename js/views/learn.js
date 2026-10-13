@@ -88,6 +88,9 @@
         <div class="page-head"><div><div class="eyebrow">Learn · ${esc(I.emoji + ' ' + I.label)}</div><h1>Learn & practise</h1>
           <p>Guided practice that listens to you: scales, chords, reading, ear training and creative exercises. Every session earns XP and counts toward your goals.</p></div>
           <div class="row"><a class="btn ghost" href="#/games">${icon('games')} Challenges</a></div></div>
+        ${I.family === 'voice' ? `<section class="card" style="margin-bottom:16px"><div class="card-head"><h3>🎤 Your voice type</h3><span class="muted small">Exercises, scales and sing-alongs are pitched for it</span></div>
+          <div class="seg voice-types" id="vType">${Object.entries(Instruments.VOICE_TYPES).map(([id, v]) => `<button data-v="${id}" class="${(App.settings.voiceType || 'alto') === id ? 'on' : ''}">${esc(v.label)} <span class="muted small">${PM.DSP.midiName(v.range[0])}–${PM.DSP.midiName(v.range[1])}</span></button>`).join('')}</div>
+          <p class="small muted" style="margin-top:8px">Not sure? Most women sing alto or mezzo, most men baritone or tenor. If high notes strain, pick the lower type.</p></section>` : ''}
         <div class="learn-grid" id="lGrid">${ACTIVITIES.map((a) => `<button class="card learn-tile" data-a="${a.id}"><span class="lt-art">${a.art}</span><b>${a.name}</b><span class="small">${a.desc}</span>${a.input ? '' : '<span class="tag" style="align-self:flex-start">no instrument needed</span>'}</button>`).join('')}</div>
         <section class="card stage hidden" id="lStage" style="margin-top:18px"></section>`;
       const stage = $('#lStage', host);
@@ -100,6 +103,7 @@
         setTimeout(() => stage.scrollIntoView({ behavior: 'smooth', block: 'start' }), 30);
       };
       $$('[data-a]', host).forEach((b) => (b.onclick = () => open(b.dataset.a)));
+      $$('#vType [data-v]', host).forEach((b) => (b.onclick = () => { App.settings.voiceType = b.dataset.v; App.saveSettings(); PM.Learn.setVoiceType(b.dataset.v); App.rerender(); }));
       if (App.pendingExercise) { const id = App.pendingExercise; App.pendingExercise = null; open('path', { exercise: id }); }
       else if (App.pendingLearn && App.pendingLearn.learn && ACT[App.pendingLearn.learn.activity]) open(App.pendingLearn.learn.activity, Object.assign({ assignment: App.pendingLearn }, App.pendingLearn.learn));
       return () => { if (current && current.stop) current.stop(); };
