@@ -76,6 +76,7 @@
         </div>
         <div id="paAlong">
           ${chordsKind ? `<div class="pa-chords" id="paChords">${ex.chords.map((c, i) => `<div class="pa-chord" data-i="${i}">${I.strings ? UI.chordDiagram(c) : `<b>${esc(c)}</b><span class="small">${chordNotes(c)}</span>`}</div>`).join('')}</div>` : '<canvas class="pa-lane" id="paLane" height="170"></canvas>'}
+          ${chordsKind || !PM.FingerPanel ? '' : '<details class="pa-fing" id="paFingD" open><summary>🖐️ Fingering guide — piano roll & ' + (I.strings ? 'fretboard' : I.family === 'keys' ? 'keyboard' : I.family === 'brass' ? 'valves' : 'notes') + '</summary><div id="paFing"></div></details>'}
           <div class="row" style="justify-content:center;margin-top:10px">
             <button class="btn glass" id="paListen">${icon('headphones')} Listen</button>
             <button class="btn primary" id="paGo">${icon('mic')} Start take</button>
@@ -90,6 +91,10 @@
     const q = (id) => $('#' + id, box);
 
     function chordNotes(name) { const p = Theory.parseChordName(name); return p ? Theory.chordPcs(p.root, p.type).map((x) => Theory.spell(x + (inst === 'trumpet' ? 2 : 0))).join(' ') : ''; }
+
+    // ---------------- fingering guide (piano roll + fretboard / keyboard / valves)
+    const fpanel = !chordsKind && q('paFing') && I.family !== 'voice' ? PM.FingerPanel.mount(q('paFing'), { inst, notes: ex.notes, beats: ex.beats, title: false }) : null;
+    if (!fpanel && q('paFingD')) q('paFingD').remove();
 
     // ---------------- note lane
     const lane = q('paLane');
@@ -234,6 +239,7 @@
         if (take.cand && now - take.cand.time > 0.14) { decide(take.cand, win, tol); take.cand = null; }
         for (const t of targets) if (!t.result && now > t.time + (chordsKind ? t.dur * 0.8 : win + 0.18) && now > t0) { t.result = 'miss'; emitNote(t); }
         if (lane) drawLane(now); else highlightChord(now);
+        if (fpanel && targets.length) { let i = -1; for (let k = 0; k < targets.length; k++) if (targets[k].time <= now + 0.05) i = k; else break; if (i >= 0) fpanel.setCurrent(i); }
         if (now > endTime + 0.5) return finish(false);
         raf = requestAnimationFrame(loop);
       };

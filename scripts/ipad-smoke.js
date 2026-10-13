@@ -198,7 +198,11 @@ fs.mkdirSync(outDir, { recursive: true });
       await page.waitForTimeout(800);
       await shot('exercise-path');
       if (n < 50) throw new Error('only ' + n + ' exercises');
-      return n + ' exercises';
+      const inst = await page.evaluate(() => PM.App.instrument);
+      const fp = await page.locator('.fp').count();
+      if (inst !== 'voice' && !fp) throw new Error('no fingering guide for ' + inst);
+      if (fp) { await tap('.fp-step [data-step="1"]'); if (!/^2\//.test(await page.textContent('.fp-now'))) throw new Error('fingering stepper did not advance'); }
+      return n + ' exercises · fingering guide ' + (fp ? 'shown' : 'n/a') + ' (' + inst + ')';
     });
     await step('styles: groove plays with Main B and accompaniment', async () => {
       await page.goto(base + '/#/metronome');

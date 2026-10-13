@@ -109,7 +109,8 @@
             visual === 'voice' ? `<canvas class="pitch-trail" id="trail"></canvas>
             <div class="row small" style="margin-top:10px;gap:14px;flex-wrap:wrap"><span class="muted" id="trailSrc">${a ? (a.part && a.part.notes && a.part.notes.length ? 'Target: the vocal part' : a.melody && a.melody.length ? 'Target: the melody Cadenza heard in the song' : 'No melody found — free singing') : 'Free singing — load a song or use the Exercise path for a melody to follow'}</span><span>In tune <b id="trailAcc">—</b></span>${a ? '<button class="btn sm ghost" id="karaoke">🎤 Sing-along mix (mute vocals)</button>' : ''}</div>` :
             visual === 'keys' ? '<div class="keyboard-wrap" id="kbd"></div>' : `<div id="valves">${UI.valvesHtml()}</div>`}
-        </section>`;
+        </section>
+        ${a && visual !== 'voice' && !improv ? '<section class="card stage fp-card" id="fpCard"></section>' : ''}`;
 
       $$('#modeSeg button', host).forEach((b) => (b.onclick = () => { App.settings.studioMode = b.dataset.mode; App.saveSettings(); App.rerender(); }));
       $$('.mobile-inst [data-inst]', host).forEach((b) => (b.onclick = () => App.setInstrument(b.dataset.inst)));
@@ -457,11 +458,31 @@
         }
       }
 
+      // ---------- Fingering guide for the melody / your part ----------
+      let fpanel = null, fpStarts = null;
+      if ($('#fpCard', host)) {
+        const src = a.part && a.part.notes && a.part.notes.length ? a.part.notes : a.melody || [];
+        // keep the line playable: one note at a time, moved by octaves into the instrument's range
+        const mono = [];
+        for (const n of src) { if (mono.length && n.start < mono[mono.length - 1].start + 0.05) continue; mono.push(n); }
+        const lo = I.range[0], hi = I.strings ? Math.min(I.range[1], I.strings[I.strings.length - 1] + (I.frets || 15)) : I.range[1];
+        if (mono.length >= 4) {
+          const mean = mono.reduce((x, n) => x + n.midi, 0) / mono.length;
+          const target = I.strings ? lo + 12 : (lo + hi) / 2;
+          const shift = 12 * Math.round((target - mean) / 12);
+          const notes = mono.map((n) => { let m = n.midi + shift; while (m < lo) m += 12; while (m > hi) m -= 12; return m; });
+          fpStarts = mono.map((n) => n.start);
+          $('#fpCard', host).innerHTML = `<div class="card-head"><h3>${icon('hand')} Fingering guide <span class="muted small" style="font-weight:600">· ${a.part && a.part.notes && a.part.notes.length ? 'your part' : 'the melody'}${shift ? ' (moved ' + (shift > 0 ? 'up ' : 'down ') + Math.abs(shift / 12) + ' octave' + (Math.abs(shift) > 12 ? 's' : '') + ' to fit your ' + esc(I.label.toLowerCase()) + ')' : ''}</span></h3></div><div id="fpBox"></div>`;
+          fpanel = PM.FingerPanel.mount($('#fpBox', host), { inst, notes, starts: fpStarts, durs: mono.map((n) => Math.max(0.1, (n.end || n.start + 0.4) - n.start)), window: 14, title: false });
+        } else $('#fpCard', host).remove();
+      }
+
       // ---------- Visual loop (playback + instrument) ----------
       let raf = 0, lastStrumSlot = -1;
       const tick = () => {
         raf = requestAnimationFrame(tick);
         const t = player.time;
+        if (fpanel && player.playing) { const i = PM.FingerPanel.indexAt(fpStarts, t); if (i >= 0) fpanel.setCurrent(i); }
         if (timeline) {
           timeline.setTime(t);
           $('#timeLbl', host).textContent = `${UI.fmtTime(t)} / ${UI.fmtTime(a.duration)}`;
