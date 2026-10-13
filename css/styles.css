@@ -1185,3 +1185,36 @@ body.has-mini { scroll-padding-bottom: 150px; }
 .ak-instwrap > .small svg { width: 16px; height: 16px; vertical-align: -3px; margin-right: 4px; }
 /* page transitions slide sideways: never let them create a horizontal scrollbar */
 main#view { overflow-x: clip; }
+
+/* ---------- Click patterns (step sequencer) ---------- */
+.ck-top { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.ck-top input[type="range"] { max-width: 320px; width: 100%; }
+.ck-bpm { display: flex; flex-direction: column; align-items: center; min-width: 96px; }
+.ck-bpm b { font-size: 44px; font-weight: 850; line-height: 1; }
+.ck-bpm span { font-size: 11px; letter-spacing: 0.12em; opacity: 0.7; }
+.ck-status { text-align: center; color: rgba(237, 233, 254, 0.8); transition: color 0.2s; }
+.ck-status.silent::after { content: " · 🤫 silent loop — keep counting!"; color: var(--warn); }
+.ck-grid { display: flex; flex-direction: column; gap: 10px; margin: 18px 0 10px; overflow-x: auto; padding: 4px 2px 8px; scrollbar-width: thin; touch-action: pan-x pan-y; }
+.ck-bar { display: grid; grid-template-columns: 22px repeat(var(--n), minmax(26px, 1fr)); gap: 4px; align-items: stretch; min-width: max-content; }
+@media (min-width: 720px) { .ck-bar { min-width: 0; } }
+.ck-barno { align-self: center; font-size: 11px; font-weight: 800; color: var(--v-300); text-align: center; }
+.ck-step { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 4px; height: 66px; padding: 6px 0 5px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.1); background: rgba(255, 255, 255, 0.04); color: #fff; cursor: pointer; transition: background 0.15s, transform 0.08s, box-shadow 0.15s; -webkit-tap-highlight-color: transparent; }
+.ck-step.gap { margin-left: 6px; }
+.ck-step.beat { background: rgba(255, 255, 255, 0.08); }
+.ck-step i { display: block; width: 70%; border-radius: 6px; background: var(--v-300); transition: height 0.15s, background 0.15s, opacity 0.15s; }
+.ck-step.l0 i { height: 4px; opacity: 0.25; }
+.ck-step.l1 i { height: 14px; opacity: 0.6; }
+.ck-step.l2 i { height: 26px; background: var(--v-400); }
+.ck-step.l3 i { height: 40px; background: linear-gradient(180deg, var(--pink), var(--fuchsia)); box-shadow: 0 0 12px rgba(217, 70, 239, 0.5); }
+.ck-step em { font-style: normal; font-size: 10px; font-weight: 700; opacity: 0.7; }
+.ck-step.beat em { opacity: 1; font-size: 11px; }
+.ck-step.now { box-shadow: 0 0 0 2px #fff inset, 0 0 18px rgba(255, 255, 255, 0.35); transform: translateY(-2px); }
+.ck-step.now.muted { box-shadow: 0 0 0 2px var(--warn) inset; }
+.ck-step:focus-visible { outline: 2px solid var(--pink); outline-offset: 2px; }
+.ck-brush { justify-content: center; }
+.ck-mine { display: grid; gap: 8px; }
+.ck-saved { display: flex; gap: 8px; align-items: center; }
+.ck-load { flex: 1; display: grid; gap: 2px; text-align: left; padding: 10px 12px; border-radius: var(--radius-sm); border: 1px solid var(--line); background: var(--card); color: var(--ink); cursor: pointer; min-width: 0; }
+.ck-load code { font-size: 12px; color: var(--v-600); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (hover: hover) { .ck-step:hover { background: rgba(255, 255, 255, 0.14); } .ck-load:hover { border-color: var(--v-300); } }
+[data-calm="1"] .ck-step.now { transform: none; }

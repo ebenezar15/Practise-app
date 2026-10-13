@@ -221,6 +221,22 @@ fs.mkdirSync(outDir, { recursive: true });
       await tap('.sq-row[data-v="clap"] .sq-cell');
       await shot('beat-maker');
     });
+    await step('click patterns: preset, edit a step, loop plays with a playhead', async () => {
+      await tap('#mTabs [data-t="pattern"]');
+      await page.waitForSelector('.ck-step', { timeout: 5000 });
+      await page.selectOption('#cpPreset', 'clave32');
+      const n = await page.locator('.ck-step').count();
+      if (n !== 16) throw new Error('clave should have 16 steps, got ' + n);
+      await tap('.ck-step[data-k="1"]');
+      if (!/\bl2\b/.test(await page.getAttribute('.ck-step[data-k="1"]', 'class'))) throw new Error('step did not change');
+      await tap('#cpGo');
+      await page.waitForTimeout(1200);
+      const q = await page.evaluate(() => PM.App.clickLoop.queue.length);
+      await tap('#cpGo');
+      if (!q) throw new Error('click loop not scheduling');
+      await shot('click-patterns');
+      return q + ' clicks scheduled';
+    });
     await step('Cadi answers a question', async () => {
       await page.evaluate(() => document.querySelectorAll('.cadi-bubble').forEach((b) => b.classList.add('hidden')));
       await tap('#cadiFab');

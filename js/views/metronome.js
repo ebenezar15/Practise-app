@@ -14,9 +14,17 @@
     render(host, App) {
       const m = App.metronome;
       const tab = App.metroTab || 'click';
-      const tabs = `<div class="seg big-tabs" id="mTabs" style="margin-bottom:18px">${[['click', 'metronome', 'Click'], ['styles', 'music', 'Styles (40+ rhythms)'], ['beats', 'sliders', 'Beat maker']].map(([k, ic, l]) => `<button data-t="${k}" class="${tab === k ? 'on' : ''}">${icon(ic)} ${l}</button>`).join('')}</div>`;
+      const tabs = `<div class="seg big-tabs" id="mTabs" style="margin-bottom:18px">${[['click', 'metronome', 'Click'], ['styles', 'music', 'Styles (40+ rhythms)'], ['pattern', 'grid', 'Click patterns'], ['beats', 'sliders', 'Beat maker']].map(([k, ic, l]) => `<button data-t="${k}" class="${tab === k ? 'on' : ''}">${icon(ic)} ${l}</button>`).join('')}</div>`;
       const wireTabs = () => $$('#mTabs button', host).forEach((b) => (b.onclick = () => { if (b.dataset.t === tab) return; App.metroTab = b.dataset.t; App.keepSequencer = true; App.rerender(); }));
       const seqCleanup = () => { if (App.keepSequencer) { App.keepSequencer = false; return; } if (App.sequencer && App.sequencer.running) App.sequencer.stop(); };
+      if (tab === 'pattern') {
+        if (m.running) m.stop();
+        if (App.sequencer && App.sequencer.running) App.sequencer.stop();
+        const c = PM.ClickPatternView.render(host, App, tabs);
+        wireTabs();
+        return () => { c && c(); App.keepSequencer = false; };
+      }
+      if (App.clickLoop && App.clickLoop.running) App.clickLoop.stop();
       if (tab !== 'click') {
         if (m.running) m.stop();
         const c = PM.RhythmView.render(host, App, tab, tabs);
