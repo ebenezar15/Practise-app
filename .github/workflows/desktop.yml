@@ -159,6 +159,12 @@ jobs:
           name: Cadenza ${{ steps.tag.outputs.name }}
           make_latest: true
           body: |
+            ## What's new in 2.6
+            * **Academy:** 53 self-paced lessons in 12 subjects — fundamentals, reading music, rhythm & groove, scales & keys, intervals, chords & harmony, ear training, songwriting, improvisation, worship band & arranging, how to practise, and your instrument. Each lesson explains the idea, gives real-world uses and examples to hear, shows it on your instrument, and has unlimited auto-generated practice questions (43 kinds) with stars and mastery, plus a placement quiz that tells you where to start.
+            * **Music Toolkit:** chord dictionary (any root and type, guitar and piano, the keys it belongs to), scale finder with fret positions, interactive circle of fifths with playable progressions, chord-chart transposer and capo calculator, and an 80-term glossary (including Tamil/Carnatic terms).
+            * **Practice Planner:** a balanced routine for your time and focus (balanced, technique, songs, theory, performance) with a guided timer for each block and a weekly tracker.
+            * **Clearer pages:** Academy, Practice Room, Kids Zone, Play-Along Studio, Song Library, Rhythm & Metronome, Song Analyzer, Music Toolkit, Practice Planner, My Progress — grouped in the sidebar, with a "More" menu on phones. Home is now a learning hub.
+
             ## What's new in 2.5
             * **Harmony & part singing:** a six-step harmony path (what harmony is, holding a drone, singing in thirds, rounds, finding your part) and a part trainer for hymns — Doxology, Amazing Grace, Joyful Joyful, Silent Night, When the Saints, plus rounds — in four parts. Listen, hear your part alone, or sing it while Cadenza sings the others, with a scrolling four-colour score, the chord and each voice's chord tone, words, your live pitch line and an in-tune score.
             * **Smoother app:** page transitions that follow the direction you travel, cascading cards, tactile buttons and live chord-change pulses (all switched off by calm mode).

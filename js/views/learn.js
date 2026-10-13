@@ -106,7 +106,8 @@
       };
       $$('[data-a]', host).forEach((b) => (b.onclick = () => open(b.dataset.a)));
       $$('#vType [data-v]', host).forEach((b) => (b.onclick = () => { App.settings.voiceType = b.dataset.v; App.saveSettings(); PM.Learn.setVoiceType(b.dataset.v); App.rerender(); }));
-      if (App.pendingExercise) { const id = App.pendingExercise; App.pendingExercise = null; open('path', { exercise: id }); }
+      if (App.pendingActivity && ACT[App.pendingActivity]) { const a = App.pendingActivity; App.pendingActivity = null; open(a); }
+      else if (App.pendingExercise) { const id = App.pendingExercise; App.pendingExercise = null; open('path', { exercise: id }); }
       else if (App.pendingLearn && App.pendingLearn.learn && ACT[App.pendingLearn.learn.activity]) open(App.pendingLearn.learn.activity, Object.assign({ assignment: App.pendingLearn }, App.pendingLearn.learn));
       return () => { if (current && current.stop) current.stop(); };
     },

@@ -35,15 +35,23 @@ fs.mkdirSync(outDir, { recursive: true });
   const results = [];
   const errors = [];
   let failed = false;
+  let lastState = '';
   const step = async (name, fn) => {
     try { const info = await fn(); results.push({ step: name, ok: true, info: info || '' }); console.log(`✓ ${name}${info ? ' — ' + info : ''}`); }
     catch (e) { failed = true; results.push({ step: name, ok: false, info: e.message }); console.log(`✗ ${name} — ${process.env.SMOKE_VERBOSE ? e.message : e.message.split("\n")[0]}`); }
+    // trace page reloads and the loaded track between steps (diagnoses a lost track on WebKit)
+    try {
+      const st = await pageRef.evaluate(() => `page ${window.__boot || (window.__boot = Math.random().toString(36).slice(2, 6))} · track ${PM.App.track ? '"' + PM.App.track.name + '"' : 'none'}`);
+      if (st !== lastState) { console.log(`    ↳ ${st}`); lastState = st; }
+    } catch (e) { /* page closed */ }
   };
+  let pageRef = null;
 
   for (const deviceName of ['iPad Pro 11', 'iPad Pro 11 landscape', 'iPhone 13']) {
     const device = pw.devices[deviceName];
     const ctx = await browser.newContext(Object.assign({}, device, engine === 'chromium' ? { defaultBrowserType: undefined } : {}));
     const page = await ctx.newPage();
+    pageRef = page;
     const tag = deviceName.replace(/\s+/g, '-');
     page.on('pageerror', (e) => errors.push(`[${deviceName}] ${e.message}`));
     page.on('console', (m) => { if (m.type() === 'error' && !/Failed to load resource|getUserMedia|NotAllowed|NotFound|NotSupported|Overconstrained/i.test(m.text())) errors.push(`[${deviceName}] console: ${m.text()}`); });
@@ -76,6 +84,18 @@ fs.mkdirSync(outDir, { recursive: true });
         await shot(v.replace(/\W+/g, '-'));
       }
     });
+    if (deviceName === 'iPhone 13') {
+      await step('iPhone 13: "More" opens every page', async () => {
+        await page.waitForSelector('#navMore', { timeout: 5000 });
+        await page.evaluate(() => document.querySelector('#navMore').click()); // fixed bottom bar
+        await page.waitForSelector('.more-item', { timeout: 3000 });
+        const n = await page.locator('.more-item').count();
+        await page.locator('.more-item[href="#/toolkit"]').click();
+        await page.waitForSelector('#tkTabs', { timeout: 5000 });
+        if (n < 6) throw new Error('only ' + n + ' extra pages');
+        return n + ' more pages';
+      });
+    }
     if (deviceName !== 'iPad Pro 11') { await ctx.close(); continue; }
 
     await step('studio: guitar demo loads & analyses', async () => {
@@ -438,6 +458,8 @@ fs.mkdirSync(outDir, { recursive: true });
       await page.waitForTimeout(500);
       const view4 = await page.evaluate(() => PM.App.currentView + ' ' + document.querySelectorAll('#view > *').length);
       await shot('nav-back');
+      const actives = await page.locator('.nav a.active').count();
+      if (actives !== 1) throw new Error(actives + ' nav items highlighted');
       if (atTop > 5) throw new Error('new page did not start at the top: ' + atTop);
       if (Math.abs(y1 - y0) > 40) throw new Error(`scroll not restored: ${y0} → ${y1}`);
       if (modals) throw new Error('dialog left open after Back');
@@ -445,6 +467,88 @@ fs.mkdirSync(outDir, { recursive: true });
       if (!/wl-way-maker/.test(view2)) throw new Error('forward went to ' + view2);
       if (view3 !== 'home') throw new Error('back×2 went to ' + view3);
       return `scroll ${y0}→${y1}, rapid back/forward ended on ${view4}`;
+    });
+    await step('academy: subjects, a lesson with examples, practice quiz and stars', async () => {
+      await page.goto(base + '/#/academy');
+      await page.waitForSelector('.ak-subject', { timeout: 5000 });
+      const subjects = await page.locator('.ak-subject').count();
+      await page.evaluate(() => document.querySelector('.ak-subject[href*="s=chords"]').click());
+      await page.waitForSelector('.ak-row', { timeout: 5000 });
+      await page.evaluate(() => document.querySelector('.ak-row[href*="l=c1"]').click());
+      await page.waitForSelector('.ak-lesson', { timeout: 5000 });
+      await tap('[data-ex]');
+      let answered = 0;
+      for (let i = 0; i < 12 && !(await page.$('.ak-result')); i++) {
+        const right = await page.evaluate(() => { const q = document.querySelector('.ak-prompt'); return q ? q.textContent : ''; });
+        // answer by trying options until one is accepted (the quiz never punishes retries)
+        for (let k = 0; k < 4; k++) {
+          const opt = page.locator('.ak-opt:not([disabled])').first();
+          if (!(await opt.count())) break;
+          await opt.click();
+          await page.waitForTimeout(120);
+          if (await page.$('.ak-opt.ok')) break;
+        }
+        answered++; void right;
+        await page.waitForTimeout(900);
+      }
+      await page.waitForSelector('.ak-result', { timeout: 5000 });
+      await shot('academy-lesson');
+      const best = await page.evaluate(() => PM.App.game.state.academy.best.c1);
+      if (subjects < 12) throw new Error('subjects ' + subjects);
+      if (best == null) throw new Error('score not saved');
+      return `${subjects} subjects · ${answered} questions · best ${Math.round(best * 100)}%`;
+    });
+    await step('academy: placement quiz recommends a level', async () => {
+      await page.goto(base + '/#/academy?placement=1');
+      await page.waitForSelector('.ak-opt', { timeout: 5000 });
+      for (let i = 0; i < 8; i++) { await page.waitForSelector('#plSkip', { timeout: 3000 }); await tap('#plSkip'); }
+      await page.waitForSelector('.ak-result', { timeout: 3000 });
+      const t = await page.textContent('.ak-result h2');
+      if (!/Beginner/.test(t)) throw new Error(t);
+      return t;
+    });
+    await step('toolkit: chord dictionary, scale finder, circle of fifths, transposer, glossary', async () => {
+      await page.goto(base + '/#/toolkit');
+      await page.waitForSelector('#tkR', { timeout: 5000 });
+      await page.selectOption('#tkR', '7');
+      await page.selectOption('#tkT', 'm7');
+      const chord = await page.textContent('.tk-chord h2');
+      await tap('#tkTabs [data-t="scales"]');
+      await page.waitForSelector('#tkSS', { timeout: 3000 });
+      await page.selectOption('#tkSS', 'minpent');
+      await tap('#tkTabs [data-t="circle"]');
+      await page.waitForSelector('.tk-node', { timeout: 3000 });
+      await page.locator('.tk-node[data-pc="2"]').click();
+      const key = await page.textContent('.tk-circle-wrap h2');
+      await shot('toolkit-circle');
+      await tap('#tkTabs [data-t="transpose"]');
+      await page.fill('#tkTx', 'G D/F# Em C');
+      await tap('#tkUp'); await tap('#tkUp');
+      const out = await page.textContent('#tkOut');
+      await tap('#tkTabs [data-t="glossary"]');
+      await page.fill('#tkG', 'capo');
+      const gl = await page.locator('.tk-gloss dt').count();
+      if (!/Gm7/.test(chord)) throw new Error('chord ' + chord);
+      if (!/D major/.test(key)) throw new Error('key ' + key);
+      if (!/A E\/G# F#m D/.test(out.trim())) throw new Error('transpose ' + out);
+      if (gl < 1) throw new Error('glossary');
+      return `${chord.trim()} · ${key.trim()} · ${out.trim()}`;
+    });
+    await step('planner: routine for the chosen time and focus, guided timer', async () => {
+      await page.goto(base + '/#/planner');
+      await page.waitForSelector('.pl-block', { timeout: 5000 });
+      await tap('#plMin [data-m="30"]');
+      await tap('#plFocus [data-f="theory"]');
+      const mins = await page.evaluate(() => [...document.querySelectorAll('.pl-min')].reduce((a, e) => a + parseInt(e.textContent, 10), 0));
+      await tap('#plGo');
+      await page.waitForSelector('.pl-run .vt-svg', { timeout: 3000 });
+      await tap('#plNext');
+      await page.waitForTimeout(250);
+      const second = await page.textContent('.modal-back:not(.closing) .pl-run h2');
+      await shot('planner');
+      await closeModals();
+      if (mins !== 30) throw new Error('minutes ' + mins);
+      return `30-minute plan · second block: ${second.trim()}`;
     });
     await step('ear trainer game', async () => {
       await page.goto(base + '/#/games');

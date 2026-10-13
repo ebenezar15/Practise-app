@@ -73,7 +73,9 @@
         this.cleanup = null;
         const host = $('#view');
         host.innerHTML = '';
-        $$('.nav a').forEach((a) => a.classList.toggle('active', a.dataset.id === view.id || (view.hidden && a.dataset.id === view.parent)));
+        $$('.nav a').forEach((a) => a.classList.toggle('active', !!(a.dataset.id === view.id || (view.hidden && a.dataset.id === view.parent))));
+        const more = $('#navMore');
+        if (more) more.classList.toggle('active', !!$('.nav a.extra.active'));
         this.currentView = view.id;
         document.title = view.title + ' · Cadenza';
         try { this.cleanup = view.render(host, this) || null; }
@@ -309,10 +311,28 @@
 
   // ---------- Shell ----------
   function buildShell() {
-    const nav = App.order.map((id) => {
-      const v = App.views[id];
-      return `<a href="#/${id}" data-id="${id}">${icon(v.icon)}<span>${esc(v.nav || v.title)}</span></a>`;
-    }).join('');
+    // grouped navigation with clear names; phones show the first five + a "More" sheet
+    const NAV = [
+      ['Learn', [['home', 'Home', 'Home'], ['academy', 'Academy', 'Academy'], ['learn', 'Practice Room', 'Practice'], ['kids', 'Kids Zone', 'Kids']]],
+      ['Play', [['studio', 'Play-Along Studio', 'Play Along'], ['songs', 'Song Library', 'Songs'], ['metronome', 'Rhythm & Metronome', 'Rhythm'], ['tuner', 'Tuner', 'Tuner']]],
+      ['Tools', [['insights', 'Song Analyzer', 'Analyzer'], ['toolkit', 'Music Toolkit', 'Toolkit'], ['planner', 'Practice Planner', 'Planner']]],
+      ['You', [['progress', 'My Progress', 'Progress'], ['classroom', 'Classroom', 'Classroom']]],
+    ];
+    const PRIMARY = ['home', 'academy', 'learn', 'songs', 'studio'];
+    const listed = new Set();
+    let nav = '';
+    for (const [group, items] of NAV) {
+      nav += `<div class="nav-group">${esc(group)}</div>`;
+      for (const [id, title, short] of items) {
+        const v = App.views[id];
+        if (!v) continue;
+        listed.add(id);
+        v.title = title; v.nav = short;
+        nav += `<a href="#/${id}" data-id="${id}" class="${PRIMARY.includes(id) ? 'primary' : 'extra'}" title="${esc(title)}">${icon(v.icon)}<span>${esc(short)}</span></a>`;
+      }
+    }
+    for (const id of App.order) if (!listed.has(id)) { const v = App.views[id]; nav += `<a href="#/${id}" data-id="${id}" class="extra">${icon(v.icon)}<span>${esc(v.nav || v.title)}</span></a>`; }
+    nav += `<button class="nav-more" id="navMore" aria-label="More pages">${icon('sliders')}<span>More</span></button>`;
     $('#app').innerHTML = `
       <aside class="sidebar">
         <div class="brand">
@@ -337,6 +357,12 @@
       b.addEventListener('click', () => App.setInstrument(b.dataset.inst));
     });
     $('#themeBtn').onclick = () => PM.Theme.openModal(App);
+    $('#navMore').onclick = () => {
+      const links = $$('.nav a.extra').map((a) => `<a class="more-item" href="${a.getAttribute('href')}">${a.innerHTML.replace(/<span>[^<]*<\/span>/, `<span>${esc(a.title || a.textContent)}</span>`)}</a>`).join('');
+      const m = UI.modal(`<div class="modal-body"><h2 style="margin-bottom:12px">All pages</h2><div class="more-grid">${links}</div><button class="btn ghost" data-close style="margin-top:14px;width:100%">Close</button><button class="btn ghost" id="moreTheme" style="margin-top:8px;width:100%">🎨 Theme & fonts</button></div>`);
+      m.el.querySelectorAll('.more-item').forEach((a) => a.addEventListener('click', () => m.close()));
+      m.el.querySelector('#moreTheme').onclick = () => { m.close(); PM.Theme.openModal(App); };
+    };
     $('#pbBack').onclick = () => { if ((history.state || {}).cadIdx > 1) history.back(); else App.go('home'); };
     $('#pbFwd').onclick = () => history.forward();
     // edge swipes in the installed app (browsers already have their own)

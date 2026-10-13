@@ -25,10 +25,11 @@
           <div>
             <div class="now-label">${greeting()}${s.name ? ', ' + esc(s.name) : ''} · ${PM.Instruments.get(inst).emoji} ${esc(PM.Instruments.get(inst).label)} mode</div>
             <h1 style="margin-top:10px">Ready to make music, ${esc(g.title)}?</h1>
-            <p class="hero-sub">Upload any song or MIDI clip, plug in or open your mic, and play along. Your on-device coach listens in real time and tells you exactly what to fix — no internet needed.</p>
+            <p class="hero-sub">Learn music from the very basics to advanced harmony at your own pace: lessons, practice with live feedback, songs with tutorials and a coach that listens — all on your device, no internet needed.</p>
             <div class="row" style="margin-top:20px">
-              <a class="btn white" href="#/studio">${icon('mic')} Start practising</a>
-              <a class="btn glass" href="#/insights">${icon('upload')} Analyse a song</a>
+              <a class="btn white" href="#/planner">${icon('play')} Start today's routine</a>
+              <a class="btn glass" href="#/academy">${icon('library')} Continue learning</a>
+              <a class="btn glass" href="#/studio">${icon('mic')} Play along</a>
             </div>
             <div class="hero-stats">
               <div class="hero-stat"><b>${s.streak} 🔥</b><span>Day streak</span></div>
@@ -61,12 +62,16 @@
           </div>
         </div>
 
-        <h2 style="margin:28px 0 14px">Jump in</h2>
+        <h2 style="margin:28px 0 14px">What would you like to do today?</h2>
         <div class="tiles">
-          <a class="card tile feature" href="#/studio"><div class="tile-ic">${icon('mic')}</div><h3>Live Studio</h3><p>Play over a track with real-time chord, timing, intonation & dynamics coaching.</p></a>
-          <a class="card tile" href="#/insights"><div class="tile-ic">${icon('insights')}</div><h3>Song Insights</h3><p>Key, chords, tempo, meter${PM.Instruments.get(inst).strum ? ', strumming' : ''} & dynamics — plus instrument separation.</p></a>
-          <a class="card tile" href="#/games"><div class="tile-ic">${icon('games')}</div><h3>Challenges</h3><p>Chord Quest, Rhythm Hero, Note Hunter & Ear Trainer.</p></a>
-          <a class="card tile" href="#/metronome"><div class="tile-ic">${icon('metronome')}</div><h3>Metronome</h3><p>Accents, subdivisions, speed trainer & timing check.</p></a>
+          <a class="card tile feature" href="#/academy"><div class="tile-ic">${icon('library')}</div><h3>Learn — Academy</h3><p>${PM.Academy.LESSONS.length} lessons: fundamentals, reading, scales, chords, ear, songwriting, worship band and more.</p></a>
+          <a class="card tile" href="#/learn"><div class="tile-ic">${icon('target')}</div><h3>Practise — Practice Room</h3><p>Exercise path, scales, chords, sight-reading and ear training with live feedback.</p></a>
+          <a class="card tile" href="#/studio"><div class="tile-ic">${icon('mic')}</div><h3>Play — Play-Along Studio</h3><p>Play over songs with real-time chord, timing, pitch & dynamics coaching.</p></a>
+          <a class="card tile" href="#/songs"><div class="tile-ic">${icon('music')}</div><h3>Songs — Song Library</h3><p>Worship, hymns & Tamil patterns with tutorials, a backing band and parts to sing.</p></a>
+          <a class="card tile" href="#/planner"><div class="tile-ic">${icon('progress')}</div><h3>Plan — Practice Planner</h3><p>A balanced routine for your time and focus, with timers.</p></a>
+          <a class="card tile" href="#/toolkit"><div class="tile-ic">${icon('sliders')}</div><h3>Look up — Music Toolkit</h3><p>Chord dictionary, scale finder, circle of fifths, transposer & glossary.</p></a>
+          <a class="card tile" href="#/insights"><div class="tile-ic">${icon('insights')}</div><h3>Analyse — Song Analyzer</h3><p>Key, chords, tempo${PM.Instruments.get(inst).strum ? ', strumming' : ''}, melody and 7-instrument separation for any song.</p></a>
+          <a class="card tile" href="#/games"><div class="tile-ic">${icon('games')}</div><h3>Play games — Challenges</h3><p>Chord Quest, Rhythm Hero, Note Hunter & Ear Trainer.</p></a>
         </div>
 
         <div class="grid g2" style="margin-top:18px">
