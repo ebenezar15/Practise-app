@@ -326,12 +326,14 @@
   // ---------- Shell ----------
   function buildShell() {
     // grouped navigation with clear names; phones show the first five + a "More" sheet
+    // every page appears exactly once; Harmony is reached from the Practice Room
     const NAV = [
-      ['Learn', [['home', 'Home', 'Home'], ['academy', 'Academy', 'Academy'], ['learn', 'Practice Room', 'Practice'], ['kids', 'Kids Zone', 'Kids'], ['games', 'Challenge Arena', 'Challenges']]],
-      ['Play', [['studio', 'Play-Along Studio', 'Play Along'], ['songs', 'Song Library', 'Songs'], ['drums', 'Drum Studio', 'Drums'], ['metronome', 'Rhythm & Metronome', 'Rhythm'], ['tuner', 'Tuner', 'Tuner']]],
-      ['Tools', [['insights', 'Song Analyzer', 'Analyzer'], ['toolkit', 'Music Toolkit', 'Toolkit'], ['planner', 'Practice Planner', 'Planner']]],
-      ['You', [['progress', 'My Progress', 'Progress'], ['classroom', 'Classroom', 'Classroom']]],
+      ['Learn', [['home', 'Home', 'Home'], ['academy', 'Academy', 'Academy'], ['learn', 'Practice Room', 'Practice'], ['kids', 'Kids Zone', 'Kids']]],
+      ['Play', [['songs', 'Song Library', 'Songs'], ['studio', 'Play-Along Studio', 'Play Along'], ['drums', 'Drum Studio', 'Drums'], ['games', 'Challenge Arena', 'Challenges']]],
+      ['Tools', [['metronome', 'Rhythm & Metronome', 'Metronome'], ['tuner', 'Tuner', 'Tuner'], ['toolkit', 'Music Toolkit', 'Toolkit'], ['insights', 'Song Analyzer', 'Analyzer']]],
+      ['You', [['planner', 'Practice Planner', 'Planner'], ['progress', 'My Progress', 'Progress'], ['classroom', 'Classroom', 'Classroom']]],
     ];
+    const NAV_HIDDEN = new Set(['harmony']);
     const PRIMARY = ['home', 'academy', 'learn', 'songs', 'studio'];
     const listed = new Set();
     let nav = '';
@@ -345,7 +347,7 @@
         nav += `<a href="#/${id}" data-id="${id}" class="${PRIMARY.includes(id) ? 'primary' : 'extra'}" title="${esc(title)}">${icon(v.icon)}<span>${esc(short)}</span></a>`;
       }
     }
-    for (const id of App.order) if (!listed.has(id)) { const v = App.views[id]; nav += `<a href="#/${id}" data-id="${id}" class="extra">${icon(v.icon)}<span>${esc(v.nav || v.title)}</span></a>`; }
+    for (const id of App.order) if (!listed.has(id) && !NAV_HIDDEN.has(id)) { const v = App.views[id]; nav += `<a href="#/${id}" data-id="${id}" class="extra">${icon(v.icon)}<span>${esc(v.nav || v.title)}</span></a>`; }
     nav += `<button class="nav-more" id="navMore" aria-label="More pages">${icon('sliders')}<span>More</span></button>`;
     $('#app').innerHTML = `
       <aside class="sidebar">

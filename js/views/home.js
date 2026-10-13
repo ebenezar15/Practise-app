@@ -10,6 +10,19 @@
     return h < 5 ? 'Late-night session' : h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening';
   }
 
+  /** Instrument-specific quick starts (the pages themselves are all in the menu). */
+  function quickStarts(App) {
+    const inst = App.instrument, k = PM.Groove && PM.Groove.kindFor(inst);
+    const G = { strum: ['🎸', 'Strumming patterns', 'All patterns in every time signature with a metronome, dynamics and live AI feedback.'], comp: ['🎹', 'Comping patterns', 'Accompaniment rhythms for both hands with live feedback on timing and touch.'], bass: ['🎸', 'Bass grooves', 'Lock in with the click on real chord changes, from root–fifth to funk.'], line: ['🎺', 'Long tones & articulation', 'Breath, tonguing, crescendos and sustain with live feedback.'] };
+    const out = [];
+    if (k) out.push({ art: G[k][0], name: G[k][1], desc: G[k][2], act: 'groove', go: 'learn', feature: true });
+    if (inst === 'drums') out.push({ art: '🥁', name: 'Groove library', desc: 'Rock, worship, shuffle, 6/8, funk and odd meters — scored hit by hit.', go: 'drums', feature: true });
+    out.push({ art: '🧭', name: 'Next on your exercise path', desc: 'Pick up where you left off, with a click and live feedback on every note.', act: 'path', go: 'learn' });
+    if (inst !== 'drums') out.push({ art: '💪', name: 'Technique warm-up', desc: 'Five minutes of warm-ups made for your instrument.', act: 'technique', go: 'learn' });
+    out.push({ art: '👂', name: 'Ear training', desc: 'Hear two notes and name the distance — a few minutes a day goes a long way.', act: 'intervals', go: 'learn' });
+    return out;
+  }
+
   PM.App.register({
     id: 'home', title: 'Home', icon: 'home',
     render(host, App) {
@@ -67,17 +80,8 @@
           <div class="card daily-card fact"><div class="card-head"><h3>🤓 Did you know?</h3><button class="btn sm ghost" id="factNext" aria-label="Another fact">Another →</button></div><p class="daily-text" id="factText"></p></div>
         </div>
 
-        <h2 style="margin:28px 0 14px">What would you like to do today?</h2>
-        <div class="tiles">
-          <a class="card tile feature" href="#/academy"><div class="tile-ic">${icon('library')}</div><h3>Learn — Academy</h3><p>${PM.Academy.LESSONS.length} lessons: fundamentals, reading, scales, chords, ear, songwriting, worship band and more.</p></a>
-          <a class="card tile" href="#/learn"><div class="tile-ic">${icon('target')}</div><h3>Practise — Practice Room</h3><p>Exercise path, scales, chords, sight-reading and ear training with live feedback.</p></a>
-          <a class="card tile" href="#/studio"><div class="tile-ic">${icon('mic')}</div><h3>Play — Play-Along Studio</h3><p>Play over songs with real-time chord, timing, pitch & dynamics coaching.</p></a>
-          <a class="card tile" href="#/songs"><div class="tile-ic">${icon('music')}</div><h3>Songs — Song Library</h3><p>Worship, hymns & Tamil patterns with tutorials, a backing band and parts to sing.</p></a>
-          <a class="card tile" href="#/planner"><div class="tile-ic">${icon('progress')}</div><h3>Plan — Practice Planner</h3><p>A balanced routine for your time and focus, with timers.</p></a>
-          <a class="card tile" href="#/toolkit"><div class="tile-ic">${icon('sliders')}</div><h3>Look up — Music Toolkit</h3><p>Chord dictionary, scale finder, circle of fifths, transposer & glossary.</p></a>
-          <a class="card tile" href="#/insights"><div class="tile-ic">${icon('insights')}</div><h3>Analyse — Song Analyzer</h3><p>Key, chords, tempo${PM.Instruments.get(inst).strum ? ', strumming' : ''}, melody and 7-instrument separation for any song.</p></a>
-          <a class="card tile" href="#/games"><div class="tile-ic">${icon('games')}</div><h3>Play games — Challenges</h3><p>Chord Quest, Rhythm Hero, Note Hunter & Ear Trainer.</p></a>
-        </div>
+        <h2 style="margin:28px 0 14px">Practise your ${esc(PM.Instruments.get(inst).label.toLowerCase())} today</h2>
+        <div class="tiles">${quickStarts(App).map((t) => `<button class="card tile ${t.feature ? 'feature' : ''}" data-qs="${t.act || ''}" data-go="${t.go}"><div class="tile-ic">${t.art}</div><h3>${esc(t.name)}</h3><p>${esc(t.desc)}</p></button>`).join('')}</div>
 
         <div class="grid g2" style="margin-top:18px">
           <div class="card">
@@ -96,6 +100,7 @@
       const showTip = () => { const t = PM.Daily.tip(inst, tipOff); host.querySelector('#tipText').textContent = t.text; host.querySelector('#tipAbout').textContent = t.about === 'Practice' ? 'Practice habit' : 'For ' + t.about; };
       const showFact = () => { host.querySelector('#factText').textContent = PM.Daily.fact(factOff); };
       showTip(); showFact();
+      host.querySelectorAll('[data-go]').forEach((b) => (b.onclick = () => { if (b.dataset.qs) App.pendingActivity = b.dataset.qs; if (b.dataset.tab) App.drumTab = b.dataset.tab; App.go(b.dataset.go); }));
       host.querySelector('#tipNext').onclick = () => { tipOff++; showTip(); UI.bump(host.querySelector('#tipText'), 'pop-in'); };
       host.querySelector('#factNext').onclick = () => { factOff++; showFact(); UI.bump(host.querySelector('#factText'), 'pop-in'); };
       PM.Install.render(host.querySelector('#installHint'));

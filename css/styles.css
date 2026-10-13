@@ -1378,3 +1378,52 @@ button.fp-valve { background: none; border: 0; padding: 0; color: #fff; cursor: 
 .daily-card.fact { background: linear-gradient(135deg, #ecfeff, var(--card) 60%); border-color: #a5f3fc; }
 .daily-text { font-size: 16px; line-height: 1.55; margin: 0 0 6px; color: var(--ink); }
 :root[data-mode="dark"] .daily-card.tip, :root[data-mode="dark"] .daily-card.fact { background: var(--card); }
+.ak-upnext { display: block; padding: 6px 8px; border-radius: 8px; background: var(--v-50); color: var(--ink-2); margin-top: 2px; }
+
+/* ---- Practice Room groups + groove trainer (strumming / comping / bass / articulation) */
+.learn-group { margin: 22px 0 10px; font-size: 17px; }
+.learn-group:first-of-type { margin-top: 6px; }
+.learn-grid.mine .learn-tile { border-color: var(--v-200); }
+.learn-grid.mine .learn-tile:first-child { background: var(--grad); color: #fff; border: 0; }
+.learn-grid.mine .learn-tile:first-child .small { color: rgba(255, 255, 255, .88); }
+button.tile { font: inherit; text-align: left; width: 100%; }
+.tile .tile-ic { font-size: 22px; }
+.gv-meters { flex-wrap: wrap; margin-bottom: 10px; }
+.gv-pats { display: flex; flex-direction: column; gap: 8px; max-height: 260px; overflow-y: auto; padding-right: 4px; scrollbar-width: thin; }
+.gv-lv { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.gv-lv .lvl { margin-right: 4px; }
+.gv-pat { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; padding: 7px 10px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, .12); background: rgba(255, 255, 255, .06); color: #fff; font: inherit; cursor: pointer; text-align: left; }
+.gv-pat b { font-size: 13px; } .gv-pat span { font-size: 11px; color: rgba(237, 233, 254, .7); } .gv-pat i { font-style: normal; font-size: 11px; color: #fbbf24; }
+.gv-pat.on { background: rgba(255, 255, 255, .95); color: var(--v-800); } .gv-pat.on span { color: var(--ink-2); }
+.gv-now { margin-top: 14px; }
+.gv-bars { display: flex; gap: 6px; flex-wrap: wrap; margin: 4px 0 8px; }
+.gv-bar { display: flex; align-items: baseline; gap: 6px; padding: 4px 10px; border-radius: 10px; background: rgba(255, 255, 255, .07); font-size: 13px; }
+.gv-bar em { font-family: Georgia, serif; font-style: italic; font-weight: 700; color: #fbbf24; }
+.gv-bar.now { background: rgba(255, 255, 255, .95); color: var(--v-800); } .gv-bar.now em { color: #b45309; }
+.gv-wrap { overflow-x: auto; padding: 2px 2px 6px; scrollbar-width: thin; }
+.gv-grid { display: flex; flex-direction: column; gap: 2px; min-width: max-content; }
+.gv-row { display: grid; grid-template-columns: repeat(var(--n), minmax(34px, 1fr)); gap: 3px; }
+.gv-c { display: grid; place-items: center; min-height: 18px; border-radius: 8px; font-size: 12px; color: rgba(237, 233, 254, .7); position: relative; }
+.gv-acc .gv-c { font-size: 20px; line-height: 1; color: #fbbf24; font-weight: 800; }
+.gv-main .gv-c { min-height: 52px; background: rgba(255, 255, 255, .06); }
+.gv-main .gv-c.beat { background: rgba(255, 255, 255, .12); }
+.gv-main .gv-c.now { outline: 2px solid #fff; outline-offset: -2px; background: rgba(255, 255, 255, .22); }
+.gv-s { font-size: 24px; color: #fff; } .gv-s.up { color: #7dd3fc; } .gv-s.mute { color: #fca5a5; } .gv-s.rest { color: rgba(255, 255, 255, .35); }
+.gv-hold { position: absolute; left: -3px; right: 0; top: 50%; height: 6px; margin-top: -3px; background: rgba(255, 255, 255, .55); border-radius: 3px; }
+.gv-cnt .gv-c.beat { color: #fff; font-weight: 800; }
+.gv-c.r-perfect { box-shadow: 0 0 0 2px #10b981 inset; } .gv-c.r-good { box-shadow: 0 0 0 2px #84cc16 inset; } .gv-c.r-early { box-shadow: 0 0 0 2px #f59e0b inset; } .gv-c.r-late { box-shadow: 0 0 0 2px #fb923c inset; } .gv-c.r-miss { box-shadow: 0 0 0 2px #f43f5e inset; }
+.gv-legend { text-align: center; margin-top: 4px; }
+.gv-live { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 220px); gap: 12px; align-items: center; margin-top: 12px; }
+.gv-fb { display: flex; flex-direction: column; gap: 2px; padding: 10px 14px; border-radius: 14px; background: rgba(255, 255, 255, .08); min-height: 56px; }
+.gv-fb b { font-size: 18px; } .gv-fb b.ok { color: #6ee7b7; } .gv-fb b.warn { color: #fcd34d; } .gv-fb b.bad { color: #fca5a5; }
+.gv-meter { position: relative; height: 26px; border-radius: 13px; background: rgba(255, 255, 255, .1); overflow: hidden; }
+.gv-meter i { position: absolute; left: 0; top: 0; bottom: 0; width: 0; background: linear-gradient(90deg, #34d399, #fbbf24 70%, #f87171); transition: width .06s linear; }
+.gv-band { position: absolute; top: 0; bottom: 0; border: 2px solid #fff; border-radius: 13px; z-index: 1; display: none; }
+.gv-meter em { position: absolute; right: 10px; top: 3px; z-index: 2; font-family: Georgia, serif; font-style: italic; font-weight: 700; color: #fff; }
+.gv-pads { display: flex; gap: 10px; justify-content: center; margin-top: 12px; flex-wrap: wrap; }
+.gv-pads button { min-width: 120px; padding: 16px 18px; border-radius: 16px; border: 0; background: rgba(255, 255, 255, .14); color: #fff; font: inherit; font-weight: 800; font-size: 16px; cursor: pointer; touch-action: manipulation; }
+.gv-pads kbd { display: block; font-size: 11px; font-weight: 600; opacity: .7; margin-top: 2px; }
+.gv-res { margin-top: 14px; text-align: center; display: flex; flex-direction: column; gap: 10px; }
+.gv-coach { text-align: left; padding: 12px 14px; border-radius: 14px; background: rgba(255, 255, 255, .08); }
+.gv-coach ul { margin: 6px 0 6px 18px; } .gv-coach li { margin: 3px 0; font-size: 14px; }
+@media (max-width: 640px) { .gv-live { grid-template-columns: 1fr; } .gv-row { grid-template-columns: repeat(var(--n), minmax(26px, 1fr)); } .gv-s { font-size: 19px; } }

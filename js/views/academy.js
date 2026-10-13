@@ -103,37 +103,45 @@
     },
   });
 
-  const lessonsOf = (sid, App) => Academy.LESSONS.filter((l) => l.subject === sid && (!l.instrument || sid !== 'instrument' || true));
-  const nextLesson = (App) => {
-    const st = stateOf(App), lvl = (st.placement && st.placement.level) || 1;
-    return Academy.LESSONS.find((l) => l.level <= lvl && !(st.best[l.id] >= 0.75) && (!l.instrument || l.instrument === App.instrument)) || Academy.LESSONS.find((l) => !(st.best[l.id] >= 0.75)) || Academy.LESSONS[0];
+  /** A subject's lessons in teaching order: level, then the order they were written. */
+  const ordered = (sid) => Academy.LESSONS.filter((l) => l.subject === sid).sort((a, b) => a.level - b.level || a.n - b.n);
+  const LV_NAMES = ['All levels', ...Academy.LEVELS.slice(1)];
+  /** Next lesson to take: at the chosen level (if any), your instrument's course first. */
+  const nextLesson = (App, level) => {
+    const st = stateOf(App), lvl = level || (st.placement && st.placement.level) || 1;
+    const ok = (l) => !(st.best[l.id] >= 0.75) && (!l.instrument || l.instrument === App.instrument);
+    const pool = Academy.SUBJECTS.flatMap((sj) => ordered(sj.id)).sort((a, b) => (b.instrument === App.instrument) - (a.instrument === App.instrument));
+    return (level ? pool.find((l) => l.level === level && ok(l)) : pool.find((l) => l.level <= lvl && ok(l))) || pool.find((l) => (!level || l.level === level) && !(st.best[l.id] >= 0.75)) || pool.find((l) => !level || l.level === level) || pool[0];
   };
 
   function home(host, App) {
     const st = stateOf(App);
     const done = Object.values(st.best).filter((b) => b >= 0.75).length;
-    const nx = nextLesson(App);
     const level = App.academyLevel || 0;
     host.innerHTML = `
       <div class="page-head"><div><div class="eyebrow">Academy</div><h1>Learn music, step by step</h1>
         <p>${Academy.LESSONS.length} lessons in ${Academy.SUBJECTS.length} subjects — from your first notes to modes, harmony and arranging. Every lesson has examples to hear, real-world uses and unlimited practice questions.</p></div>
         <div class="row"><span class="chip big">🎓 ${done} / ${Academy.LESSONS.length} mastered</span></div></div>
       <div class="grid g2">
-        <section class="card stage ak-next"><div class="now-label">${st.last ? 'Continue learning' : 'Start here'}</div>
-          <h2 style="color:#fff;margin:6px 0">${SUBJ[nx.subject].emoji} ${esc(nx.title)}</h2>
-          <p style="color:rgba(255,255,255,.8)">${esc(SUBJ[nx.subject].name)} · ${Academy.LEVELS[nx.level]} · ${nx.minutes} min</p>
-          <a class="btn white" href="#/academy?l=${nx.id}">${icon('play')} Open lesson</a></section>
+        <section class="card stage ak-next" id="akNext"></section>
         <section class="card"><div class="card-head"><h3>🧭 Where should I start?</h3></div>
           <p>${st.placement ? `Your placement: <b>${esc(st.placement.label)}</b>. Suggested subjects: ${st.placement.start.map((s) => esc(SUBJ[s].name)).join(', ')}.` : 'Take the 2-minute placement quiz — Overture suggests your level and the best first subjects.'}</p>
           <a class="btn ${st.placement ? 'ghost' : 'primary'}" href="#/academy?placement=1">${st.placement ? 'Retake the quiz' : 'Take the placement quiz'}</a></section>
       </div>
-      <div class="row" style="margin:18px 0 12px;gap:10px;flex-wrap:wrap"><div class="seg" id="akLvl">${['All levels', ...Academy.LEVELS.slice(1)].map((n, i) => `<button data-l="${i}" class="${i === level ? 'on' : ''}">${n}</button>`).join('')}</div>
+      <div class="row" style="margin:18px 0 12px;gap:10px;flex-wrap:wrap"><div class="seg" id="akLvl">${LV_NAMES.map((n, i) => `<button data-l="${i}" class="${i === level ? 'on' : ''}">${n}</button>`).join('')}</div>
         <input type="search" id="akQ" placeholder="Search lessons: chords, capo, modes, rhythm…" style="flex:1 1 220px"></div>
       <div id="akBody"></div>`;
     const draw = () => {
+      const level = App.academyLevel || 0;
+      const nx = nextLesson(App, level);
+      $('#akNext', host).innerHTML = `<div class="now-label">${level ? 'Next ' + Academy.LEVELS[level] + ' lesson' : st.last ? 'Continue learning' : 'Start here'}</div>
+          <h2 style="color:#fff;margin:6px 0">${SUBJ[nx.subject].emoji} ${esc(nx.title)}</h2>
+          <p style="color:rgba(255,255,255,.8)">${esc(SUBJ[nx.subject].name)} · ${Academy.LEVELS[nx.level]} · ${nx.minutes} min</p>
+          <a class="btn white" href="#/academy?l=${nx.id}">${icon('play')} Open lesson</a>`;
+      const upNext = (sid) => { const xs = ordered(sid).filter((l) => !level || l.level === level); const n = xs.find((l) => !(st.best[l.id] >= 0.75)) || xs[0]; return n ? `<span class="ak-upnext small"><b>${level ? LV_NAMES[level] : Academy.LEVELS[n.level]}:</b> ${esc(n.title)}</span>` : ''; };
       const q = ($('#akQ', host).value || '').trim().toLowerCase();
       if (q) {
-        const hits = Academy.LESSONS.filter((l) => (l.title + ' ' + SUBJ[l.subject].name + ' ' + JSON.stringify(l.body)).toLowerCase().includes(q));
+        const hits = Academy.LESSONS.filter((l) => (!level || l.level === level) && (l.title + ' ' + SUBJ[l.subject].name + ' ' + JSON.stringify(l.body)).toLowerCase().includes(q));
         $('#akBody', host).innerHTML = hits.length ? `<div class="ak-list">${hits.map((l) => lessonRow(l, st)).join('')}</div>` : '<div class="empty">No lessons match.</div>';
         return;
       }
@@ -141,13 +149,13 @@
       const courseHtml = courses.length ? `<h3 style="margin:4px 0 10px">🎻 Instrument courses</h3><div class="ak-courses">${courses.map((c) => {
         const ls = Academy.LESSONS.filter((l) => l.subject === c.id && (!level || l.level === level));
         const m = ls.filter((l) => st.best[l.id] >= 0.75).length;
-        return `<a class="card ak-course ${c.course === App.instrument ? 'mine' : ''}" href="#/academy?s=${c.id}" style="--sc:${c.color}"><span class="ak-em">${c.emoji}</span><b>${esc(c.name)}</b>${c.course === App.instrument ? '<span class="tag">Your instrument</span>' : ''}<span class="small">${esc(c.desc)}</span><span class="ak-bar"><i style="width:${ls.length ? Math.round((m / ls.length) * 100) : 0}%"></i></span><span class="small muted">${m}/${ls.length} lessons · 3 levels</span></a>`;
+        return `<a class="card ak-course ${c.course === App.instrument ? 'mine' : ''}" href="#/academy?s=${c.id}${level ? '&lv=' + level : ''}" style="--sc:${c.color}"><span class="ak-em">${c.emoji}</span><b>${esc(c.name)}</b>${c.course === App.instrument ? '<span class="tag">Your instrument</span>' : ''}<span class="small">${esc(c.desc)}</span>${upNext(c.id)}<span class="ak-bar"><i style="width:${ls.length ? Math.round((m / ls.length) * 100) : 0}%"></i></span><span class="small muted">${m}/${ls.length} lessons${level ? ' · ' + Academy.LEVELS[level] : ' · 3 levels'}</span></a>`;
       }).join('')}</div><h3 style="margin:22px 0 10px">📚 Subjects</h3>` : '';
       $('#akBody', host).innerHTML = courseHtml + `<div class="ak-subjects">${Academy.SUBJECTS.filter((s) => !s.course).map((s) => {
         const ls = Academy.LESSONS.filter((l) => l.subject === s.id && (!level || l.level === level));
         if (!ls.length) return '';
         const m = ls.filter((l) => st.best[l.id] >= 0.75).length;
-        return `<a class="card ak-subject" href="#/academy?s=${s.id}" style="--sc:${s.color}"><span class="ak-em">${s.emoji}</span><b>${esc(s.name)}</b><span class="small">${esc(s.desc)}</span><span class="ak-bar"><i style="width:${Math.round((m / ls.length) * 100)}%"></i></span><span class="small muted">${m}/${ls.length} lessons${level ? ' · ' + Academy.LEVELS[level] : ''}</span></a>`;
+        return `<a class="card ak-subject" href="#/academy?s=${s.id}${level ? '&lv=' + level : ''}" style="--sc:${s.color}"><span class="ak-em">${s.emoji}</span><b>${esc(s.name)}</b><span class="small">${esc(s.desc)}</span>${upNext(s.id)}<span class="ak-bar"><i style="width:${Math.round((m / ls.length) * 100)}%"></i></span><span class="small muted">${m}/${ls.length} lessons${level ? ' · ' + Academy.LEVELS[level] : ''}</span></a>`;
       }).join('')}</div>`;
     };
     $('#akQ', host).oninput = draw;
@@ -159,18 +167,24 @@
 
   function subject(host, App, s) {
     const st = stateOf(App);
-    const ls = Academy.LESSONS.filter((l) => l.subject === s.id);
+    const lvParam = +param('lv');
+    if (lvParam >= 0 && lvParam <= 3 && param('lv') != null) App.academyLevel = lvParam;
+    const level = App.academyLevel || 0;
+    const ls = ordered(s.id);
+    const count = (lv) => ls.filter((l) => !lv || l.level === lv).length;
     host.innerHTML = `<div class="page-head"><div><a href="#/academy" class="eyebrow" style="text-decoration:none">${icon('back')} Academy</a><h1>${s.emoji} ${esc(s.name)}</h1><p>${esc(s.desc)}</p></div></div>
-      ${[1, 2, 3].map((lv) => { const x = ls.filter((l) => l.level === lv); return x.length ? `<h3 style="margin:18px 0 10px">${Academy.LEVELS[lv]}</h3><div class="ak-list">${x.map((l) => lessonRow(l, st)).join('')}</div>` : ''; }).join('')}`;
+      <div class="seg" id="akSubLvl" style="margin-bottom:8px">${LV_NAMES.map((n, i) => `<button data-l="${i}" class="${i === level ? 'on' : ''}">${n} <span class="small">${count(i)}</span></button>`).join('')}</div>
+      ${[1, 2, 3].filter((lv) => !level || lv === level).map((lv) => { const x = ls.filter((l) => l.level === lv); return x.length ? `<h3 style="margin:18px 0 10px">${Academy.LEVELS[lv]} <span class="muted small">· ${x.length} lessons</span></h3><div class="ak-list pop-in">${x.map((l) => lessonRow(l, st)).join('')}</div>` : `<div class="empty">No ${Academy.LEVELS[lv].toLowerCase()} lessons here yet.</div>`; }).join('')}`;
+    $$('#akSubLvl [data-l]', host).forEach((b) => (b.onclick = () => { App.academyLevel = +b.dataset.l; location.replace('#/academy?s=' + s.id + '&lv=' + b.dataset.l); }));
   }
 
   function lesson(host, App, l) {
     const st = stateOf(App);
     st.last = l.id; App.game.save();
     const s = SUBJ[l.subject];
-    const sib = Academy.LESSONS.filter((x) => x.subject === l.subject);
+    const sib = ordered(l.subject);
     const i = sib.indexOf(l);
-    const prev = sib[i - 1], next = sib[i + 1] || Academy.LESSONS[Academy.LESSONS.indexOf(l) + 1];
+    const prev = sib[i - 1], next = sib[i + 1];
     const I = Instruments.get(App.instrument);
     host.innerHTML = `<div class="page-head"><div><a href="#/academy?s=${s.id}" class="eyebrow" style="text-decoration:none">${icon('back')} ${esc(s.name)}</a><h1>${esc(l.title)}</h1>
         <div class="row" style="gap:6px;margin-top:8px"><span class="chip">${s.emoji} ${esc(s.name)}</span><span class="chip">${Academy.LEVELS[l.level]}</span><span class="chip">⏱ ${l.minutes} min</span><span class="chip">Lesson ${i + 1} of ${sib.length}</span><span class="chip" id="akStars">${'★'.repeat(Academy.stars(st.best[l.id]))}${'☆'.repeat(3 - Academy.stars(st.best[l.id]))}</span></div></div></div>

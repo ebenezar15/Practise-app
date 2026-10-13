@@ -8,29 +8,33 @@
   const { icon, esc, $, $$ } = UI;
 
   const ACTIVITIES = [
-    { id: 'path', art: '🧭', name: 'Exercise path (50+)', desc: 'Step-by-step exercises from your first notes to advanced technique. Play along with the click, get live feedback on every note and compare your takes.', input: true },
-    { id: 'scales', art: '🪜', name: 'Scales', desc: 'Major, minor, pentatonic, blues and modes in every key. Overture listens and moves on with you.', input: true },
-    { id: 'arpeggios', art: '🌈', name: 'Arpeggios', desc: 'Chord tones one at a time — the bridge between scales and chords.', input: true },
-    { id: 'technique', art: '💪', name: 'Technique exercises', desc: 'Warm-ups made for your instrument: finger patterns, chromatic drills, lip slurs, root–fifth grooves.', input: true },
-    { id: 'sight', art: '👀', name: 'Sight-reading', desc: 'Read a fresh melody on the staff and play it. New music every time.', input: true },
-    { id: 'notes', art: '🔤', name: 'Note names', desc: 'Name notes on the treble and bass staff as fast as you can. No instrument needed.', input: false },
-    { id: 'chords', art: '🎼', name: 'Chord library & changes', desc: 'Every chord in a key with shapes for your instrument, plus the one-minute chord-change drill.', input: true },
-    { id: 'intervals', art: '👂', name: 'Interval ear training', desc: 'Hear two notes and name the distance — with a famous song to remember each one.', input: false },
-    { id: 'callresp', art: '🗣️', name: 'Call & response', desc: 'Echo short phrases by ear, then invent your own answers. Creative ear training.', input: true },
-    { id: 'harmony', art: '🎶', name: 'Harmony & part singing', desc: 'Sing soprano, alto, tenor or bass in famous hymns while Overture sings the other parts. Rounds, thirds and drones too.', input: true, link: 'harmony' },
-    { id: 'builder', art: '🧱', name: 'Progression builder', desc: 'Build your own chord progression, hear it with a band and improvise over it. Save it as a song.', input: false },
+    { id: 'groove', group: 'mine', art: '🎸', name: 'Strumming patterns', desc: 'Every strumming pattern in every time signature, with a metronome, chord changes and dynamics. Live AI feedback on timing, strum direction and loudness.', input: true },
+    { id: 'path', group: 'mine', art: '🧭', name: 'Exercise path (50+)', desc: 'Step-by-step exercises from your first notes to advanced technique. Play along with the click, get live feedback on every note and compare your takes.', input: true },
+    { id: 'technique', group: 'mine', art: '💪', name: 'Technique exercises', desc: 'Warm-ups made for your instrument: finger patterns, chromatic drills, lip slurs, root–fifth grooves.', input: true },
+    { id: 'scales', group: 'harmony', art: '🪜', name: 'Scales', desc: 'Major, minor, pentatonic, blues and modes in every key. Overture listens and moves on with you.', input: true },
+    { id: 'arpeggios', group: 'harmony', art: '🌈', name: 'Arpeggios', desc: 'Chord tones one at a time — the bridge between scales and chords.', input: true },
+    { id: 'chords', group: 'harmony', art: '🎼', name: 'Chord library & changes', desc: 'Every chord in a key with shapes for your instrument, plus the one-minute chord-change drill.', input: true },
+    { id: 'builder', group: 'harmony', art: '🧱', name: 'Progression builder', desc: 'Build your own chord progression, hear it with a band and improvise over it. Save it as a song.', input: false },
+    { id: 'sight', group: 'ear', art: '👀', name: 'Sight-reading', desc: 'Read a fresh melody on the staff and play it. New music every time.', input: true },
+    { id: 'notes', group: 'ear', art: '🔤', name: 'Note names', desc: 'Name notes on the treble and bass staff as fast as you can. No instrument needed.', input: false },
+    { id: 'intervals', group: 'ear', art: '👂', name: 'Interval ear training', desc: 'Hear two notes and name the distance — with a famous song to remember each one.', input: false },
+    { id: 'callresp', group: 'ear', art: '🗣️', name: 'Call & response', desc: 'Echo short phrases by ear, then invent your own answers. Creative ear training.', input: true },
+    { id: 'harmony', group: 'ear', art: '🎶', name: 'Harmony & part singing', desc: 'Sing soprano, alto, tenor or bass in famous hymns while Overture sings the other parts. Rounds, thirds and drones too.', input: true, link: 'harmony' },
   ];
-  // activities a drummer gets (rhythm-only); pitched activities are hidden for drums
-  const DRUM_ACTIVITIES = [
-    { id: 'drumkit', art: '🥁', name: 'Play the kit', desc: 'A playable kit with keyboard keys and a loop recorder — make your own beats.', input: false, link: 'drums', tab: 'kit' },
-    { id: 'drumgrooves', art: '🎶', name: 'Groove library', desc: 'Rock, pop, worship, shuffle, 6/8, reggae, funk, bossa and odd meters — hear them and get scored.', input: true, link: 'drums', tab: 'grooves' },
-    { id: 'drumrud', art: '✋', name: 'Rudiments', desc: 'Singles, doubles, paradiddles, rolls and triplets with sticking shown.', input: true, link: 'drums', tab: 'rudiments' },
-    { id: 'drumfills', art: '🎲', name: 'Fills & remix', desc: 'A brand-new fill every time and remixed grooves to spark ideas.', input: true, link: 'drums', tab: 'fills' },
-    { id: 'drumread', art: '📖', name: 'Read rhythms', desc: 'Learn to read the drum grid and play every note length.', input: true, link: 'drums', tab: 'learn' },
-  ];
+  const GROUPS = [['mine', 'For your instrument'], ['harmony', 'Scales, chords & creating'], ['ear', 'Reading & ear training']];
+  // the groove trainer is named for the instrument; drummers get rhythm-only activities (+ the Drum Studio)
+  const GROOVE_NAMES = {
+    strum: ['🎸', 'Strumming patterns', 'Every strumming pattern in every time signature (2/4 to 12/8, swing, 16ths) with a metronome, chord changes and dynamics. Live AI feedback on timing, strum direction and loudness.'],
+    comp: ['🎹', 'Comping patterns', 'Accompaniment rhythms for both hands in every time signature, with a metronome, chord changes and dynamics. Live AI feedback on timing and touch.'],
+    bass: ['🎸', 'Bass grooves', 'Root–fifth, octaves, approach notes, funk and odd-meter grooves on real chord changes, with a metronome and dynamics. Live AI feedback on timing and evenness.'],
+    line: ['🎺', 'Articulation & long tones', 'Long tones, tonguing, staccato, legato and swing in every time signature, with crescendos and diminuendos. Live AI feedback on timing, dynamics and sustain.'],
+  };
   const DRUM_SHOW = new Set(['path', 'intervals', 'notes']);
-  const activitiesFor = (inst) => (inst === 'drums' ? ACTIVITIES.filter((a) => DRUM_SHOW.has(a.id)).concat(DRUM_ACTIVITIES) : ACTIVITIES);
-  const ART = Object.fromEntries(ACTIVITIES.concat(DRUM_ACTIVITIES).map((a) => [a.id, a]));
+  const activitiesFor = (inst) => {
+    const k = PM.Groove && PM.Groove.kindFor(inst);
+    return ACTIVITIES.filter((a) => (inst === 'drums' ? DRUM_SHOW.has(a.id) : a.id !== 'groove' || k)).map((a) => (a.id === 'groove' && k ? Object.assign({}, a, { art: GROOVE_NAMES[k][0], name: GROOVE_NAMES[k][1], desc: GROOVE_NAMES[k][2] }) : a));
+  };
+  const ART = Object.fromEntries(ACTIVITIES.map((a) => [a.id, a]));
   const KEYS = Theory.FLATS.map((n, i) => ({ pc: i, name: [1, 3, 6, 8, 10].includes(i) ? (i === 6 ? 'F#' : n) : n }));
   const keySel = (id, sel) => `<select id="${id}">${KEYS.map((k) => `<option value="${k.pc}" ${k.pc === sel ? 'selected' : ''}>${k.name}</option>`).join('')}</select>`;
   const flatsFor = (pc) => [5, 10, 3, 8, 1].includes(((pc % 12) + 12) % 12);
@@ -81,14 +85,13 @@
       const I = Instruments.get(App.instrument);
       host.innerHTML = `
         <div class="page-head"><div><div class="eyebrow">Learn · ${esc(I.emoji + ' ' + I.label)}</div><h1>Learn & practise</h1>
-          <p>Guided practice that listens to you: scales, chords, reading, ear training and creative exercises. Every session earns XP and counts toward your goals.</p></div>
-          <div class="row"><a class="btn ghost" href="#/games">${icon('games')} Challenges</a></div></div>
+          <p>Guided practice that listens to you, starting with practice made for your instrument. Every session earns XP and counts toward your goals.</p></div></div>
         ${I.id === 'bass' ? `<section class="card" style="margin-bottom:16px"><div class="card-head"><h3>🎸 Your bass</h3><span class="muted small">Exercises, fretboard and tuner follow your choice</span></div>${PM.Shared.bassStrings(App)}</section>` : ''}
         ${I.family === 'voice' ? `<section class="card" style="margin-bottom:16px"><div class="card-head"><h3>🎤 Your voice type</h3><span class="muted small">Exercises, scales and sing-alongs are pitched for it</span></div>
           <div class="seg voice-types" id="vType">${Object.entries(Instruments.VOICE_TYPES).map(([id, v]) => `<button data-v="${id}" class="${(App.settings.voiceType || 'alto') === id ? 'on' : ''}">${esc(v.label)} <span class="muted small">${PM.DSP.midiName(v.range[0])}–${PM.DSP.midiName(v.range[1])}</span></button>`).join('')}</div>
           <p class="small muted" style="margin-top:8px">Not sure? Most women sing alto or mezzo, most men baritone or tenor. If high notes strain, pick the lower type.</p></section>` : ''}
-        ${I.id === 'drums' ? '<section class="card" style="margin-bottom:16px"><div class="card-head"><h3>🥁 Drums</h3><a class="btn sm primary" href="#/drums">Open the Drum Studio →</a></div><p class="small">Your exercise path scores every hit for timing — with a microphone on a real kit, or the on-screen / keyboard pads.</p></section>' : ''}
-        <div class="learn-grid" id="lGrid">${activitiesFor(I.id).map((a) => `<button class="card learn-tile" data-a="${a.id}"><span class="lt-art">${a.art}</span><b>${a.name}</b><span class="small">${a.desc}</span>${a.input ? '' : '<span class="tag" style="align-self:flex-start">no instrument needed</span>'}</button>`).join('')}</div>
+        ${I.id === 'drums' ? `<section class="card" style="margin-bottom:16px"><div class="card-head"><h3>🥁 Drums</h3><span class="muted small">Your exercise path below scores every hit; the Drum Studio has the rest</span></div><div class="row" style="gap:8px;flex-wrap:wrap">${[['kit', '🥁 Play the kit'], ['grooves', '🎶 Groove library'], ['rudiments', '✋ Rudiments'], ['fills', '🎲 Fills & remix'], ['learn', '📖 Read rhythms']].map(([t, n]) => `<button class="btn sm ghost" data-dtab="${t}">${n}</button>`).join('')}</div></section>` : ''}
+        ${GROUPS.map(([g, title]) => { const list = activitiesFor(I.id).filter((a) => a.group === g); return list.length ? `<h3 class="learn-group">${g === 'mine' ? esc(I.emoji + ' ' + title) : esc(title)}</h3><div class="learn-grid ${g === 'mine' ? 'mine' : ''}">${list.map((a) => `<button class="card learn-tile" data-a="${a.id}"><span class="lt-art">${a.art}</span><b>${a.name}</b><span class="small">${a.desc}</span>${a.input ? '' : '<span class="tag" style="align-self:flex-start">no instrument needed</span>'}</button>`).join('')}</div>` : ''; }).join('')}
         <section class="card stage hidden" id="lStage" style="margin-top:18px"></section>`;
       const stage = $('#lStage', host);
       let current = null;
@@ -101,6 +104,7 @@
         setTimeout(() => { if (stage.isConnected) stage.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 30);
       };
       $$('[data-a]', host).forEach((b) => (b.onclick = () => open(b.dataset.a)));
+      $$('[data-dtab]', host).forEach((b) => (b.onclick = () => { App.drumTab = b.dataset.dtab; App.go('drums'); }));
       PM.Shared.wireBassStrings(host, App);
       $$('#vType [data-v]', host).forEach((b) => (b.onclick = () => { App.settings.voiceType = b.dataset.v; App.saveSettings(); PM.Learn.setVoiceType(b.dataset.v); App.rerender(); }));
       if (App.pendingActivity && ACT[App.pendingActivity]) { const a = App.pendingActivity; App.pendingActivity = null; open(a); }
@@ -111,7 +115,7 @@
   });
 
   function head(stage, id, extra) {
-    const a = ART[id];
+    const a = activitiesFor(PM.App.instrument).find((x) => x.id === id) || ART[id];
     return `<div class="card-head"><h3 style="color:#fff">${a.art} ${a.name}</h3><div class="row">${extra || ''}<button class="btn glass sm" data-close-stage>${icon('stop')} Close</button></div></div>`;
   }
   function wireClose(stage, ctl) { const c = $('[data-close-stage]', stage); if (c) c.onclick = () => { ctl.stop && ctl.stop(); stage.classList.add('hidden'); $$('.learn-tile').forEach((t) => t.classList.remove('on')); }; }
@@ -441,6 +445,15 @@
     };
     draw();
     next();
+    return ctl;
+  };
+
+  ACT.groove = (stage, App, p) => {
+    const ctl = { stop() { if (ctl.tr) ctl.tr.stop(); } };
+    stage.innerHTML = head(stage, 'groove') + asgNote(p) + '<div id="lGv"></div>';
+    wireClose(stage, ctl);
+    if (!PM.Groove.kindFor(App.instrument)) { $('#lGv', stage).innerHTML = '<p>Pick a guitar, piano, bass, trumpet or voice to practise patterns made for it.</p>'; return ctl; }
+    ctl.tr = PM.GrooveAlong.mount($('#lGv', stage), App, { assignment: p.assignment, onDone: (s) => { if (p.assignment && App.pendingLearn === p.assignment && s.inTime >= 0.7) App.pendingLearn = null; } });
     return ctl;
   };
 

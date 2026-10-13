@@ -119,7 +119,6 @@
     { id: 'improv', name: 'Improvisation', emoji: '🎷', color: '#ef4444', desc: 'Chord tones, the right scale, targeting and phrasing.' },
     { id: 'band', name: 'Worship band & arranging', emoji: '⛪', color: '#3b82f6', desc: 'Band roles, dynamics, transposing, capo, Nashville numbers.' },
     { id: 'practice', name: 'How to practise', emoji: '🧠', color: '#64748b', desc: 'Practise smarter: goals, slow practice, memory and healthy technique.' },
-    { id: 'instrument', name: 'Your instrument', emoji: '🎸', color: '#d946ef', desc: 'Piano, guitar, bass, trumpet and voice — the essentials of each.' },
   ];
 
   const LESSONS = [
@@ -285,19 +284,19 @@
       practice: [{ gen: 'practice-skill', n: 4 }] },
 
     // ===== Your instrument
-    { id: 'in-piano', subject: 'instrument', level: 1, title: 'Piano: hands, posture and first chords', minutes: 7, instrument: 'piano',
+    { id: 'in-piano', subject: 'piano-course', level: 1, title: 'Piano: hands, posture and first chords', minutes: 7, instrument: 'piano',
       body: [p('Sit so your forearms are level with the keys; fingers curved, numbered **1 (thumb) to 5 (little)**. Right hand plays melody, left hand bass/chords. Start with five-finger position on C, then the C, F and G chords.'), inst({ chord: 'C' }), inst({ chord: 'F' }), inst({ chord: 'G' }), use('With C, F, G and Am you can accompany hundreds of hymns.')],
       practice: [{ gen: 'note-name', n: 4 }, { gen: 'triad-spell', n: 3 }], try: [{ label: 'Piano exercise path', go: 'learn', activity: 'path' }] },
-    { id: 'in-guitar', subject: 'instrument', level: 1, title: 'Guitar: strings, frets and the first four chords', minutes: 7, instrument: 'guitar',
+    { id: 'in-guitar', subject: 'guitar-course', level: 1, title: 'Guitar: strings, frets and the first four chords', minutes: 7, instrument: 'guitar',
       body: [p('Strings from thickest: **E A D G B E**. Each fret is a half step. Learn **Em, G, C and D** first — they play the I–V–vi–IV progression in G.'), inst({ chord: 'Em' }), inst({ chord: 'G' }), inst({ chord: 'C' }), inst({ chord: 'D' }), use('Add a capo and the same four shapes play in any key.')],
       practice: [{ gen: 'capo', n: 3 }, { gen: 'diatonic-chord', n: 3 }], try: [{ label: 'Guitar exercise path', go: 'learn', activity: 'path' }] },
-    { id: 'in-bass', subject: 'instrument', level: 1, title: 'Bass: roots, fifths and locking with the kick', minutes: 6, instrument: 'bass',
+    { id: 'in-bass', subject: 'bass-course', level: 1, title: 'Bass: roots, fifths and locking with the kick', minutes: 6, instrument: 'bass',
       body: [p('Bass strings: **E A D G**. Play the **root** of each chord on beat 1, then decorate with the **5th** and **octave**. Lock your rhythm with the kick drum.'), ex('Root – 5th – octave', { notes: [40, 47, 52, 47] }), use('In worship, simple roots with great timing beat busy lines.')],
       practice: [{ gen: 'chord-tone', n: 4 }, { gen: 'band-role', n: 2 }], try: [{ label: 'Bass exercise path', go: 'learn', activity: 'path' }] },
-    { id: 'in-trumpet', subject: 'instrument', level: 1, title: 'Trumpet: buzzing, valves and transposition', minutes: 6, instrument: 'trumpet',
+    { id: 'in-trumpet', subject: 'trumpet-course', level: 1, title: 'Trumpet: buzzing, valves and transposition', minutes: 6, instrument: 'trumpet',
       body: [p('Buzz your lips into the mouthpiece with steady air. The B♭ trumpet **transposes**: written C sounds concert B♭, so trumpet parts are written a tone higher than piano parts.'), use('When the band plays in concert B♭, you read in C.')],
       practice: [{ gen: 'transpose', n: 4 }, { gen: 'scale-notes', n: 2 }], try: [{ label: 'Trumpet exercise path', go: 'learn', activity: 'path' }] },
-    { id: 'in-voice', subject: 'instrument', level: 1, title: 'Voice: breath, resonance and range', minutes: 6, instrument: 'voice',
+    { id: 'in-voice', subject: 'voice-course', level: 1, title: 'Voice: breath, resonance and range', minutes: 6, instrument: 'voice',
       body: [p('Breathe low (belly and ribs), keep the jaw and throat relaxed, and feel the buzz in your face ("forward resonance"). Find your **voice type** — soprano, alto, tenor, bass — so songs sit in a comfortable range.'), ex('A five-note warm-up', { notes: [60, 62, 64, 65, 67, 65, 64, 62, 60] }), use('Singing in the right key is the fastest way to sound good — Insights suggests one for you.')],
       practice: [{ gen: 'interval-ear', n: 4 }, { gen: 'practice-skill', n: 2 }], try: [{ label: 'Vocal exercise path', go: 'learn', activity: 'path' }, { label: 'Harmony & parts', go: 'harmony' }] },
   ];
