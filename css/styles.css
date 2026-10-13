@@ -1254,3 +1254,29 @@ main#view { overflow-x: clip; }
 .fp-valts { display: grid; gap: 10px; }
 .fp-valt { display: flex; gap: 12px; align-items: center; }
 .fp-card .card-head h3 { color: #fff; }
+
+/* ---------- Academy: instrument courses & interactive lesson blocks ---------- */
+.ak-courses { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; }
+.ak-course { display: flex; flex-direction: column; gap: 6px; text-decoration: none; color: var(--ink); border-top: 5px solid var(--sc); position: relative; }
+.ak-course.mine { box-shadow: 0 0 0 2px var(--sc), var(--shadow-lg); }
+.ak-course .tag { align-self: flex-start; }
+.ak-int { margin: 16px 0; padding: 14px; border-radius: var(--radius); border: 1px solid var(--line); background: var(--v-50); }
+.ak-int.stage { border: 0; background: var(--grad-deep); color: #fff; }
+.ak-int-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+.ak-int.stage .ak-int-head b { color: #fff; }
+.ak-out { margin-top: 8px; min-height: 1.4em; }
+.ak-int.stage .ak-out { color: rgba(237, 233, 254, 0.85); }
+.ak-play { width: 100%; max-width: 640px; cursor: pointer; }
+.ak-play rect.hit { fill: var(--pink) !important; }
+.ak-drill { display: flex; align-items: center; gap: 12px; margin: 16px 0; padding: 12px 14px; border-radius: var(--radius); background: linear-gradient(135deg, var(--v-100), #fdf2ff); border: 1px solid var(--v-200); }
+.ak-drill > div { flex: 1; display: grid; gap: 2px; }
+.ak-drill-em { font-size: 28px; }
+.ak-drillm { min-width: min(92vw, 760px); }
+.ak-show { margin: 8px 0 4px; }
+.ak-diag .chord-diagram { width: 120px; }
+.ak-fret { width: 100%; max-width: 560px; display: block; height: auto; }
+.ak-tab { font: 700 15px/1.35 ui-monospace, "SF Mono", Menlo, Consolas, monospace; background: var(--v-50); border: 1px solid var(--line); border-radius: 10px; padding: 10px 14px; display: inline-block; color: var(--v-800); }
+.ak-valves .fp-valve i { border-color: var(--v-400); background: var(--v-100); }
+.ak-valves .fp-valve.down i { background: linear-gradient(180deg, var(--pink), var(--fuchsia)); }
+button.fp-valve { background: none; border: 0; padding: 0; color: #fff; cursor: pointer; font: inherit; }
+.vx-out { color: #fff; }

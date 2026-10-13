@@ -25,9 +25,16 @@
     let starts = opts.starts, durs = opts.durs;
     if (!starts) { let b = 0; starts = []; durs = []; (opts.beats || notes.map(() => 1)).forEach((d) => { starts.push(b); durs.push(d); b += d; }); }
     const WIN = opts.window || 12;
-    const st = { hand: 'R', opt: 0, view: 'both', cur: 0 };
+    const st = { hand: opts.hand === 'L' ? 'L' : 'R', opt: 0, view: 'both', cur: 0 };
     let fing = compute();
     let fb = null;
+    if (!fing.length) {
+      const low = I.strings && Math.min(...notes) < I.strings[0];
+      box.innerHTML = `<div class="notice">🎸<div>${low && I.id === 'bass' ? 'Some of these notes are below your lowest string. Choose a <b>5-string bass</b> (low B) to see the fingering.' : 'These notes are outside your instrument’s range.'}</div>${low && I.id === 'bass' ? '<button class="btn sm primary" data-bs5>Use a 5-string bass</button>' : ''}</div>`;
+      const b5 = box.querySelector('[data-bs5]');
+      if (b5) b5.onclick = () => { PM.App.settings.bassStrings = 5; PM.App.saveSettings(); PM.Instruments.setBassStrings(5); PM.App.rerender(); };
+      return { setCurrent() {}, current: () => 0, el: box, destroy() { box.innerHTML = ''; } };
+    }
 
     function compute() {
       if (kind === 'piano') return PM.Fingering.piano(notes, st.hand);

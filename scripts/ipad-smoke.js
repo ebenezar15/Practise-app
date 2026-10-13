@@ -532,6 +532,19 @@ fs.mkdirSync(outDir, { recursive: true });
       if (best == null) throw new Error('score not saved');
       return `${subjects} subjects · ${answered} questions · best ${Math.round(best * 100)}%`;
     });
+    await step('academy: instrument course lesson with fingering guide, fretboard explorer and drill', async () => {
+      await page.goto(base + '/#/academy');
+      const courses = await page.locator('.ak-course').count();
+      if (courses < 5) throw new Error('only ' + courses + ' instrument courses');
+      await page.goto(base + '/#/academy?l=gc1');
+      await page.waitForSelector('[data-fretx] svg', { timeout: 5000 });
+      if (!(await page.locator('.ak-int .fp').count())) throw new Error('no fingering guide in the lesson');
+      await page.evaluate(() => document.querySelector('[data-fretx] svg').dispatchEvent(new MouseEvent('click', { clientX: document.querySelector('[data-fretx] svg').getBoundingClientRect().left + 200, clientY: document.querySelector('[data-fretx] svg').getBoundingClientRect().top + 40, bubbles: true })));
+      const out = (await page.textContent('[data-fxo]')).trim();
+      if (!/string/.test(out)) throw new Error('fretboard explorer did not answer: ' + out);
+      await shot('academy-course');
+      return courses + ' courses · ' + out;
+    });
     await step('academy: placement quiz recommends a level', async () => {
       await page.goto(base + '/#/academy?placement=1');
       await page.waitForSelector('.ak-opt', { timeout: 5000 });
