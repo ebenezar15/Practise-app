@@ -30,6 +30,29 @@
     { id: 'jingle', title: 'Jingle Bells (chorus)', deg: [4, 4, 4, 4, 4, 4, 4, 7, 0, 2, 4, 5, 5, 5, 5, 5, 4, 4, 4, 4, 4, 2, 2, 4, 2, 7], beats: [1, 1, 2, 1, 1, 2, 1, 1, 1.5, 0.5, 4, 1, 1, 1.5, 0.5, 1, 1, 1, 0.5, 0.5, 1, 1, 1, 1, 2, 2] },
   ];
 
+  /**
+   * Note-length exercises (whole → sixteenths, dotted, triplets, syncopation) for any pitched
+   * instrument. `sc` is an ascending scale (8 notes); `add` is the builder's add().
+   */
+  function noteLengths(add, sc, o) {
+    o = o || {};
+    const x = Object.assign({ noFit: !!o.noFit }, o.syl ? { syl: o.syl } : {});
+    const up = sc.slice(0, 5), down = up.slice().reverse(), five = up.concat(down.slice(1));
+    let k = 0;
+    const L = (level, title, desc, tip, notes, beats, bpm) => add(level, 'Note lengths', title, desc, tip, notes, Object.assign({}, x, { beats, bpm, extra: { fixedId: 'len-' + (++k) } }));
+    L(1, 'Whole notes 𝅝', 'Four notes, each held for a whole bar: count "1-2-3-4" on every note.', 'Keep the sound going right up to the next note — no early stops.', [sc[0], sc[2], sc[4], sc[0]], [4, 4, 4, 4], 72);
+    L(1, 'Half notes 𝅗𝅥', 'Up and down five notes, two beats each: "1-2, 3-4".', 'Change note exactly on beats 1 and 3.', up.concat(down.slice(1, 4)), new Array(8).fill(2), 72);
+    L(1, 'Quarter notes ♩', 'One note per beat, up and down five notes.', 'Lock each note to the click.', five, new Array(9).fill(1), 76);
+    L(2, 'Eighth notes ♫', 'Two even notes per beat: "1-&, 2-&".', 'Say "1 & 2 &" out loud — each note gets exactly half a beat.', five.concat(five.slice(1, 8)), new Array(16).fill(0.5), 66);
+    L(2, 'Halves, quarters and eighths', 'Long, medium and short notes in one line.', 'Feel the beat underneath — the note lengths change, the pulse doesn\'t.', [sc[0], sc[1], sc[2], sc[3], sc[4], sc[3], sc[2], sc[1], sc[0]], [2, 1, 1, 0.5, 0.5, 0.5, 0.5, 1, 1], 72);
+    L(2, 'Dotted half notes (3 beats)', 'Waltz-style: each note lasts three beats — "1-2-3".', 'A dot adds half the value again: half note (2) + 1 = 3 beats.', [sc[0], sc[2], sc[4], sc[2], sc[0]], [3, 3, 3, 3, 3], 84);
+    L(3, 'Dotted quarter + eighth', 'Long–short pairs: 1½ beats then ½ beat ("1 … & 2").', 'Hold the long note through beat 2, move on its "&".', [sc[0], sc[1], sc[2], sc[3], sc[4], sc[3], sc[2], sc[1]], [1.5, 0.5, 1.5, 0.5, 1.5, 0.5, 1.5, 0.5], 72);
+    L(3, 'Eighth-note triplets', 'Three even notes in every beat: "trip-o-let".', 'Triplets are rounder than 8ths — don\'t let them turn into "long-short".', [sc[0], sc[1], sc[2], sc[1], sc[2], sc[3], sc[2], sc[3], sc[4], sc[3], sc[2], sc[1], sc[0]], new Array(12).fill(1 / 3).concat([1]), 60);
+    L(4, 'Sixteenth notes', 'Four even notes per beat: "1 e & a".', 'Start slowly; keep every note the same length and volume.', sc.slice(0, 8).concat(sc.slice(0, 8).reverse()).concat([sc[0]]), new Array(16).fill(0.25).concat([1]), 56);
+    L(4, 'Syncopation: short–long–short', 'Eighth – quarter – eighth patterns that push across the beat.', 'The long note starts on an "&" — feel the beat land in the middle of it.', [sc[0], sc[2], sc[1], sc[2], sc[4], sc[3], sc[2], sc[1], sc[0]], [0.5, 1, 0.5, 0.5, 1, 0.5, 1, 1, 2], 72);
+    L(5, 'Rhythm study: every value', 'Quarters, eighths, dotted notes, sixteenths and a triplet in one phrase.', 'Count everything in 16ths before you play it.', [sc[0], sc[1], sc[2], sc[3], sc[4], sc[5], sc[4], sc[3], sc[2], sc[3], sc[2], sc[1], sc[2], sc[1], sc[0]], [1, 0.5, 0.5, 1.5, 0.5, 0.25, 0.25, 0.25, 0.25, 1 / 3, 1 / 3, 1 / 3, 1, 1, 2], 64);
+  }
+
   /** Fit a list of notes into the instrument's range by whole octaves. */
   function fit(inst, notes) {
     const R = PM.Learn.RANGE[inst];
@@ -71,6 +94,7 @@
       add(1, 'Basics', 'Long tones: written G', 'Hold written G (open) for 4 beats, rest, repeat.', 'Aim for a steady pitch — watch the tuner needle.', [65, 65, 65], { each: 4, bpm: 60, noFit: true });
       add(1, 'Basics', 'Written C to G', 'Written C-D-E-F-G and back.', 'Valves straight down, fingertips on the pearls.', [0, 2, 4, 5, 7, 5, 4, 2, 0].map((d) => 58 + d), { bpm: 60, noFit: true });
     }
+    noteLengths(add, scale(k0, 'major', 1, 'up'));
     add(1, 'Pulse', `Quarter notes on ${kn(k0)}`, 'Play the same note eight times, perfectly in time with the click.', 'Start each note exactly on the click — not before, not after.', new Array(8).fill(start(k0)), { bpm: 70 });
     add(1, 'Pulse', `Half notes & quarter notes on ${kn(k0)}`, 'Long-long-short-short-short-short: feel two-beat and one-beat notes.', 'Count "1-2, 3-4" out loud.', [0, 0, 0, 0, 0, 0].map(() => start(k0)), { beats: [2, 2, 1, 1, 1, 1], bpm: 70 });
     add(1, 'Patterns', `Three-note steps in ${kn(k0)}`, 'Do-re-mi-re-do — the first three notes of the major scale.', 'Move only the finger you need.', [0, 2, 4, 2, 0].map((d) => start(k0) + d), { bpm: 66 });
@@ -158,7 +182,9 @@
 
     // stable order: by level, then as authored
     ex.sort((a, b) => a.level - b.level || a.n - b.n);
-    ex.forEach((e, i) => { e.n = i + 1; e.id = `${inst}-${String(i + 1).padStart(2, '0')}`; });
+    // ids stay stable when new kinds of exercise are added (saved progress is keyed by id)
+    let num = 0;
+    ex.forEach((e, i) => { e.n = i + 1; e.id = e.fixedId ? `${inst}-${e.fixedId}` : `${inst}-${String(++num).padStart(2, '0')}`; });
     return ex;
   }
 
@@ -198,6 +224,7 @@
     const kn = (pc) => NAMES[mod12(pc)];
     // keys that sit well in THIS voice type: low enough that an octave + a step fits above
     const k0 = mod12(lo + 2), k1 = mod12(lo + 4), k2 = mod12(lo + 5), mn0 = mod12(lo + 2), mn1 = mod12(lo + 4);
+    { const t = tonicAt(k0, 9); noteLengths(add, MAJ.slice(0, 8).map((d) => t + d), { noFit: true, syl: 'la' }); }
     const scale = (pc, sc, dir) => L.scale({ tonic: pc, scale: sc, octaves: 1, direction: dir || 'updown', start: tonicAt(pc, 12) });
     // sing-alongs: start from the suggested key, nudging it until the whole tune fits the voice
     const tune = (m, pc) => {
@@ -285,7 +312,8 @@
     I.tips.slice(0, 4).forEach((tip, i) => add(Math.min(5, 1 + i), 'Technique', ['Posture & breath check', 'Resonance check', 'Relaxation check', 'Vocal health check'][i], tip, tip, [home + 4, home + 4, home + 4], { each: 4, bpm: 60, syl: 'ah', noFit: true }));
 
     ex.sort((a, b) => a.level - b.level || a.n - b.n);
-    ex.forEach((e, i) => { e.n = i + 1; e.id = `voice-${String(i + 1).padStart(2, '0')}`; });
+    let num = 0;
+    ex.forEach((e, i) => { e.n = i + 1; e.id = e.fixedId ? `voice-${e.fixedId}` : `voice-${String(++num).padStart(2, '0')}`; });
     return ex;
   }
 
