@@ -43,7 +43,7 @@ jobs:
           for i in $(seq 1 30); do curl -skf https://localhost/api/health && break; sleep 2; done
           curl -skf https://localhost/api/health | grep -q '"ok":true'
           curl -skf https://localhost/ | grep -q '<title>Overture'
-          curl -skf https://localhost/sw.js | grep -q 'cadenza-v'
+          curl -skf https://localhost/sw.js | grep -q 'overture-v'
           test "$(curl -s -o /dev/null -w '%{http_code}' http://localhost/)" = "308"
           test "$(curl -sk -o /dev/null -w '%{http_code}' https://localhost/server/server.js)" = "404"
           curl -skf -X POST https://localhost/api/setup -H 'Content-Type: application/json' -d '{"username":"maestro","password":"supersecret"}' | grep -q token
